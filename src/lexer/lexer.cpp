@@ -1,25 +1,5 @@
-struct Span {
-public:
-    int line;
-    int position;
-};
+#include "lexer.h"
 
-class Token {   
-    Span span;
-    unsigned int code;
-};
+Lexer::tokenize() {
 
-class Lexer {
-public:
-    Token getNextToken() {
-        
-    }
-};
-
-class Syntax {
-    
-};
-
-int main() {
-    return 0;
 }
