@@ -50,5 +50,5 @@ public:
 
 class Lexer {
 public:
-    static std::vector<std::shared_ptr<Token>> tokenize();
+    static std::vector<std::shared_ptr<Token>> tokenize(const std::string& code);
 };
