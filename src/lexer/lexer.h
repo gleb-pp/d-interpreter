@@ -6,8 +6,7 @@
 
 struct Span {
 public:
-    size_t line;
-    size_t position;
+    size_t pos;
     size_t length;
 };
 
@@ -40,6 +39,7 @@ public:
         "and",
         "or",
         "xor",
+        "not",
         ">",
         ">=",
         "<",
@@ -85,6 +85,7 @@ public:
         tkAnd,
         tkOr,
         tkXor,
+        tkNot,
         tkGreater,
         tkGreaterEq,
         tkLess,
@@ -108,26 +109,31 @@ public:
         tkStringLiteral,
         tkIdent,
     } type;
+    Token(Span span, Type tkType);
 };
 
-class Identifier : public Token {
+class IdentifierToken : public Token {
 public:
     std::string identifier;
+    IdentifierToken(Span span, const std::string& value);
 };
 
-class Integer : Token {
+class IntegerToken : public Token {
 public:
     long value;
+    IntegerToken(Span span, long value);
 };
 
-class Real : Token {
+class RealToken : public Token {
 public:
     long double value;
+    RealToken(Span span, long double value);
 };
 
-class StringLiteral : Token {
+class StringLiteral : public Token {
 public:
     std::string value;
+    StringLiteral(Span span, const std::string& value);
 };
 
 class Lexer {

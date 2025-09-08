@@ -107,6 +107,7 @@ TermOp:
 Unary:
 - positive: "+" Primary;
 - negative: "-" Primary;
+- not: "not" Primary;
 - typecheck: Reference "is" TypeIndicator;
 - ref: Reference;
 - prim: Primary;
