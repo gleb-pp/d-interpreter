@@ -77,7 +77,6 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("end", Token::Type::tkEnd),
     std::make_pair("exit", Token::Type::tkExit),
     std::make_pair("print", Token::Type::tkPrint),
-    std::make_pair("in", Token::Type::tkIn),
     std::make_pair("else", Token::Type::tkElse),
     std::make_pair("loop", Token::Type::tkLoop),
     std::make_pair(",", Token::Type::tkComma),
@@ -85,7 +84,6 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("or", Token::Type::tkOr),
     std::make_pair("not", Token::Type::tkNot),
     std::make_pair("xor", Token::Type::tkXor),
-    std::make_pair("int", Token::Type::tkInt),
     std::make_pair("real", Token::Type::tkReal),
     std::make_pair("string", Token::Type::tkString),
     std::make_pair("bool", Token::Type::tkBool),
@@ -103,6 +101,9 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("}", Token::Type::tkClosedCurlyBrace),
     std::make_pair(";", Token::Type::tkSemicolon),
     std::make_pair(":=", Token::Type::tkAssign),
+
+    std::make_pair("int", Token::Type::tkInt),
+    std::make_pair("in", Token::Type::tkIn),
 
     std::make_pair("..", Token::Type::tkRange),
     std::make_pair(".", Token::Type::tkDot),
