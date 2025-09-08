@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include <stdexcept>
 
 using namespace std;
 
@@ -15,16 +16,20 @@ static bool checkComments(size_t& i, size_t n, const string& code) {
 
 static bool checkStringLiterals(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     if (code[i] == '"') {
+        size_t position = i;
         std::string value;
         i++;
         while (i < n && code[i] != '"') {
+            if (code [i] == '\n') {
+                throw std::runtime_error("Newline character is not allowed in string literal");
+            }
             value += code[i];
             i++;
         }
         i++;
         auto token = make_shared<StringLiteral>();
         token->type = Token::Type::tkStringLiteral;
-        token->span = {i, value.length()};
+        token->span = {position, value.length()};
         token->value = value;
         tokens.push_back(token);
         return true;
@@ -35,7 +40,7 @@ static bool checkStringLiterals(size_t& i, size_t n, const string& code, vector<
 
 static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     if (std::isdigit(code[i])) {
-        int start = i;
+        size_t position = i;
         long value = 0;
         while (i < n && std::isdigit(code[i])) {
             value = value * 10 + (code[i] - '0');
@@ -52,13 +57,13 @@ static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_
             }
             auto token = make_shared<Real>();
             token->type = Token::Type::tkRealLiteral;
-            token->span = {i, i - start};
+            token->span = {position, i - position};
             token->value = value;
             tokens.push_back(token);
         } else {
             auto token = make_shared<Integer>();
             token->type = Token::Type::tkIntLiteral;
-            token->span = {i, i - start};
+            token->span = {position, i - position};
             token->value = value;
             tokens.push_back(token);
         }
@@ -85,14 +90,15 @@ static bool checkToken(size_t& i, size_t n, const string& code, vector<shared_pt
 
 static bool checkIdentifier(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     if (std::isalpha(code[i])) {
+        size_t position = i;
         std::string value;
         while (i < n && (std::isalnum(code[i]) || code[i] == '_')) {
             value += code[i];
             i++;
         }
         auto token = make_shared<Identifier>();
-        token->type = Token::Type::tkStringLiteral;
-        token->span = {i, value.length()};
+        token->type = Token::Type::tkIdent;
+        token->span = {position, value.length()};
         token->identifier = value;
         tokens.push_back(token);
         return true;
@@ -109,6 +115,7 @@ vector<shared_ptr<Token>> Lexer::tokenize(const string& code) {
         if (checkStringLiterals(i, n, code, tokens)) continue;
         if (checkNumbers(i, n, code, tokens)) continue;
         if (checkToken(i, n, code, tokens)) continue;
+        if (checkIdentifier(i, n, code, tokens)) continue;
     }
     return tokens;
 }
