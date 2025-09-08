@@ -111,7 +111,7 @@ vector<shared_ptr<Token>> Lexer::tokenize(const string& code) {
     size_t i = 0;
     size_t n = code.length();
     while (i < code.length()) {
-        if (isspace(code[i])) { i++; continue; }
+        if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') { i++; continue; }
         if (checkComments(i, n, code)) continue;
         if (checkStringLiterals(i, n, code, tokens)) continue;
         if (checkNumbers(i, n, code, tokens)) continue;
