@@ -4,7 +4,7 @@ public:
     int position;
 };
 
-class Token {
+class Token {   
     Span span;
     unsigned int code;
 };
