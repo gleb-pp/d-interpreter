@@ -158,12 +158,12 @@ static optional<shared_ptr<Token>> TryScanToken(const string& code, size_t pos) 
         return make_shared<Token>(span, static_cast<Token::Type>(foundTokenType));
     }
 
-    auto maybeInt = TryScanInt(code, pos);
-    if (maybeInt.has_value())
-        return {maybeInt.value()};
     auto maybeReal = TryScanReal(code, pos);
     if (maybeReal.has_value())
         return {maybeReal.value()};
+    auto maybeInt = TryScanInt(code, pos);
+    if (maybeInt.has_value())
+        return {maybeInt.value()};
     auto maybeIdent = TryScanIdent(code, pos);
     if (maybeIdent.has_value())
         return {maybeIdent.value()};
