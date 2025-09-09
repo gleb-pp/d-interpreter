@@ -8,7 +8,7 @@ using namespace std;
 
 namespace complog {
 Severity::Severity(int index) : index(index) {
-    if (index < 0 || index >= sizeof(SEVERITY_STR) / sizeof(SEVERITY_STR[0]))
+    if (index < 0 || static_cast<size_t>(index) >= sizeof(SEVERITY_STR) / sizeof(SEVERITY_STR[0]))
         throw runtime_error("Index " + to_string(index) + " does not correspond to a severity level");
 }
 Severity Severity::Info() { return {0}; }
@@ -52,19 +52,19 @@ void CompilationMessage::WriteContextToStream(ostream& out, const locators::Loca
     width -= static_cast<int>(linenum.size()) + 2;
     width = max(0, width);
     out << linenum << " |";
-    int linewidth = loc.File()->LineLength(line);
+    size_t linewidth = loc.File()->LineLength(line);
     int toleft, toright;
-    if (linewidth <= width) {
+    if (static_cast<long>(linewidth) <= width) {
         toleft = col;
         toright = linewidth - col;
     } else {
         toleft = width / 2;
         toright = width - toleft;
-        if (toleft > col) {
+        if (toleft > static_cast<long>(col)) {
             toright += toleft - col;
             toleft = col;
         }
-        if (col + toright > linewidth) {
+        if (static_cast<long>(col + toright) > static_cast<long>(linewidth)) {
             toleft += col + toright - linewidth;
             toright = linewidth - col;
         }

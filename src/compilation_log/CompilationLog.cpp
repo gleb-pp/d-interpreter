@@ -48,7 +48,7 @@ CombinedCompilationLog::CombinedCompilationLog(const std::vector<std::shared_ptr
     : logs(recipients) {}
 CombinedCompilationLog::CombinedCompilationLog(
     const std::initializer_list<std::shared_ptr<ICompilationLog>>& recipients)
-    : logs(std::move(recipients)) {}
+    : logs(recipients) {}
 void CombinedCompilationLog::Log(const std::shared_ptr<CompilationMessage>& message) {
     for (auto& ptr : logs) ptr->Log(message);
 }

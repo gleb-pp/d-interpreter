@@ -24,7 +24,7 @@ if [ -t 1 -a $(tput colors) -ge 8 ]; then
     NORM=$(tput sgr0)
 fi
 echo ${BOLD}=== BUILD START ===${NORM}
-if testfunc; then
+if buildfunc; then
     echo ${GOOD}=== ALL GOOD!! ===${NORM}
 else
     echo ${BAD}=== ERRORS FOUND ===${NORM}
