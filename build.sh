@@ -7,11 +7,6 @@ buildfunc ()
     ctest -V . || return 1
 }
 
-if [ ! -d build ]; then
-    mkdir build
-    echo "/build directory created"
-fi
-
 GOOD=""
 BAD=""
 BOLD=""
@@ -23,6 +18,17 @@ if [ -t 1 -a $(tput colors) -ge 8 ]; then
     BOLD=$(tput setaf 4)
     NORM=$(tput sgr0)
 fi
+
+if [ ! -d .git ]; then
+    echo "${BAD}This script must be run in the project's root directory (as ./build.sh)${NORM}" >/dev/stderr
+    exit 1
+fi
+
+if [ ! -d build ]; then
+    mkdir build
+    echo "/build directory created"
+fi
+
 echo ${BOLD}=== BUILD START ===${NORM}
 if buildfunc; then
     echo ${GOOD}=== ALL GOOD!! ===${NORM}
