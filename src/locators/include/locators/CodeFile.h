@@ -27,5 +27,6 @@ public:
     CodeContext Context(size_t pos, size_t toleft, size_t toright) const;
     size_t LineLength(size_t line) const;
     size_t LineCount() const;
+    const std::string& AllText() const;
 };
 }  // namespace locators

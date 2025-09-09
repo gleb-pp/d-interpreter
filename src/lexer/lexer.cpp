@@ -1,7 +1,100 @@
 #include "lexer.h"
-#include <stdexcept>
+#include "complog/CompilationLog.h"
+#include "complog/CompilationMessage.h"
+#include "locators/CodeFile.h"
+#include "locators/locator.h"
+#include <cctype>
 
 using namespace std;
+
+static bool isLatin(char ch) {
+    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z');
+}
+
+LexerError::LexerError(const locators::Locator& position)
+: complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) { }
+
+void LexerError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+    out << "Cannot tokenize the file.\n";
+}
+
+std::vector<locators::Locator> LexerError::Locators() const { return {position}; }
+
+NewlineInStringLiteralError::NewlineInStringLiteralError(const locators::Locator& position) 
+: complog::CompilationMessage(complog::Severity::Error(), "EolnInStringError"), position(position) { }
+
+void NewlineInStringLiteralError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+    out << "A string literal cannot span several lines.\n";
+}
+
+std::vector<locators::Locator> NewlineInStringLiteralError::Locators() const {
+    return {position};
+}
+
+WrongEscapeSequenceError::WrongEscapeSequenceError(const locators::Locator& position,
+                                                   const std::string& badsequence) 
+: complog::CompilationMessage(complog::Severity::Error(), "EscapeSequenceError"),
+  position(position), badsequence(badsequence) { }
+
+void WrongEscapeSequenceError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+    out << "This escape sequence is not supported: \"" << badsequence << "\".\n";
+}
+
+std::vector<locators::Locator> WrongEscapeSequenceError::Locators() const { return {position}; }
+
+
+const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
+    std::make_pair("var", Token::Type::tkVar),
+    std::make_pair("while", Token::Type::tkWhile),
+    std::make_pair("for", Token::Type::tkFor),
+    std::make_pair("if", Token::Type::tkIf),
+    std::make_pair("then", Token::Type::tkThen),
+    std::make_pair("end", Token::Type::tkEnd),
+    std::make_pair("exit", Token::Type::tkExit),
+    std::make_pair("print", Token::Type::tkPrint),
+    std::make_pair("else", Token::Type::tkElse),
+    std::make_pair("loop", Token::Type::tkLoop),
+    std::make_pair(",", Token::Type::tkComma),
+    std::make_pair("and", Token::Type::tkAnd),
+    std::make_pair("or", Token::Type::tkOr),
+    std::make_pair("not", Token::Type::tkNot),
+    std::make_pair("xor", Token::Type::tkXor),
+    std::make_pair("real", Token::Type::tkReal),
+    std::make_pair("string", Token::Type::tkString),
+    std::make_pair("bool", Token::Type::tkBool),
+    std::make_pair("none", Token::Type::tkNone),
+    std::make_pair("func", Token::Type::tkFunc),
+    std::make_pair("+", Token::Type::tkPlus),
+    std::make_pair("-", Token::Type::tkMinus),
+    std::make_pair("*", Token::Type::tkTimes),
+    std::make_pair("\n", Token::Type::tkNewLine),
+    std::make_pair("[", Token::Type::tkOpenBracket),
+    std::make_pair("]", Token::Type::tkClosedBracket),
+    std::make_pair("(", Token::Type::tkOpenParenthesis),
+    std::make_pair(")", Token::Type::tkClosedParenthesis),
+    std::make_pair("{", Token::Type::tkOpenCurlyBrace),
+    std::make_pair("}", Token::Type::tkClosedCurlyBrace),
+    std::make_pair(";", Token::Type::tkSemicolon),
+    std::make_pair(":=", Token::Type::tkAssign),
+
+    std::make_pair("int", Token::Type::tkInt),
+    std::make_pair("in", Token::Type::tkIn),
+
+    std::make_pair("..", Token::Type::tkRange),
+    std::make_pair(".", Token::Type::tkDot),
+
+    std::make_pair("=>", Token::Type::tkArrow),
+    std::make_pair("=", Token::Type::tkEqual),
+
+    std::make_pair(">=", Token::Type::tkGreaterEq),
+    std::make_pair(">", Token::Type::tkGreater),
+
+    std::make_pair("<=", Token::Type::tkLessEq),
+    std::make_pair("<", Token::Type::tkLess),
+
+    std::make_pair("/=", Token::Type::tkNotEqual),
+    std::make_pair("/", Token::Type::tkDivide)
+};
 
 static bool checkComments(size_t& i, size_t n, const string& code) {
     if (i + 1 < n && code[i] == '/' && code[i + 1] == '/') {
@@ -13,65 +106,62 @@ static bool checkComments(size_t& i, size_t n, const string& code) {
     return false;
 }
 
-
-static bool checkStringLiterals(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
-    if (code[i] == '"') {
-        size_t position = i;
-        string value;
+static bool checkStringLiterals(size_t& i, size_t n, const shared_ptr<const locators::CodeFile>& file,
+                                vector<shared_ptr<Token>>& tokens, complog::ICompilationLog& log) {
+    const std::string& code = file->AllText();
+    if (code[i] != '"') return false;
+    size_t position = i;
+    string value;
+    i++;
+    while (i < n && code[i] != '"') {
+        if (code [i] == '\n') {
+            log.Log(make_shared<NewlineInStringLiteralError>(locators::Locator(file, i)));
+            i = position;
+            return false;
+        }
+        value += code[i];
         i++;
-        while (i < n && code[i] != '"') {
-            if (code [i] == '\n') {
-                throw runtime_error("Newline character is not allowed in string literal");
-            }
-            value += code[i];
+    }
+    i++;
+    auto token = make_shared<StringLiteral>();
+    token->type = Token::Type::tkStringLiteral;
+    token->span = {position, i - position};
+    token->value = value;
+    tokens.push_back(token);
+    return true;
+}
+
+static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
+    if (!isdigit(code[i])) return false;
+    size_t position = i;
+    long value = 0;
+    while (i < n && isdigit(code[i])) {
+        value = value * 10 + (code[i] - '0');
+        i++;
+    }
+    if (i < n && code[i] == '.') {
+        double realValue = value;
+        double fraction = 0.1;
+        i++;
+        while (i < n && isdigit(code[i])) {
+            realValue += (code[i] - '0') * fraction;
+            fraction *= 0.1;
             i++;
         }
-        i++;
-        auto token = make_shared<StringLiteral>();
-        token->type = Token::Type::tkStringLiteral;
+        auto token = make_shared<RealToken>();
+        token->type = Token::Type::tkRealLiteral;
+        token->span = {position, i - position};
+        token->value = realValue;
+        tokens.push_back(token);
+    } else {
+        auto token = make_shared<IntegerToken>();
+        token->type = Token::Type::tkIntLiteral;
         token->span = {position, i - position};
         token->value = value;
         tokens.push_back(token);
-        return true;
     }
-    return false;
+    return true;
 }
-
-
-static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
-    if (isdigit(code[i])) {
-        size_t position = i;
-        long value = 0;
-        while (i < n && isdigit(code[i])) {
-            value = value * 10 + (code[i] - '0');
-            i++;
-        }
-        if (i < n && code[i] == '.') {
-            double realValue = value;
-            double fraction = 0.1;
-            i++;
-            while (i < n && isdigit(code[i])) {
-                realValue += (code[i] - '0') * fraction;
-                fraction *= 0.1;
-                i++;
-            }
-            auto token = make_shared<Real>();
-            token->type = Token::Type::tkRealLiteral;
-            token->span = {position, i - position};
-            token->value = realValue;
-            tokens.push_back(token);
-        } else {
-            auto token = make_shared<Integer>();
-            token->type = Token::Type::tkIntLiteral;
-            token->span = {position, i - position};
-            token->value = value;
-            tokens.push_back(token);
-        }
-        return true;
-    }
-    return false;
-}
-
 
 static bool checkToken(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     for (const pair<string, Token::Type>& tok : Token::typeChars) {
@@ -87,37 +177,34 @@ static bool checkToken(size_t& i, size_t n, const string& code, vector<shared_pt
     return false;
 }
 
-
-static bool checkIdentifier(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
-    if (isalpha(code[i]) || code[i] == '_') {
-        size_t position = i;
-        string value;
-        while (i < n && (isalnum(code[i]) || code[i] == '_')) {
-            value += code[i];
-            i++;
-        }
-        auto token = make_shared<Identifier>();
-        token->type = Token::Type::tkIdent;
-        token->span = {position, i - position};
-        token->identifier = value;
-        tokens.push_back(token);
-        return true;
-    }
-    return false;
+static bool checkIdentifierToken(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
+    if (!isLatin(code[i]) && code[i] != '_') return false;
+    size_t position = i;
+    while (i < n && (isLatin(code[i]) || isdigit(code[i]) || code[i] == '_')) i++;
+    string value = code.substr(position, i - position);
+    auto token = make_shared<IdentifierToken>();
+    token->type = Token::Type::tkIdent;
+    token->span = {position, i - position};
+    token->identifier = value;
+    tokens.push_back(token);
+    return true;
 }
 
-vector<shared_ptr<Token>> Lexer::tokenize(const string& code) {
+optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locators::CodeFile>& file,
+                                                    complog::ICompilationLog& log) {
     vector<shared_ptr<Token>> tokens;
     size_t i = 0;
+    const std::string& code = file->AllText();
     size_t n = code.length();
-    while (i < code.length()) {
+    while (i < n) {
         if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') { i++; continue; }
         if (checkComments(i, n, code)) continue;
-        if (checkStringLiterals(i, n, code, tokens)) continue;
+        if (checkStringLiterals(i, n, file, tokens, log)) continue;
         if (checkNumbers(i, n, code, tokens)) continue;
         if (checkToken(i, n, code, tokens)) continue;
-        if (checkIdentifier(i, n, code, tokens)) continue;
-        throw runtime_error(string("Unknown character: ") + code[i]);
+        if (checkIdentifierToken(i, n, code, tokens)) continue;
+        log.Log(make_shared<LexerError>(locators::Locator(file, i)));
+        return {};
     }
     return tokens;
 }
