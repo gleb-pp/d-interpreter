@@ -128,13 +128,29 @@ static bool checkStringLiterals(size_t& i, size_t n, const shared_ptr<const loca
     string value;
     i++;
     while (i < n && code[i] != '"') {
-        if (code [i] == '\n') {
+        if (code[i] == '\n') {
             log.Log(make_shared<NewlineInStringLiteralError>(locators::Locator(file, i)));
             i = position;
             return false;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 'n') {
+            value += '\n';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 't') {
+            value += '\t';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 'r') {
+            value += '\r';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == '"') {
+            value += '"';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == '\\') {
+            value += '\\';
+            i += 2;
+        } else {
+            value += code[i];
+            i++;
         }
-        value += code[i];
-        i++;
     }
     if (i == n) {
         log.Log(make_shared<UnclosedStringLiteralError>(locators::Locator(file, i)));
