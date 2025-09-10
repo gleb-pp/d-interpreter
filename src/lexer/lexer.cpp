@@ -85,6 +85,8 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("}", Token::Type::tkClosedCurlyBrace),
     std::make_pair(";", Token::Type::tkSemicolon),
     std::make_pair(":=", Token::Type::tkAssign),
+    std::make_pair("true", Token::Type::tkTrue),
+    std::make_pair("false", Token::Type::tkFalse),
 
     std::make_pair("int", Token::Type::tkInt),
     std::make_pair("in", Token::Type::tkIn),

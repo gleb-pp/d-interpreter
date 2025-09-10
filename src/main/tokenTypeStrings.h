@@ -46,6 +46,8 @@ static constexpr const char* tokenTypeStrings[] = {
     "tkString",
     "tkNone",
     "tkFunc",
+    "tkTrue",
+    "tkFalse",
     "tkIntLiteral",
     "tkRealLiteral",
     "tkStringLiteral",
