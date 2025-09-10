@@ -13,6 +13,8 @@ struct Span {
 public:
     size_t position;
     size_t length;
+    bool operator==(const Span& other) const = default;
+    bool operator!=(const Span& other) const = default;
 };
 
 class LexerError : public complog::CompilationMessage {
@@ -44,6 +46,17 @@ public:
     void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
     std::vector<locators::Locator> Locators() const override;
     virtual ~WrongEscapeSequenceError() override = default;
+};
+
+class UnclosedStringLiteralError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+    std::string badsequence;
+public:
+    UnclosedStringLiteralError(const locators::Locator& position);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~UnclosedStringLiteralError() override = default;
 };
 
 class Token {

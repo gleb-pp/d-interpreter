@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-I../, -I../../locators/include, -I../../compilation_log/include, -std=c++20]
