@@ -48,6 +48,17 @@ public:
     virtual ~WrongEscapeSequenceError() override = default;
 };
 
+class UnclosedStringLiteralError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+    std::string badsequence;
+public:
+    UnclosedStringLiteralError(const locators::Locator& position);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~UnclosedStringLiteralError() override = default;
+};
+
 class Token {
 public: 
     Span span;
