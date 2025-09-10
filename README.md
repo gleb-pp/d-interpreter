@@ -1,15 +1,15 @@
 The interpreter for the [dynamic language](https://github.com/gleb-pp/d-interpreter/blob/main/proj-describtion/Project%20D.pdf) implemented in С++.
 
-# Lexical Analyser
+# Lexical Analyzer
 
-Lexical Analyser splits the initial code into self-contained tokens.
+Lexical Analyzer splits the initial code into self-contained tokens.
 
-#### Input for the Lexical Analyser
+#### Input for the Lexical Analyzer
 ```
 var x := 5
 print x
 ```
-#### Output for the Lexical Analyser
+#### Output for the Lexical Analyzer
 ```
 tkVar tkIdent(x) tkAssign tkIntLiteral(5) tkNewLine tkPrint tkIdent(x)
 ```
@@ -18,7 +18,7 @@ tkVar tkIdent(x) tkAssign tkIntLiteral(5) tkNewLine tkPrint tkIdent(x)
 **Token** class contains all the information about the tokens:
 - span (position and lenght) to indicate errors
 - type to process the code futher (by syntax analyser)
-- typeChars (list of pairs `<">=", "tkGreaterEq">`) to match the substrings and token types
+- typeChars (list of pairs `">=", "tkGreaterEq">`) to match the substrings and token types
 
 Token class has 4 subcalsses with additional information:
 - **Integer** with an attirbute `value`
