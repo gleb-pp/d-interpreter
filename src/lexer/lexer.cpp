@@ -15,7 +15,7 @@ LexerError::LexerError(const locators::Locator& position)
 : complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) { }
 
 void LexerError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
-    out << "Cannot tokenize the file.\n";
+    out << "Cannot tokenize the file: error at " << position.Pretty() << ".\n";
 }
 
 std::vector<locators::Locator> LexerError::Locators() const { return {position}; }
@@ -24,7 +24,8 @@ NewlineInStringLiteralError::NewlineInStringLiteralError(const locators::Locator
 : complog::CompilationMessage(complog::Severity::Error(), "EolnInStringError"), position(position) { }
 
 void NewlineInStringLiteralError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
-    out << "A string literal cannot span several lines.\n";
+    out << "A string literal cannot span several lines.\n" <<
+        "Line break at " << position.Pretty() << ".\n";
 }
 
 std::vector<locators::Locator> NewlineInStringLiteralError::Locators() const {
@@ -37,7 +38,7 @@ WrongEscapeSequenceError::WrongEscapeSequenceError(const locators::Locator& posi
   position(position), badsequence(badsequence) { }
 
 void WrongEscapeSequenceError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
-    out << "This escape sequence is not supported: \"" << badsequence << "\".\n";
+    out << "At " << position.Pretty() << ": this escape sequence is not supported: \"" << badsequence << "\".\n";
 }
 
 std::vector<locators::Locator> WrongEscapeSequenceError::Locators() const { return {position}; }
