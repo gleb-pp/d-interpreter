@@ -140,7 +140,7 @@ static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_
         value = value * 10 + (code[i] - '0');
         i++;
     }
-    if (i < n && code[i] == '.') {
+    if (i < n && code[i] == '.' && i + 1 < n && isdigit(code[i + 1])) {
         double realValue = value;
         double fraction = 0.1;
         i++;
