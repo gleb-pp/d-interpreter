@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <iostream>
 #include <optional>
 #include <fstream>
 #include <sstream>
 #include "complog/CompilationLog.h"
+#include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
 using namespace std;
@@ -12,10 +14,14 @@ public:
     bool Lexer = false;
     bool Help = false;
     bool Check = false;
+    bool Examples = false;
+    bool NoContext = false;
     optional<bool*> GetLongFlag(string name) {
         if (name == "lexer") return &Lexer;
         if (name == "help") return &Help;
         if (name == "check") return &Check;
+        if (name == "examples") return &Examples;
+        if (name == "nocontext") return &NoContext;
         return {};
     }
     optional<bool*> GetShortFlag(char name) {
@@ -23,6 +29,7 @@ public:
             case 'l': return &Lexer;
             case 'h': return &Help;
             case 'c': return &Check;
+            case 'C': return &NoContext;
             default: return {};
         }
     }
@@ -44,14 +51,28 @@ R"%%(dinterp - an interpreter for the D language.
 Usage: dinterp [OPTIONS] [--] [file1.d file2.d ...]
 
 Options:
-    --help      -h  Show this text.
-    --check     -c  Only check for errors, do not run.
-    --examples      Show some usage examples.
-    --lexer     -L  Stop after lexical analysis, output the tokens.
-    --locators  -l  Show code excerpts below errors.
-    --
+    --help       -h  Show this text.
+    --check      -c  Only check for errors, do not run.
+    --examples       Show some usage examples.
+    --lexer      -l  Stop after lexical analysis, output the tokens.
+    --nocontext  -C  Do not show code excerpts below errors.
 
 Every argument after -- is assumed to be a file name.
+)%%";
+    static constexpr const char* EXAMPLES =
+R"%%(-- EXAMPLES --
+
+Tokenize files:
+dinterp -l abc.d program.d
+
+Check programs for errors:
+dinterp -c *.d
+
+Check programs for lexical errors:
+dinterp *.d -lc
+
+Run a program named -abc.d:
+dinterp -- -abc.d
 )%%";
 };
 
@@ -101,6 +122,10 @@ int main(int argc, char** argv) {
         cout << Options::HELP << endl;
         doneSomething = true;
     }
+    if (opts.Examples) {
+        cout << Options::EXAMPLES << endl;
+        doneSomething = true;
+    }
     bool failed = false;
     if (files.size()) doneSomething = true;
 
@@ -114,13 +139,19 @@ int main(int argc, char** argv) {
                 continue;
             }
             stringstream sstr;
-            sstr << in.rdbuf();  // read everything
+            sstr << in.rdbuf();
             in.close();
             content = sstr.str();
         }
         shared_ptr<locators::CodeFile> file = make_shared<locators::CodeFile>(filename, content);
+        complog::CompilationMessage::FormatOptions format = complog::CompilationMessage::FormatOptions::All(80);
+        if (opts.NoContext) format = format.WithoutContext();
+        complog::StreamingCompilationLog log(cerr, format);
+        auto maybeTokens = Lexer::tokenize(file, log);
+        if (!maybeTokens.has_value()) {
+            cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
+            continue;
+        }
 
-        complog::StreamingCompilationLog log(cerr, );
-        vector<shared_ptr<Token>> tokens = Lexer::tokenize(file, log);
     }
 }
