@@ -43,6 +43,14 @@ void WrongEscapeSequenceError::WriteMessageToStream(std::ostream& out, [[maybe_u
 
 std::vector<locators::Locator> WrongEscapeSequenceError::Locators() const { return {position}; }
 
+UnclosedStringLiteralError::UnclosedStringLiteralError(const locators::Locator& position)
+: complog::CompilationMessage(complog::Severity::Error(), "UnclosedStringLiteralError"), position(position) { }
+
+void UnclosedStringLiteralError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+    out << "Closing quote expected at " << position.Pretty() << ".\n";
+}
+
+std::vector<locators::Locator> UnclosedStringLiteralError::Locators() const { return {position}; }
 
 const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("var", Token::Type::tkVar),
@@ -122,6 +130,11 @@ static bool checkStringLiterals(size_t& i, size_t n, const shared_ptr<const loca
         }
         value += code[i];
         i++;
+    }
+    if (i == n) {
+        log.Log(make_shared<UnclosedStringLiteralError>(locators::Locator(file, i)));
+        i = position;
+        return false;
     }
     i++;
     auto token = make_shared<StringLiteral>();
