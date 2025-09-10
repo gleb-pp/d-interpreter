@@ -1,0 +1,57 @@
+#pragma once
+#include "lexer.h"
+
+static constexpr const char* tokenTypeStrings[] = {
+    "tkGreater",
+    "tkGreaterEq",
+    "tkLess",
+    "tkLessEq",
+    "tkEqual",
+    "tkNotEqual",
+    "tkPlus",
+    "tkMinus",
+    "tkTimes",
+    "tkDivide",
+    "tkNewLine",
+    "tkAssign",
+    "tkOpenBracket",
+    "tkClosedBracket",
+    "tkOpenParenthesis",
+    "tkClosedParenthesis",
+    "tkOpenCurlyBrace",
+    "tkClosedCurlyBrace",
+    "tkSemicolon",
+    "tkVar",
+    "tkWhile",
+    "tkFor",
+    "tkIf",
+    "tkThen",
+    "tkEnd",
+    "tkArrow",
+    "tkExit",
+    "tkPrint",
+    "tkRange",
+    "tkIn",
+    "tkElse",
+    "tkLoop",
+    "tkDot",
+    "tkComma",
+    "tkAnd",
+    "tkOr",
+    "tkNot",
+    "tkXor",
+    "tkInt",
+    "tkReal",
+    "tkBool",
+    "tkString",
+    "tkNone",
+    "tkFunc",
+    "tkIntLiteral",
+    "tkRealLiteral",
+    "tkStringLiteral",
+    "tkIdent"
+};
+
+constexpr inline std::string TokenTypeToString(Token::Type type) {
+    return tokenTypeStrings[static_cast<int>(type)];
+}

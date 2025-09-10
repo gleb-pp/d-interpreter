@@ -1,5 +1,6 @@
-#include <algorithm>
+#include <cstring>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <fstream>
 #include <sstream>
@@ -7,6 +8,7 @@
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
+#include "tokenTypeStrings.h"
 using namespace std;
 
 class Options {
@@ -113,6 +115,45 @@ bool InterpretArgs(int argc, char** argv, Options& opts, vector<string>& files) 
     return true;
 }
 
+
+void PrintTokens(const locators::CodeFile& file, const vector<shared_ptr<Token>>& tokens) {
+    cout << file.FileName() << '\n';
+    size_t padding = 0;
+    for (auto& ptoken : tokens)
+        padding = max(padding, TokenTypeToString(ptoken->type).length());
+    padding += 2;
+    for (auto& ptoken : tokens) {
+        auto typestr = TokenTypeToString(ptoken->type);
+        cout << typestr << string(padding - typestr.size(), ' ') <<
+            file.AllText().substr(ptoken->span.position, ptoken->span.length) << '\n';
+    }
+    cout << "Total: " << tokens.size() << " tokens\n\n";
+}
+
+bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog& log) {
+    shared_ptr<const locators::CodeFile> file;
+    {
+        ifstream in(filename);
+        if (!in) {
+            perror(("Cannot open " + filename).c_str());
+            return false;
+        }
+        stringstream sstr;
+        sstr << in.rdbuf();
+        in.close();
+        file = make_shared<locators::CodeFile>(filename, sstr.str());
+    }
+    auto maybeTokens = Lexer::tokenize(file, log);
+    if (!maybeTokens.has_value()) {
+        cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
+        return false;
+    }
+    auto& tokens = maybeTokens.value();
+    // Currently, show tokens even if --lexer is not set
+    if (!opts.Check) PrintTokens(*file, tokens);
+    return true;
+}
+
 int main(int argc, char** argv) {
     vector<string> files;
     Options opts;
@@ -129,29 +170,16 @@ int main(int argc, char** argv) {
     bool failed = false;
     if (files.size()) doneSomething = true;
 
-    for (auto filename : files) {
-        string content;
-        {
-            ifstream in(filename);
-            if (!in) {
-                perror(("Cannot open " + filename).c_str());
-                failed = true;
-                continue;
-            }
-            stringstream sstr;
-            sstr << in.rdbuf();
-            in.close();
-            content = sstr.str();
-        }
-        shared_ptr<locators::CodeFile> file = make_shared<locators::CodeFile>(filename, content);
-        complog::CompilationMessage::FormatOptions format = complog::CompilationMessage::FormatOptions::All(80);
-        if (opts.NoContext) format = format.WithoutContext();
-        complog::StreamingCompilationLog log(cerr, format);
-        auto maybeTokens = Lexer::tokenize(file, log);
-        if (!maybeTokens.has_value()) {
-            cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
-            continue;
-        }
+    complog::CompilationMessage::FormatOptions format = complog::CompilationMessage::FormatOptions::All(80);
+    if (opts.NoContext) format = format.WithoutContext();
+    complog::StreamingCompilationLog log(cerr, format);
 
+    for (auto filename : files)
+        if (!ProcessFile(filename, opts, log)) failed = true;
+
+    if (!doneSomething) {
+        cerr << "Nothing to do. Type 'dinterp -h' for help.\n";
     }
+
+    return static_cast<int>(failed);
 }
