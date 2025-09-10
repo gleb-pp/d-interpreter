@@ -23,7 +23,9 @@ if(CompileTests)
     target_link_libraries(test_features INTERFACE pthread GTest::gtest)
 endif()
 
+add_executable(dinterp)
+
 add_subdirectory(compilation_log)
 add_subdirectory(locators)
 add_subdirectory(lexer)
-
+add_subdirectory(main)
