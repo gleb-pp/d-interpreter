@@ -1,21 +1,20 @@
-# d-interpreter
 The interpreter for the [dynamic language](https://github.com/gleb-pp/d-interpreter/blob/main/proj-describtion/Project%20D.pdf) implemented in С++.
 
-## Lexical Analyser
+# Lexical Analyser
 
 **Lexical Analyser** splits the initial code into self-contained tokens.
 
-### Input for the Lexical Analyser
+#### Input for the Lexical Analyser
 ```
 var x := 5
 print x
 ```
-### Output for the Lexical Analyser
+#### Output for the Lexical Analyser
 ```
 tkVar tkIdent(x) tkAssign tkIntLiteral(5) tkNewLine tkPrint tkIdent(x)
 ```
 
-### Proccessing
+#### Proccessing
 **Token** class contains all the information about the tokens:
 - span (position and lenght) to indicate errors
 - type to process the code futher (by syntax analyser)
