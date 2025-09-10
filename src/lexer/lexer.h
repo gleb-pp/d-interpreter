@@ -13,6 +13,8 @@ struct Span {
 public:
     size_t position;
     size_t length;
+    bool operator==(const Span& other) const = default;
+    bool operator!=(const Span& other) const = default;
 };
 
 class LexerError : public complog::CompilationMessage {
