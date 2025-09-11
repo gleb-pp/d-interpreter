@@ -109,6 +109,8 @@ public:
         tkFunc,
         tkTrue,
         tkFalse,
+        tkIs,
+        tkReturn,
         tkIntLiteral,
         tkRealLiteral,
         tkStringLiteral,

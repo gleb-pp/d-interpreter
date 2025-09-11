@@ -70,7 +70,7 @@ TEST(goodtests, test1) {
     ASSERT_EQ(pIdent->identifier, "othername");
     auto pString = dynamic_pointer_cast<StringLiteral>(tokens[15]);
     ASSERT_NE(pString, nullptr);
-    ASSERT_EQ(pString->value, "A string lite\\\\\\\\ral that does not support escape sequences ");
+    ASSERT_EQ(pString->value, "A string lite\\\\ral that does not support escape sequences ");
     pString = dynamic_pointer_cast<StringLiteral>(tokens[16]);
     ASSERT_NE(pString, nullptr);
     ASSERT_EQ(pString->value, "");

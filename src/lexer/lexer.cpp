@@ -4,6 +4,7 @@
 #include "locators/CodeFile.h"
 #include "locators/locator.h"
 #include <cctype>
+#include <utility>
 
 using namespace std;
 
@@ -87,6 +88,8 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair(":=", Token::Type::tkAssign),
     std::make_pair("true", Token::Type::tkTrue),
     std::make_pair("false", Token::Type::tkFalse),
+    std::make_pair("is", Token::Type::tkIs),
+    std::make_pair("return", Token::Type::tkReturn),
 
     std::make_pair("int", Token::Type::tkInt),
     std::make_pair("in", Token::Type::tkIn),
@@ -125,13 +128,29 @@ static bool checkStringLiterals(size_t& i, size_t n, const shared_ptr<const loca
     string value;
     i++;
     while (i < n && code[i] != '"') {
-        if (code [i] == '\n') {
+        if (code[i] == '\n') {
             log.Log(make_shared<NewlineInStringLiteralError>(locators::Locator(file, i)));
             i = position;
             return false;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 'n') {
+            value += '\n';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 't') {
+            value += '\t';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == 'r') {
+            value += '\r';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == '"') {
+            value += '"';
+            i += 2;
+        } else if (code[i] == '\\' && i + 1 < n && code[i + 1] == '\\') {
+            value += '\\';
+            i += 2;
+        } else {
+            value += code[i];
+            i++;
         }
-        value += code[i];
-        i++;
     }
     if (i == n) {
         log.Log(make_shared<UnclosedStringLiteralError>(locators::Locator(file, i)));
