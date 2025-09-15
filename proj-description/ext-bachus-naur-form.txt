@@ -33,6 +33,8 @@ Statement -> VarStatement // var a := 3
 VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
 
+AssignExpression -> tkAssign Expression
+
 IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
     [ tkElse [tkNewLine] Body ] tkEnd
 
