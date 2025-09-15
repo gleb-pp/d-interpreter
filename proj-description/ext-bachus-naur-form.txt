@@ -1,0 +1,108 @@
+// we also ignore tkNewLine inside any brackets/parentheses/etc., but not in function bodies:
+//
+// var myObj := { method
+//  :=                      // here, tkNewLine is ignored
+//    func (
+//    ab                    // here, tkNewLine is ignored
+//    , cd) is
+//      var sum := ab + cd
+//      return sum + 1      // here, tkNewLine matters
+//    end}
+//
+// Inside < >, tkNewLine is ignored.
+// Inside <* *>, tkNewLine is not ignored.
+
+PROGRAM -> <* [ { Statement Sep } Statement [Sep] ] *>
+
+Sep -> tkSemicolon | tkNewLine
+
+Body -> <* { Statement Sep } *>
+
+Statement -> VarStatement // var a := 3
+    | IfStatement         // if a = 3 then ... else ...
+    | ShortIfStatement    // if a = 3 => ...
+    | WhileStatement      // while ... loop ... end
+    | ForStatement        // for i in start..stop loop ... end
+    | ExitStatement       // exit
+    | AssignStatement     // a := 3
+    | PrintStatement      // print a, b, "c"
+    | ReturnStatement     // return a + 4
+    | ExpressionStatement // myObj.method(a, a + 1)
+    | EmptyStatement      // ;
+
+VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
+    { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
+
+IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
+    [ tkElse [tkNewLine] Body ] tkEnd
+
+ShortIfStatement -> tkIf < Expression > tkArrow Statement
+
+WhileStatement -> tkWhile < Expression > LoopBody
+
+LoopBody -> tkLoop Body tkEnd
+
+ForStatement -> tkFor [ Reference tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
+
+ExitStatement -> tkExit
+
+AssignStatement -> Reference tkAssign Expression
+
+PrintStatement -> tkPrint [ CommaExpressions ]
+
+CommaExpressions -> Expression { tkComma Expression }
+
+ReturnStatement -> tkReturn Expression
+
+ExpressionStatement -> Expression
+
+EmptyStatement -> 
+
+Reference -> tkIdent { Accessor }
+
+Accessor -> MemberAccessor | IndexAccessor
+
+MemberAccessor -> tkDot ( tkIdent | tkIntLiteral | ParenthesesExpression )
+//                        a.value   a.2            a.(1 + i)
+
+IndexAccessor -> tkOpenBracket < Expression > tkClosedBracket
+
+// Binary operator precedence:
+// 1. * /
+// 2. + -
+// 3. > >= < <= = /=
+// 4. and
+// 5. or
+// 6. xor
+// Unary operator precedence:
+// 1. function(args)  obj.field  arr[index]  // call & accessors
+// 2. +num -num
+// 3. obj is type
+// 4. not value
+
+Expression -> XorOperand { tkXor XorOperand }
+XorOperand -> OrOperand { tkOr OrOperand }
+OrOperand -> AndOperand { tkAnd AndOperand }
+AndOperand -> Sum { BinaryRelation Sum }
+BinaryRelation -> tkLess | tkLessEq
+    | tkGreater | tkGreaterEq
+    | tkEqual | tkNotEqual
+Sum -> Term { (tkPlus | tkMinus) Term }
+Term -> Unary { (tkTimes | tkDivide) Unary }
+
+Unary -> {tkNot} TypecheckUnary
+TypecheckUnary -> MinusPlusUnary { tkIs TypeId }
+TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
+    | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
+MinusPlusUnary -> {tkPlus | tkMinus} AccessorCallUnary
+AccessorCallUnary -> Primary { Accessor | Call }
+Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
+
+Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral
+PrimaryIdent -> tkIdent
+ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
+TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse
+FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
+FuncBody -> ShortFuncBody | LongFuncBody
+ShortFuncBody -> tkArrow Expression
+LongFuncBody -> tkIs Body tkEnd
