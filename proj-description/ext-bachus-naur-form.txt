@@ -52,7 +52,7 @@ PrintStatement -> tkPrint [ CommaExpressions ]
 
 CommaExpressions -> Expression { tkComma Expression }
 
-ReturnStatement -> tkReturn Expression
+ReturnStatement -> tkReturn [ Expression ]
 
 ExpressionStatement -> Expression
 
