@@ -28,6 +28,7 @@ TEST(goodtests, test2) {
         {Token::Type::tkRange,     {16, 2}},  // ..
         {Token::Type::tkDot,       {18, 1}},  // .
         {Token::Type::tkNewLine,   {22, 1}},  // \n
+        {Token::Type::tkEof,       {string(CODE).size(), 0}},
     };
 
     constexpr size_t COUNT = sizeof(tokenInfo) / sizeof(tokenInfo[0]);

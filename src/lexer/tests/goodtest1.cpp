@@ -19,7 +19,7 @@ TEST(goodtests, test1) {
     ASSERT_TRUE(maybeTokens.has_value());
     ASSERT_EQ(log.Messages().size(), 0ul);
     auto& tokens = maybeTokens.value();
-    constexpr size_t COUNT = 5 + 4 + 6 + 3 + 3;
+    constexpr size_t COUNT = 5 + 4 + 6 + 3 + 3 + 1;
     ASSERT_EQ(tokens.size(), COUNT);
     pair<Token::Type, Span> tokenInfo[] = {
         {Token::Type::tkVar,         {file->Position(0, 0), 3}},  // var
@@ -47,6 +47,8 @@ TEST(goodtests, test1) {
         {Token::Type::tkIdent,       {file->Position(4, 0), 7}},  // goodbye
         {Token::Type::tkEnd,         {file->Position(4, 8), 3}},  // end
         {Token::Type::tkNewLine,     {file->Position(4, 11), 1}}, // \n
+
+        {Token::Type::tkEof,         {string(CODE).size(), 0}},
     };
     for (size_t i = 0; i < COUNT; i++) {
         auto& tk = *tokens[i];

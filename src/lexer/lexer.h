@@ -114,7 +114,8 @@ public:
         tkIntLiteral,
         tkRealLiteral,
         tkStringLiteral,
-        tkIdent
+        tkIdent,
+        tkEof,
     } type;
 
     static const std::vector<std::pair<std::string, Type>> typeChars;

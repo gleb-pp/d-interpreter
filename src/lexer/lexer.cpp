@@ -241,5 +241,9 @@ optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locat
         log.Log(make_shared<LexerError>(locators::Locator(file, i)));
         return {};
     }
+    auto eof = make_shared<Token>();
+    eof->type = Token::Type::tkEof;
+    eof->span = {n, 0};
+    tokens.push_back(eof);
     return tokens;
 }
