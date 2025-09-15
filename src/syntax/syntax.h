@@ -27,13 +27,20 @@ public:
     );
 };
 
+class Expression;
+
 bool parseSep(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
 
+std::optional<std::shared_ptr<Expression>> parseAssignExpression(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+
+bool parseExit(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+
+// Body -> <* { Statement Sep } *>
 class Body {
 
 };
 
-Body -> <* { Statement Sep } *>
+std::optional<std::shared_ptr<Body>> parseLoopBody(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
 
 Statement -> VarStatement // var a := 3
     | IfStatement         // if a = 3 then ... else ...
@@ -50,8 +57,6 @@ Statement -> VarStatement // var a := 3
 VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
 
-AssignExpression -> tkAssign Expression
-
 IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
     [ tkElse [tkNewLine] Body ] tkEnd
 
@@ -59,11 +64,7 @@ ShortIfStatement -> tkIf < Expression > tkArrow Statement
 
 WhileStatement -> tkWhile < Expression > LoopBody
 
-LoopBody -> tkLoop Body tkEnd
-
 ForStatement -> tkFor [ Reference tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
-
-ExitStatement -> tkExit
 
 AssignStatement -> Reference tkAssign Expression
 
