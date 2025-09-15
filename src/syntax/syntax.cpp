@@ -38,9 +38,11 @@ locators::Locator SyntaxContext::MakeLocator(size_t pos) const {
 
 namespace ast {
 
-bool parseSep(const vector<shared_ptr<Token>>& tokens, size_t& pos) {
-    size_t n = tokens.size();
-    if (pos >= n) return false;
+bool parseSep(SyntaxContext& context, size_t& pos) {
+    if (!AssertToken(context, pos, Token::Type::tkNewLine) && !AssertToken(context, pos, Token::Type::tkSemicolon))
+        return false;
+    ++pos;
+    return true;
 }
 
 }

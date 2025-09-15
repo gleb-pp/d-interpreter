@@ -11,14 +11,14 @@ class SyntaxErrorReport {
 public:
     size_t rightmostPos = 0;
     std::vector<std::shared_ptr<complog::CompilationMessage>> messages;
-    void Report(size_t& pos, const std::shared_ptr<complog::CompilationMessage>& msg);
+    void Report(size_t pos, const std::shared_ptr<complog::CompilationMessage>& msg);
 };
 
 struct SyntaxContext {
     const std::vector<std::shared_ptr<Token>> tokens;
     SyntaxErrorReport report;
     std::shared_ptr<const locators::CodeFile> file;
-    locators::Locator MakeLocator(size_t& pos) const;
+    locators::Locator MakeLocator(size_t pos) const;
 };
 
 namespace ast {
@@ -33,8 +33,7 @@ public:
 class Expression;
 
 // Sep -> tkSemicolon | tkNewLine
-bool parseSep(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
-              SyntaxErrorReport& report);
+bool parseSep(SyntaxContext& context, size_t& pos);
 
 // AssignExpression -> tkAssign Expression
 std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context, size_t& pos);
