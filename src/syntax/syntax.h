@@ -29,18 +29,42 @@ public:
 
 class Expression;
 
-bool parseSep(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+bool parseSep(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+              SyntaxErrorReport& report);
 
-std::optional<std::shared_ptr<Expression>> parseAssignExpression(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+std::optional<std::shared_ptr<Expression>> parseAssignExpression(
+    const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+    SyntaxErrorReport& report
+);
 
-bool parseExit(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+bool parseExit(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+               SyntaxErrorReport& report);
 
 // Body -> <* { Statement Sep } *>
 class Body {
-
+public:
+    std::vector<std::shared_ptr<Statement>> statements;
+    std::optional<std::shared_ptr<Body>> parse(
+        const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+        SyntaxErrorReport& report
+    );
 };
 
-std::optional<std::shared_ptr<Body>> parseLoopBody(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos);
+std::optional<std::shared_ptr<Body>> parseLoopBody(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+                                                   SyntaxErrorReport& report);
+
+class Statement {
+public:
+    std::optional<std::shared_ptr<Statement>> parse(const std::vector<std::shared_ptr<Token>>& tokens, size_t& pos,
+                                                   SyntaxErrorReport& report);
+    virtual ~Statement() = default;
+};
+
+class VarStatement : public Statement {
+public:
+
+    virtual ~VarStatement() override = default;
+};
 
 Statement -> VarStatement // var a := 3
     | IfStatement         // if a = 3 then ... else ...
