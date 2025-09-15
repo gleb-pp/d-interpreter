@@ -103,6 +103,13 @@ public:
     std::optional<std::shared_ptr<CommaExpressions>> parse(SyntaxContext& context, size_t& pos);
 };
 
+// CommaIdents -> tkIdent { tkComma tkIdent }
+class CommaIdents {
+public:
+    std::vector<std::shared_ptr<IdentifierToken>> idents;
+    std::optional<std::shared_ptr<CommaIdents>> parse(SyntaxContext& context, size_t& pos);
+};
+
 // Accessor -> MemberAccessor | IndexAccessor
 class Accessor {
 public:
@@ -130,49 +137,38 @@ public:
 // Reference -> tkIdent { Accessor }
 std::optional<std::shared_ptr<Accessor>> parseReference(SyntaxContext& context, size_t& pos);
 
-// Binary operator precedence:
-// 1. * /
-// 2. + -
-// 3. > >= < <= = /=
-// 4. and
-// 5. or
-// 6. xor
-// Unary operator precedence:
-// 1. function(args)  obj.field  arr[index]  // call & accessors
-// 2. +num -num
-// 3. obj is type
-// 4. not value
-
 // Expression -> XorOperand { tkXor XorOperand }
+
 // XorOperand -> OrOperand { tkOr OrOperand }
+
 // OrOperand -> AndOperand { tkAnd AndOperand }
+
 // AndOperand -> Sum { BinaryRelation Sum }
-// BinaryRelation -> tkLess | tkLessEq
-//     | tkGreater | tkGreaterEq
-//     | tkEqual | tkNotEqual
+
+// BinaryRelation -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
+
 // Sum -> Term { (tkPlus | tkMinus) Term }
+
 // Term -> Unary { (tkTimes | tkDivide) Unary }
 
 // Unary -> {tkNot} TypecheckUnary
+
 // TypecheckUnary -> MinusPlusUnary { tkIs TypeId }
-// TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
-//     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
+
+// TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
+
 // MinusPlusUnary -> {tkPlus | tkMinus} AccessorCallUnary
+
 // AccessorCallUnary -> Primary { Accessor | Call }
+
 // Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
+std::optional<std::shared_ptr<CommaExpressions>> parseCall(SyntaxContext& context, size_t& pos);
 
 // Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
 // PrimaryIdent -> tkIdent
-// ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
-// TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
-// FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 
-// ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
-class ArrayLiteral {
-public:
-    std::optional<std::shared_ptr<CommaExpressions>> commaExpression;
-    std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
-};
+// ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
+std::optional<std::shared_ptr<Expression>> parseParenthesesExpression(SyntaxContext& context, size_t& pos);
 
 // TupleLiteralElement -> [ tkIdent tkAssign ] Expression
 class TupleLiteralElement {
@@ -210,6 +206,24 @@ public:
     std::shared_ptr<Body> funcBody;
     static std::optional<std::shared_ptr<LongFuncBody>> parse(SyntaxContext& context, size_t& pos);
     virtual ~LongFuncBody() override = default;
+};
+
+// FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
+class FuncLiteral {
+public:
+    std::optional<std::shared_ptr<CommaIdents>> commaIdents;
+    std::optional<std::shared_ptr<FuncBody>> funcBody;
+    std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context, size_t& pos);
+};
+
+// TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
+
+
+// ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
+class ArrayLiteral {
+public:
+    std::optional<std::shared_ptr<CommaExpressions>> commaExpression;
+    std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
 };
 
 }
