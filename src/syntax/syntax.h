@@ -14,6 +14,13 @@ public:
     void Report(size_t pos, const std::shared_ptr<complog::CompilationMessage>& msg);
 };
 
+struct SyntaxContext {
+    const std::vector<std::shared_ptr<Token>> tokens;
+    SyntaxErrorReport report;
+    std::shared_ptr<const locators::CodeFile> file;
+    locators::Locator MakeLocator(size_t pos) const;
+};
+
 namespace ast {
 class Statement;
 

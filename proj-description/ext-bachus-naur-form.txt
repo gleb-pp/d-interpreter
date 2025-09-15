@@ -54,6 +54,8 @@ PrintStatement -> tkPrint [ CommaExpressions ]
 
 CommaExpressions -> Expression { tkComma Expression }
 
+CommaIdents -> tkIdent { tkComma tkIdent }
+
 ReturnStatement -> tkReturn [ Expression ]
 
 ExpressionStatement -> Expression

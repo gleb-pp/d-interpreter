@@ -110,6 +110,22 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("/", Token::Type::tkDivide)
 };
 
+string Token::TypeToString(Token::Type type) {
+    switch (type) {
+        case Token::Type::tkIntLiteral: return "<int literal>";
+        case Token::Type::tkRealLiteral: return "<real literal>";
+        case Token::Type::tkStringLiteral: return "<string literal>";
+        case Token::Type::tkIdent: return "<identifier>";
+        case Token::Type::tkEof: return "<end of file>";
+        default: break;
+    }
+    for (auto& p : Token::typeChars) {
+        if (p.second == type)
+            return "\"" + p.first + "\"";
+    }
+    return "<?>";
+}
+
 static bool checkComments(size_t& i, size_t n, const string& code) {
     if (i + 1 < n && code[i] == '/' && code[i + 1] == '/') {
         while (i < n && code[i] != '\n') {

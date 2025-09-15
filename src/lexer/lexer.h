@@ -119,6 +119,7 @@ public:
     } type;
 
     static const std::vector<std::pair<std::string, Type>> typeChars;
+    static std::string TypeToString(Type type);
     virtual ~Token() = default;
 };
 
