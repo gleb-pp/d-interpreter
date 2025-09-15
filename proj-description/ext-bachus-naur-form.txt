@@ -100,11 +100,14 @@ MinusPlusUnary -> {tkPlus | tkMinus} AccessorCallUnary
 AccessorCallUnary -> Primary { Accessor | Call }
 Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
 
-Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral
+Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
 PrimaryIdent -> tkIdent
 ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
-TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse
+TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
 FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
+ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
+TupleLiteral -> tkOpenCurlyBrace < [ TupleLiteralElement { tkComma TupleLiteralElement } ] > tkClosedCurlyBrace
+TupleLiteralElement -> [ tkIdent tkAssign ] Expression
 FuncBody -> ShortFuncBody | LongFuncBody
 ShortFuncBody -> tkArrow Expression
 LongFuncBody -> tkIs Body tkEnd
