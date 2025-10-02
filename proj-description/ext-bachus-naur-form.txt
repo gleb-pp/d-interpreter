@@ -44,7 +44,7 @@ WhileStatement -> tkWhile < Expression > LoopBody
 
 LoopBody -> tkLoop Body tkEnd
 
-ForStatement -> tkFor [ Reference tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
+ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
 
 ExitStatement -> tkExit
 
@@ -94,13 +94,15 @@ BinaryRelation -> tkLess | tkLessEq
 Sum -> Term { (tkPlus | tkMinus) Term }
 Term -> Unary { (tkTimes | tkDivide) Unary }
 
-Unary -> {tkNot} TypecheckUnary
-TypecheckUnary -> MinusPlusUnary { tkIs TypeId }
+Unary -> {PrefixOperator} Primary {PostfixOperator}
+PrefixOperator -> tkNot | tkMinus | tkPlus
+PostfixOperator -> TypecheckOperator | Call | AccessorOperator
+
+TypecheckOperator -> tkIs TypeId
 TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
-MinusPlusUnary -> {tkPlus | tkMinus} AccessorCallUnary
-AccessorCallUnary -> Primary { Accessor | Call }
 Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
+AccessorOperator -> Accessor
 
 Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
 PrimaryIdent -> tkIdent
