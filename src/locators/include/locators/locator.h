@@ -19,4 +19,17 @@ public:
     CodeContext Context(size_t toleft, size_t toright) const;
     const std::shared_ptr<const CodeFile>& File() const;
 };
+
+class SpanLocator {
+    const size_t pos, length;
+    const std::shared_ptr<const CodeFile> file;
+
+public:
+    SpanLocator(const std::shared_ptr<const CodeFile>& file, size_t pos, size_t length);
+    SpanLocator(const Locator& loc, size_t length);
+    Locator Start() const;
+    Locator End() const;
+    size_t Length() const;
+    std::string Excerpt() const;
+};
 }  // namespace locators
