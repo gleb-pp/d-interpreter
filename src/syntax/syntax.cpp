@@ -36,6 +36,17 @@ locators::Locator SyntaxContext::MakeLocator(size_t pos) const {
     return locators::Locator(file, pos);
 }
 
+locators::SpanLocator SyntaxContext::MakeSpanLocator(size_t position, size_t length) {
+    return {file, position, length};
+}
+
+locators::SpanLocator SyntaxContext::MakeSpanFromTokens(size_t firsttoken, size_t lasttoken) {
+    size_t start = tokens[firsttoken]->span.position;
+    auto& last = tokens[lasttoken]->span;
+    size_t end = last.position + last.length;
+    return {file, start, end - start};
+}
+
 namespace ast {
 
 bool parseSep(SyntaxContext& context, size_t& pos) {

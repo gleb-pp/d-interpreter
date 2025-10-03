@@ -20,6 +20,8 @@ struct SyntaxContext {
     SyntaxErrorReport report;
     std::shared_ptr<const locators::CodeFile> file;
     locators::Locator MakeLocator(size_t pos) const;
+    locators::SpanLocator MakeSpanLocator(size_t position, size_t length);
+    locators::SpanLocator MakeSpanFromTokens(size_t firsttoken, size_t lasttoken);
 };
 
 namespace ast {
