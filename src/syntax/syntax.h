@@ -21,7 +21,9 @@ struct SyntaxContext {
     std::shared_ptr<const locators::CodeFile> file;
     locators::Locator MakeLocator(size_t pos) const;
     locators::SpanLocator MakeSpanLocator(size_t position, size_t length);
-    locators::SpanLocator MakeSpanFromTokens(size_t firsttoken, size_t lasttoken);
+    // pastTheLastToken = index of the last token + 1. This is the value
+    // of size_t& pos at the end of any class::parse method.
+    locators::SpanLocator MakeSpanFromTokens(size_t firstToken, size_t pastTheLastToken);
 };
 
 namespace ast {
@@ -38,6 +40,7 @@ public:
 class Statement;
 class Body;
 
+// PROGRAM -> <* [ { Statement Sep } Statement [Sep] ] *>
 std::optional<std::shared_ptr<Body>> parseProgram(SyntaxContext& context, size_t& pos);
 
 class Expression;
@@ -52,12 +55,14 @@ std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& 
 class Body : public ASTNode {
 public:
     Body(const locators::SpanLocator& pos);
+    Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
     std::vector<std::shared_ptr<Statement>> statements;
     static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~Body() override = default;
 };
 
+// LoopBody -> tkLoop Body tkEnd
 std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos);
 
 // Statement -> VarStatement // var a := 3
@@ -193,7 +198,8 @@ public:
 class EmptyStatement : public Statement {
 public:
     EmptyStatement(const locators::SpanLocator& pos);
-    // No parse because EmptyStatement::parse(...) would do nothing and always succeed
+    // parse does nothing and always succeeds
+    static std::shared_ptr<EmptyStatement> parse();
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~EmptyStatement() override = default;
 };
@@ -219,6 +225,8 @@ public:
 };
 
 // Accessor -> MemberAccessor | IndexAccessor
+// MemberAccessor -> tkDot ( tkIdent | tkIntLiteral | ParenthesesExpression )
+//                           a.value   a.2            a.(1 + i)
 class Accessor : public ASTNode {
 public:
     Accessor(const locators::SpanLocator& pos);
@@ -226,16 +234,7 @@ public:
     virtual ~Accessor() override = default;
 };
 
-// MemberAccessor -> tkDot ( tkIdent | tkIntLiteral | ParenthesesExpression )
-//                           a.value   a.2            a.(1 + i)
-class MemberAccessor : public Accessor {
-public:
-    MemberAccessor(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<MemberAccessor>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~MemberAccessor() override = default;
-};
-
-class IdentMemberAccessor : public MemberAccessor {
+class IdentMemberAccessor : public Accessor {
 public:
     IdentMemberAccessor(const locators::SpanLocator& pos);
     std::shared_ptr<IdentifierToken> name;
@@ -244,16 +243,16 @@ public:
     virtual ~IdentMemberAccessor() override = default;
 };
 
-class IntLiteralMemberAccessor : public MemberAccessor {
+class IntLiteralMemberAccessor : public Accessor {
 public:
     IntLiteralMemberAccessor(const locators::SpanLocator& pos);
-    int index;
+    std::shared_ptr<IntegerToken> index;
     static std::optional<std::shared_ptr<IntLiteralMemberAccessor>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~IntLiteralMemberAccessor() override = default;
 };
 
-class ParenMemberAccessor : public MemberAccessor {
+class ParenMemberAccessor : public Accessor {
 public:
     ParenMemberAccessor(const locators::SpanLocator& pos);
     std::shared_ptr<Expression> expr;
@@ -279,7 +278,7 @@ public:
     std::string baseIdent;
     std::vector<std::shared_ptr<Accessor>> accessorChain;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Accessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Reference>> parse(SyntaxContext& context, size_t& pos);
     virtual ~Reference() override = default;
 };
 
@@ -294,6 +293,8 @@ class Primary;
 
 // Expression -> XorOperand { tkXor XorOperand }
 class Expression : public ASTNode {  // value = XOR of elements
+public:
+    Expression(const locators::SpanLocator& pos);
     std::vector<std::shared_ptr<XorOperand>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context, size_t& pos);
@@ -302,6 +303,8 @@ class Expression : public ASTNode {  // value = XOR of elements
 
 // XorOperand -> OrOperand { tkOr OrOperand }
 class XorOperand : public ASTNode {  // value = OR of elements
+public:
+    XorOperand(const locators::SpanLocator& pos);
     std::vector<std::shared_ptr<OrOperand>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<XorOperand>> parse(SyntaxContext& context, size_t& pos);
@@ -310,6 +313,8 @@ class XorOperand : public ASTNode {  // value = OR of elements
 
 // OrOperand -> AndOperand { tkAnd AndOperand }
 class OrOperand : public ASTNode {  // value = AND of elements
+public:
+    OrOperand(const locators::SpanLocator& pos);
     std::vector<std::shared_ptr<AndOperand>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<OrOperand>> parse(SyntaxContext& context, size_t& pos);
@@ -318,6 +323,8 @@ class OrOperand : public ASTNode {  // value = AND of elements
 
 // AndOperand -> Sum { BinaryRelation Sum }
 class AndOperand : public ASTNode {  // value = AND of comparisons of elements
+public:
+    AndOperand(const locators::SpanLocator& pos);
     std::vector<std::shared_ptr<Sum>> operands;
     std::vector<BinaryRelation> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
@@ -387,6 +394,7 @@ public:
     enum class PrefixOperatorKind {
         Not, Plus, Minus
     };
+    PrefixOperatorKind kind;
     int precedence();  // the less, the more priority
     static int precedence(PrefixOperatorKind op);
     void AcceptVisitor(IASTVisitor& vis) override;
@@ -564,45 +572,45 @@ public:
 // This is needed for the **demo** program!!! I promise!
 class IASTVisitor {
 public:
-    void VisitBody(Body& node);
-    void VisitVarStatement(VarStatement& node);
-    void VisitIfStatement(IfStatement& node);
-    void VisitShortIfStatement(ShortIfStatement& node);
-    void VisitWhileStatement(WhileStatement& node);
-    void VisitForStatement(ForStatement& node);
-    void VisitExitStatement(ExitStatement& node);
-    void VisitAssignStatement(AssignStatement& node);
-    void VisitPrintStatement(PrintStatement& node);
-    void VisitReturnStatement(ReturnStatement& node);
-    void VisitExpressionStatement(ExpressionStatement& node);
-    void VisitEmptyStatement(EmptyStatement& node);
-    void VisitCommaExpressions(CommaExpressions& node);
-    void VisitCommaIdents(CommaIdents& node);
-    void VisitIdentMemberAccessor(IdentMemberAccessor& node);
-    void VisitIntLiteralMemberAccessor(IntLiteralMemberAccessor& node);
-    void VisitParenMemberAccessor(ParenMemberAccessor& node);
-    void VisitIndexAccessor(IndexAccessor& node);
-    void VisitReference(Reference& node);
-    void VisitExpression(Expression& node);
-    void VisitXorOperand(XorOperand& node);
-    void VisitOrOperand(OrOperand& node);
-    void VisitAndOperand(AndOperand& node);
-    void VisitSum(Sum& node);
-    void VisitTerm(Term& node);
-    void VisitUnary(Unary& node);
-    void VisitPrefixOperator(PrefixOperator& node);
-    void VisitTypecheckOperator(TypecheckOperator& node);
-    void VisitCall(Call& node);
-    void VisitAccessorOperator(AccessorOperator& node);
-    void VisitPrimaryIdent(PrimaryIdent& node);
-    void VisitParenthesesExpression(ParenthesesExpression& node);
-    void VisitTupleLiteralElement(TupleLiteralElement& node);
-    void VisitTupleLiteral(TupleLiteral& node);
-    void VisitShortFuncBody(ShortFuncBody& node);
-    void VisitLongFuncBody(LongFuncBody& node);
-    void VisitFuncLiteral(FuncLiteral& node);
-    void VisitTokenLiteral(TokenLiteral& node);
-    void VisitArrayLiteral(ArrayLiteral& node);
+    virtual void VisitBody(Body& node) = 0;
+    virtual void VisitVarStatement(VarStatement& node) = 0;
+    virtual void VisitIfStatement(IfStatement& node) = 0;
+    virtual void VisitShortIfStatement(ShortIfStatement& node) = 0;
+    virtual void VisitWhileStatement(WhileStatement& node) = 0;
+    virtual void VisitForStatement(ForStatement& node) = 0;
+    virtual void VisitExitStatement(ExitStatement& node) = 0;
+    virtual void VisitAssignStatement(AssignStatement& node) = 0;
+    virtual void VisitPrintStatement(PrintStatement& node) = 0;
+    virtual void VisitReturnStatement(ReturnStatement& node) = 0;
+    virtual void VisitExpressionStatement(ExpressionStatement& node) = 0;
+    virtual void VisitEmptyStatement(EmptyStatement& node) = 0;
+    virtual void VisitCommaExpressions(CommaExpressions& node) = 0;
+    virtual void VisitCommaIdents(CommaIdents& node) = 0;
+    virtual void VisitIdentMemberAccessor(IdentMemberAccessor& node) = 0;
+    virtual void VisitIntLiteralMemberAccessor(IntLiteralMemberAccessor& node) = 0;
+    virtual void VisitParenMemberAccessor(ParenMemberAccessor& node) = 0;
+    virtual void VisitIndexAccessor(IndexAccessor& node) = 0;
+    virtual void VisitReference(Reference& node) = 0;
+    virtual void VisitExpression(Expression& node) = 0;
+    virtual void VisitXorOperand(XorOperand& node) = 0;
+    virtual void VisitOrOperand(OrOperand& node) = 0;
+    virtual void VisitAndOperand(AndOperand& node) = 0;
+    virtual void VisitSum(Sum& node) = 0;
+    virtual void VisitTerm(Term& node) = 0;
+    virtual void VisitUnary(Unary& node) = 0;
+    virtual void VisitPrefixOperator(PrefixOperator& node) = 0;
+    virtual void VisitTypecheckOperator(TypecheckOperator& node) = 0;
+    virtual void VisitCall(Call& node) = 0;
+    virtual void VisitAccessorOperator(AccessorOperator& node) = 0;
+    virtual void VisitPrimaryIdent(PrimaryIdent& node) = 0;
+    virtual void VisitParenthesesExpression(ParenthesesExpression& node) = 0;
+    virtual void VisitTupleLiteralElement(TupleLiteralElement& node) = 0;
+    virtual void VisitTupleLiteral(TupleLiteral& node) = 0;
+    virtual void VisitShortFuncBody(ShortFuncBody& node) = 0;
+    virtual void VisitLongFuncBody(LongFuncBody& node) = 0;
+    virtual void VisitFuncLiteral(FuncLiteral& node) = 0;
+    virtual void VisitTokenLiteral(TokenLiteral& node) = 0;
+    virtual void VisitArrayLiteral(ArrayLiteral& node) = 0;
     virtual ~IASTVisitor() = default;
 };
 }
