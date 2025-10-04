@@ -24,6 +24,8 @@ struct SyntaxContext {
     // pastTheLastToken = index of the last token + 1. This is the value
     // of size_t& pos at the end of any class::parse method.
     locators::SpanLocator MakeSpanFromTokens(size_t firstToken, size_t pastTheLastToken);
+    SyntaxContext(const std::vector<std::shared_ptr<Token>>& tokens,
+                  const std::shared_ptr<const locators::CodeFile>& file);
 };
 
 namespace ast {

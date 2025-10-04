@@ -59,6 +59,9 @@ locators::SpanLocator SyntaxContext::MakeSpanFromTokens(size_t firsttoken, size_
     return {file, start, end - start};
 }
 
+SyntaxContext::SyntaxContext(const vector<shared_ptr<Token>>& tokens,
+        const shared_ptr<const locators::CodeFile>& file) : tokens(tokens), file(file) {}
+
 // AST Node classes
 // Every class in the ::parse implementation must:
 // 1. On success, advance size_t& pos to the first unused token (after the last used token)
@@ -827,4 +830,14 @@ public:
     virtual ~ArrayLiteral() override = default;
 };
 */
+}
+
+optional<shared_ptr<ast::Body>> analyze(const vector<shared_ptr<Token>>& tokens,
+        const shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& log) {
+    SyntaxContext context(tokens, file);
+    size_t pos = 0;
+    auto res = ast::parseProgram(context, pos);
+    if (!res.has_value())
+        for (auto& err : context.report.messages) log.Log(err);
+    return res;
 }
