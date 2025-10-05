@@ -1,0 +1,3 @@
+add_executable(syntaxer_test)
+target_link_libraries(syntaxer_test PRIVATE syntaxer test_features)
+add_test(NAME syntaxer_test COMMAND syntaxer_test)
