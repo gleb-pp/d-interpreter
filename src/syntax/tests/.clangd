@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-std=c++20, -I.., -I../../lexer, -I../../locators/include, -I../../compilation_log/include]
