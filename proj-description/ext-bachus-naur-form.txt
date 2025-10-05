@@ -42,9 +42,9 @@ ShortIfStatement -> tkIf < Expression > tkArrow Statement
 
 WhileStatement -> tkWhile < Expression > LoopBody
 
-LoopBody -> tkLoop Body tkEnd
+LoopBody -> tkLoop [tkNewLine] Body tkEnd
 
-ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
+ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
 
 ExitStatement -> tkExit
 

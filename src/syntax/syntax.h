@@ -64,7 +64,7 @@ public:
     virtual ~Body() override = default;
 };
 
-// LoopBody -> tkLoop Body tkEnd
+// LoopBody -> tkLoop [tkNewLine] Body tkEnd
 std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos);
 
 // Statement -> VarStatement // var a := 3
@@ -131,7 +131,7 @@ public:
     virtual ~WhileStatement() override = default;
 };
 
-// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
+// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
 class ForStatement : public Statement {
 public:
     ForStatement(const locators::SpanLocator& pos);

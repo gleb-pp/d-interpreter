@@ -150,6 +150,7 @@ optional<shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos) {
         return {};
     size_t startpos = pos;
     ++pos;
+    if (AssertToken(context, pos, Token::Type::tkNewLine)) ++pos;
     auto res = Body::parse(context, pos);
     if (!res.has_value()) {  // This is currently impossible. I am being explicit in case something changes.
         pos = startpos;
@@ -265,7 +266,7 @@ public:
 };
 */
 
-// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] LoopBody
+// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
 ForStatement::ForStatement(const locators::SpanLocator& pos) : Statement(pos) {}
 //optional<shared_ptr<IdentifierToken>> optVariableName;
 //shared_ptr<Expression> startOrList;
@@ -298,6 +299,7 @@ optional<shared_ptr<ForStatement>> ForStatement::parse(SyntaxContext& context, s
         rangeEnd = Expression::parse(context, pos);
         if (!rangeEnd.has_value()) pos = prevpos;
     }
+    if (AssertToken(context, pos, Token::Type::tkNewLine)) ++pos;
     auto action = parseLoopBody(context, pos);
     if (!action.has_value()) {
         pos = startpos;
