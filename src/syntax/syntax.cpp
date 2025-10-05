@@ -194,6 +194,10 @@ optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t&
         if (res.has_value()) return res;
     }
     {
+        auto res = LoopStatement::parse(context, pos);
+        if (res.has_value()) return res;
+    }
+    {
         auto res = ExitStatement::parse(context, pos);
         if (res.has_value()) return res;
     }
@@ -317,6 +321,16 @@ void ForStatement::AcceptVisitor(IASTVisitor& vis) {
 }
 
 /*
+// LoopStatement -> LoopBody
+class LoopStatement : public Statement {
+public:
+    LoopStatement(const locators::SpanLocator& pos);
+    std::shared_ptr<Body> body;
+    static std::optional<std::shared_ptr<LoopStatement>> parse(SyntaxContext& context, size_t& pos);
+    void AcceptVisitor(IASTVisitor& vis) override;
+    virtual ~LoopStatement() override = default;
+};
+
 // ExitStatement -> tkExit
 class ExitStatement : public Statement {
 public:

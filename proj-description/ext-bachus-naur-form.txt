@@ -23,6 +23,7 @@ Statement -> VarStatement // var a := 3
     | ShortIfStatement    // if a = 3 => ...
     | WhileStatement      // while ... loop ... end
     | ForStatement        // for i in start..stop loop ... end
+    | LoopStatement       // loop print "working..."; end
     | ExitStatement       // exit
     | AssignStatement     // a := 3
     | PrintStatement      // print a, b, "c"
@@ -45,6 +46,8 @@ WhileStatement -> tkWhile < Expression > LoopBody
 LoopBody -> tkLoop [tkNewLine] Body tkEnd
 
 ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
+
+LoopStatement -> LoopBody
 
 ExitStatement -> tkExit
 

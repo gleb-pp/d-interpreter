@@ -72,6 +72,7 @@ std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_
 //     | ShortIfStatement    // if a = 3 => ...
 //     | WhileStatement      // while ... loop ... end
 //     | ForStatement        // for i in start..stop loop ... end
+//     | LoopStatement       // loop print "working..."; end
 //     | ExitStatement       // exit
 //     | AssignStatement     // a := 3
 //     | PrintStatement      // print a, b, "c"
@@ -114,7 +115,7 @@ class ShortIfStatement : public Statement {
 public:
     ShortIfStatement(const locators::SpanLocator& pos);
     std::shared_ptr<Expression> condition;
-    std::shared_ptr<Body> doIfTrue;
+    std::shared_ptr<Statement> doIfTrue;
     static std::optional<std::shared_ptr<ShortIfStatement>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ShortIfStatement() override = default;
@@ -142,6 +143,16 @@ public:
     static std::optional<std::shared_ptr<ForStatement>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ForStatement() override = default;
+};
+
+// LoopStatement -> LoopBody
+class LoopStatement : public Statement {
+public:
+    LoopStatement(const locators::SpanLocator& pos);
+    std::shared_ptr<Body> body;
+    static std::optional<std::shared_ptr<LoopStatement>> parse(SyntaxContext& context, size_t& pos);
+    void AcceptVisitor(IASTVisitor& vis) override;
+    virtual ~LoopStatement() override = default;
 };
 
 // ExitStatement -> tkExit
@@ -361,7 +372,7 @@ public:
     enum class TermOperator {
         Times, Divide
     };
-    std::vector<std::shared_ptr<Term>> terms;
+    std::vector<std::shared_ptr<Unary>> unaries;
     std::vector<TermOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<Term>> parse(SyntaxContext& context, size_t& pos);
@@ -580,6 +591,7 @@ public:
     virtual void VisitShortIfStatement(ShortIfStatement& node) = 0;
     virtual void VisitWhileStatement(WhileStatement& node) = 0;
     virtual void VisitForStatement(ForStatement& node) = 0;
+    virtual void VisitLoopStatement(LoopStatement& node) = 0;
     virtual void VisitExitStatement(ExitStatement& node) = 0;
     virtual void VisitAssignStatement(AssignStatement& node) = 0;
     virtual void VisitPrintStatement(PrintStatement& node) = 0;
