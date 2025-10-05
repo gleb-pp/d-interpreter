@@ -228,7 +228,7 @@ optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t&
 class VarStatement : public Statement {
 public:
     VarStatement(const locators::SpanLocator& pos);
-    vector<pair<string, shared_ptr<Expression>>> definitions;
+    vector<pair<string, optional<shared_ptr<Expression>>>> definitions;
     static optional<shared_ptr<VarStatement>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~VarStatement() override = default;
