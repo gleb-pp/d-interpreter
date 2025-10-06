@@ -5,11 +5,12 @@
 
 class ASTExplorer {
 public:
-    struct GotoAction {
+    struct ActionCommand {
         std::string Command;
         std::string Description;
+        ActionCommand(const std::string& command, const std::string& description);
     };
-    virtual std::vector<GotoAction> GetGotoActions() const = 0;
+    virtual std::vector<ActionCommand> GetActionCommands() const = 0;
     virtual std::optional<std::shared_ptr<ast::ASTNode>> Action(std::string command, std::ostream& output) const = 0;
     virtual std::string NodeName() const = 0;
     virtual ~ASTExplorer() = default;
