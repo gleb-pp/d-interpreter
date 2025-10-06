@@ -1,0 +1,71 @@
+#pragma once
+#include <vector>
+#include <iostream>
+#include "syntax.h"
+
+class ASTExplorer {
+public:
+    struct GotoAction {
+        std::string Command;
+        std::string Description;
+    };
+    virtual std::vector<GotoAction> GetGotoActions() const = 0;
+    virtual std::shared_ptr<ast::ASTNode> GoTo(std::string command) const = 0;
+    virtual std::string NodeName() const = 0;
+    virtual ~ASTExplorer() = default;
+};
+
+class ASTExplorerVisitor : public ast::IASTVisitor {
+    std::shared_ptr<const ASTExplorer> explorer;
+public:
+    std::shared_ptr<const ASTExplorer> MakeExplorer();
+    void VisitBody(ast::Body& node) override;
+    void VisitVarStatement(ast::VarStatement& node) override;
+    void VisitIfStatement(ast::IfStatement& node) override;
+    void VisitShortIfStatement(ast::ShortIfStatement& node) override;
+    void VisitWhileStatement(ast::WhileStatement& node) override;
+    void VisitForStatement(ast::ForStatement& node) override;
+    void VisitLoopStatement(ast::LoopStatement& node) override;
+    void VisitExitStatement(ast::ExitStatement& node) override;
+    void VisitAssignStatement(ast::AssignStatement& node) override;
+    void VisitPrintStatement(ast::PrintStatement& node) override;
+    void VisitReturnStatement(ast::ReturnStatement& node) override;
+    void VisitExpressionStatement(ast::ExpressionStatement& node) override;
+    void VisitEmptyStatement(ast::EmptyStatement& node) override;
+    void VisitCommaExpressions(ast::CommaExpressions& node) override;
+    void VisitCommaIdents(ast::CommaIdents& node) override;
+    void VisitIdentMemberAccessor(ast::IdentMemberAccessor& node) override;
+    void VisitIntLiteralMemberAccessor(ast::IntLiteralMemberAccessor& node) override;
+    void VisitParenMemberAccessor(ast::ParenMemberAccessor& node) override;
+    void VisitIndexAccessor(ast::IndexAccessor& node) override;
+    void VisitReference(ast::Reference& node) override;
+    void VisitExpression(ast::Expression& node) override;
+    void VisitXorOperand(ast::XorOperand& node) override;
+    void VisitOrOperand(ast::OrOperand& node) override;
+    void VisitAndOperand(ast::AndOperand& node) override;
+    void VisitSum(ast::Sum& node) override;
+    void VisitTerm(ast::Term& node) override;
+    void VisitUnary(ast::Unary& node) override;
+    void VisitPrefixOperator(ast::PrefixOperator& node) override;
+    void VisitTypecheckOperator(ast::TypecheckOperator& node) override;
+    void VisitCall(ast::Call& node) override;
+    void VisitAccessorOperator(ast::AccessorOperator& node) override;
+    void VisitPrimaryIdent(ast::PrimaryIdent& node) override;
+    void VisitParenthesesExpression(ast::ParenthesesExpression& node) override;
+    void VisitTupleLiteralElement(ast::TupleLiteralElement& node) override;
+    void VisitTupleLiteral(ast::TupleLiteral& node) override;
+    void VisitShortFuncBody(ast::ShortFuncBody& node) override;
+    void VisitLongFuncBody(ast::LongFuncBody& node) override;
+    void VisitFuncLiteral(ast::FuncLiteral& node) override;
+    void VisitTokenLiteral(ast::TokenLiteral& node) override;
+    void VisitArrayLiteral(ast::ArrayLiteral& node) override;
+    virtual ~ASTExplorerVisitor() override = default;
+};
+
+class ExplorerIO {
+    std::shared_ptr<ast::ASTNode> rootNode;
+public:
+    ExplorerIO(const std::shared_ptr<ast::ASTNode>& root);
+    static void PrintPrompt(const ASTExplorer& explorer);
+    void Explore(std::ostream& output, std::istream& input);
+};
