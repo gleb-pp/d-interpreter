@@ -10,7 +10,7 @@ public:
         std::string Description;
     };
     virtual std::vector<GotoAction> GetGotoActions() const = 0;
-    virtual std::shared_ptr<ast::ASTNode> GoTo(std::string command) const = 0;
+    virtual std::optional<std::shared_ptr<ast::ASTNode>> Action(std::string command, std::ostream& output) const = 0;
     virtual std::string NodeName() const = 0;
     virtual ~ASTExplorer() = default;
 };

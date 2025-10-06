@@ -8,19 +8,19 @@ static int StrToInt(const std::string& s) {
     return res;
 }
 
-#define EXPLORER_HELP(classname, _gotoactions, _GoTo, literalExplorer)\
+#define EXPLORER_HELP(classname, _gotoactions, _action, literalExplorer)\
 class classname##literalExplorer : public ASTExplorer {\
     shared_ptr<ast::classname> node;\
 public:\
     classname##literalExplorer(const shared_ptr<ast::classname>& node) : node(node) {}\
     vector<GotoAction> GetGotoActions() const override _gotoactions\
-    shared_ptr<ast::ASTNode> GoTo(string command) const override _GoTo\
+    optional<shared_ptr<ast::ASTNode>> Action(string command, [[maybe_unused]] ostream& output) const override _action\
     string NodeName() const override { return #classname; }\
     virtual ~classname##literalExplorer() override = default;\
 };
 
-#define EXPLORER(classname, _gotoactions, _GoTo)\
-    EXPLORER_HELP(classname, _gotoactions, _GoTo, Explorer)
+#define EXPLORER(classname, _gotoactions, _action)\
+    EXPLORER_HELP(classname, _gotoactions, _action, Explorer)
 
 EXPLORER(Body, { // GoToActions
     vector<GotoAction> res;
@@ -31,285 +31,301 @@ EXPLORER(Body, { // GoToActions
     }
     return res;
 },
-{  // GoTo
+{  // Action
     return node->statements[StrToInt(command)];
 })
 
-class VarStatementExplorer : public ASTExplorer {
-public:
-    VarStatementExplorer(const std::shared_ptr<ast::VarStatement>& node) {
-
+EXPLORER(VarStatement, {  // GoToActions
+    vector<GotoAction> res;
+    int i = 0;
+    for (const auto& p : node->definitions) {
+        res.emplace_back("n" + to_string(i), "Name  of definitions[" + to_string(i) + "]");
+        if (p.second.has_value())
+            res.emplace_back("v" + to_string(i), "Value of definitions[" + to_string(i) + "]");
+        i++;
     }
-};
-
-class IfStatementExplorer : public ASTExplorer {
-public:
-    IfStatementExplorer(const std::shared_ptr<ast::IfStatement>& node) {
-
+    return res;
+},
+{  // Action
+    bool name = command[0] == 'n';
+    command.erase(0, 1);
+    auto& p = node->definitions[StrToInt(command)];
+    if (name) {
+        output << p.first;
+        return {};
     }
-};
+    else
+        return *p.second;
+})
 
-class ShortIfStatementExplorer : public ASTExplorer {
-public:
-    ShortIfStatementExplorer(const std::shared_ptr<ast::ShortIfStatement>& node) {
+EXPLORER(IfStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class WhileStatementExplorer : public ASTExplorer {
-public:
-    WhileStatementExplorer(const std::shared_ptr<ast::WhileStatement>& node) {
+})
 
-    }
-};
+EXPLORER(ShortIfStatement, {  // GoToActions
 
-class ForStatementExplorer : public ASTExplorer {
-public:
-    ForStatementExplorer(const std::shared_ptr<ast::ForStatement>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class LoopStatementExplorer : public ASTExplorer {
-public:
-    LoopStatementExplorer(const std::shared_ptr<ast::LoopStatement>& node) {
+EXPLORER(WhileStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class ExitStatementExplorer : public ASTExplorer {
-public:
-    ExitStatementExplorer(const std::shared_ptr<ast::ExitStatement>& node) {
+})
 
-    }
-};
+EXPLORER(ForStatement, {  // GoToActions
 
-class AssignStatementExplorer : public ASTExplorer {
-public:
-    AssignStatementExplorer(const std::shared_ptr<ast::AssignStatement>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class PrintStatementExplorer : public ASTExplorer {
-public:
-    PrintStatementExplorer(const std::shared_ptr<ast::PrintStatement>& node) {
+EXPLORER(LoopStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class ReturnStatementExplorer : public ASTExplorer {
-public:
-    ReturnStatementExplorer(const std::shared_ptr<ast::ReturnStatement>& node) {
+})
 
-    }
-};
+EXPLORER(ExitStatement, {  // GoToActions
 
-class ExpressionStatementExplorer : public ASTExplorer {
-public:
-    ExpressionStatementExplorer(const std::shared_ptr<ast::ExpressionStatement>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class EmptyStatementExplorer : public ASTExplorer {
-public:
-    EmptyStatementExplorer(const std::shared_ptr<ast::EmptyStatement>& node) {
+EXPLORER(AssignStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class CommaExpressionsExplorer : public ASTExplorer {
-public:
-    CommaExpressionsExplorer(const std::shared_ptr<ast::CommaExpressions>& node) {
+})
 
-    }
-};
+EXPLORER(PrintStatement, {  // GoToActions
 
-class CommaIdentsExplorer : public ASTExplorer {
-public:
-    CommaIdentsExplorer(const std::shared_ptr<ast::CommaIdents>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class IdentMemberAccessorExplorer : public ASTExplorer {
-public:
-    IdentMemberAccessorExplorer(const std::shared_ptr<ast::IdentMemberAccessor>& node) {
+EXPLORER(ReturnStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class IntLiteralMemberAccessorExplorer : public ASTExplorer {
-public:
-    IntLiteralMemberAccessorExplorer(const std::shared_ptr<ast::IntLiteralMemberAccessor>& node) {
+})
 
-    }
-};
+EXPLORER(ExpressionStatement, {  // GoToActions
 
-class ParenMemberAccessorExplorer : public ASTExplorer {
-public:
-    ParenMemberAccessorExplorer(const std::shared_ptr<ast::ParenMemberAccessor>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class IndexAccessorExplorer : public ASTExplorer {
-public:
-    IndexAccessorExplorer(const std::shared_ptr<ast::IndexAccessor>& node) {
+EXPLORER(EmptyStatement, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class ReferenceExplorer : public ASTExplorer {
-public:
-    ReferenceExplorer(const std::shared_ptr<ast::Reference>& node) {
+})
 
-    }
-};
+EXPLORER(CommaExpressions, {  // GoToActions
 
-class ExpressionExplorer : public ASTExplorer {
-public:
-    ExpressionExplorer(const std::shared_ptr<ast::Expression>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class XorOperandExplorer : public ASTExplorer {
-public:
-    XorOperandExplorer(const std::shared_ptr<ast::XorOperand>& node) {
+EXPLORER(CommaIdents, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class OrOperandExplorer : public ASTExplorer {
-public:
-    OrOperandExplorer(const std::shared_ptr<ast::OrOperand>& node) {
+})
 
-    }
-};
+EXPLORER(IdentMemberAccessor, {  // GoToActions
 
-class AndOperandExplorer : public ASTExplorer {
-public:
-    AndOperandExplorer(const std::shared_ptr<ast::AndOperand>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class SumExplorer : public ASTExplorer {
-public:
-    SumExplorer(const std::shared_ptr<ast::Sum>& node) {
+EXPLORER(IntLiteralMemberAccessor, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class TermExplorer : public ASTExplorer {
-public:
-    TermExplorer(const std::shared_ptr<ast::Term>& node) {
+})
 
-    }
-};
+EXPLORER(ParenMemberAccessor, {  // GoToActions
 
-class UnaryExplorer : public ASTExplorer {
-public:
-    UnaryExplorer(const std::shared_ptr<ast::Unary>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class PrefixOperatorExplorer : public ASTExplorer {
-public:
-    PrefixOperatorExplorer(const std::shared_ptr<ast::PrefixOperator>& node) {
+EXPLORER(IndexAccessor, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class TypecheckOperatorExplorer : public ASTExplorer {
-public:
-    TypecheckOperatorExplorer(const std::shared_ptr<ast::TypecheckOperator>& node) {
+})
 
-    }
-};
+EXPLORER(Reference, {  // GoToActions
 
-class CallExplorer : public ASTExplorer {
-public:
-    CallExplorer(const std::shared_ptr<ast::Call>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class AccessorOperatorExplorer : public ASTExplorer {
-public:
-    AccessorOperatorExplorer(const std::shared_ptr<ast::AccessorOperator>& node) {
+EXPLORER(Expression, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class PrimaryIdentExplorer : public ASTExplorer {
-public:
-    PrimaryIdentExplorer(const std::shared_ptr<ast::PrimaryIdent>& node) {
+})
 
-    }
-};
+EXPLORER(XorOperand, {  // GoToActions
 
-class ParenthesesExpressionExplorer : public ASTExplorer {
-public:
-    ParenthesesExpressionExplorer(const std::shared_ptr<ast::ParenthesesExpression>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class TupleLiteralElementExplorer : public ASTExplorer {
-public:
-    TupleLiteralElementExplorer(const std::shared_ptr<ast::TupleLiteralElement>& node) {
+EXPLORER(OrOperand, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class TupleLiteralExplorer : public ASTExplorer {
-public:
-    TupleLiteralExplorer(const std::shared_ptr<ast::TupleLiteral>& node) {
+})
 
-    }
-};
+EXPLORER(AndOperand, {  // GoToActions
 
-class ShortFuncBodyExplorer : public ASTExplorer {
-public:
-    ShortFuncBodyExplorer(const std::shared_ptr<ast::ShortFuncBody>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class LongFuncBodyExplorer : public ASTExplorer {
-public:
-    LongFuncBodyExplorer(const std::shared_ptr<ast::LongFuncBody>& node) {
+EXPLORER(Sum, {  // GoToActions
 
-    }
-};
+},
+{  // Action
 
-class FuncLiteralExplorer : public ASTExplorer {
-public:
-    FuncLiteralExplorer(const std::shared_ptr<ast::FuncLiteral>& node) {
+})
 
-    }
-};
+EXPLORER(Term, {  // GoToActions
 
-class TokenLiteralExplorer : public ASTExplorer {
-public:
-    TokenLiteralExplorer(const std::shared_ptr<ast::TokenLiteral>& node) {
+},
+{  // Action
 
-    }
-};
+})
 
-class ArrayLiteralExplorer : public ASTExplorer {
-public:
-    ArrayLiteralExplorer(const std::shared_ptr<ast::ArrayLiteral>& node) {
+EXPLORER(Unary, {  // GoToActions
 
-    }
-};
+},
+{  // Action
+
+})
+
+EXPLORER(PrefixOperator, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(TypecheckOperator, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(Call, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(AccessorOperator, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(PrimaryIdent, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(ParenthesesExpression, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(TupleLiteralElement, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(TupleLiteral, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(ShortFuncBody, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(LongFuncBody, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(FuncLiteral, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(TokenLiteral, {  // GoToActions
+
+},
+{  // Action
+
+})
+
+EXPLORER(ArrayLiteral, {  // GoToActions
+
+},
+{  // Action
+
+})
+
 
 shared_ptr<const ASTExplorer> ASTExplorerVisitor::MakeExplorer() { return this->explorer; }
-
 
 #define VISITOR_HELP(classname, literalExplorer)\
 void ASTExplorerVisitor::Visit##classname(ast::classname& node) {\
