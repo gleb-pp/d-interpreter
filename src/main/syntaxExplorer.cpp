@@ -1,6 +1,8 @@
 #include "syntaxExplorer.h"
 #include "syntax.h"
+#include <memory>
 #include <sstream>
+#include <string>
 using namespace std;
 
 static int StrToInt(const std::string& s) {
@@ -26,7 +28,7 @@ public:\
 #define EXPLORER(classname, _gotoactions, _action)\
     EXPLORER_HELP(classname, _gotoactions, _action, Explorer)
 
-EXPLORER(Body, { // GoToActions
+EXPLORER(Body, { // GetActionCommands
     vector<ActionCommand> res;
     int i = 0;
     for (const auto& pstatement : node->statements) {
@@ -39,7 +41,7 @@ EXPLORER(Body, { // GoToActions
     return node->statements[StrToInt(command)];
 })
 
-EXPLORER(VarStatement, {  // GoToActions
+EXPLORER(VarStatement, {  // GetActionCommands
     vector<ActionCommand> res;
     int i = 0;
     for (const auto& p : node->definitions) {
@@ -62,7 +64,7 @@ EXPLORER(VarStatement, {  // GoToActions
         return *p.second;
 })
 
-EXPLORER(IfStatement, {  // GoToActions
+EXPLORER(IfStatement, {  // GetActionCommands
     vector<ActionCommand> res({ { "c", "Condition" }, { "t", "Do if true" } });
     if (node->doIfFalse.has_value())
         res.emplace_back("f", "Do if false");
@@ -80,7 +82,7 @@ EXPLORER(IfStatement, {  // GoToActions
     return {};
 })
 
-EXPLORER(ShortIfStatement, {  // GoToActions
+EXPLORER(ShortIfStatement, {  // GetActionCommands
     return vector<ActionCommand>({ { "c", "Condition" }, { "t", "Do if true" } });
 },
 {  // Action
@@ -88,7 +90,7 @@ EXPLORER(ShortIfStatement, {  // GoToActions
     return node->doIfTrue;
 })
 
-EXPLORER(WhileStatement, {  // GoToActions
+EXPLORER(WhileStatement, {  // GetActionCommands
     return vector<ActionCommand>({ { "c", "Condition" }, { "a", "Action" } });
 },
 {  // Action
@@ -96,7 +98,7 @@ EXPLORER(WhileStatement, {  // GoToActions
     return node->action;
 })
 
-EXPLORER(ForStatement, {  // GoToActions
+EXPLORER(ForStatement, {  // GetActionCommands
     vector<ActionCommand> res;
     if (node->optVariableName.has_value())
         res.emplace_back("var", "Cycle variable name");
@@ -116,21 +118,21 @@ EXPLORER(ForStatement, {  // GoToActions
     return *node->end;
 })
 
-EXPLORER(LoopStatement, {  // GoToActions
+EXPLORER(LoopStatement, {  // GetActionCommands
     return vector<ActionCommand>({ { "b", "Loop body" } });
 },
 {  // Action
     return node->body;
 })
 
-EXPLORER(ExitStatement, {  // GoToActions
+EXPLORER(ExitStatement, {  // GetActionCommands
     return {};
 },
 {  // Action
     return {};
 })
 
-EXPLORER(AssignStatement, {  // GoToActions
+EXPLORER(AssignStatement, {  // GetActionCommands
     return vector<ActionCommand>({
         { "d", "Destination (left-hand side)" },
         { "l", "Destination (left-hand side)" },
@@ -144,7 +146,7 @@ EXPLORER(AssignStatement, {  // GoToActions
     }
 })
 
-EXPLORER(PrintStatement, {  // GoToActions
+EXPLORER(PrintStatement, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->expressions.size();
     for (int i = 0; i < n; ++i)
@@ -155,28 +157,28 @@ EXPLORER(PrintStatement, {  // GoToActions
     return node->expressions[StrToInt(command)];
 })
 
-EXPLORER(ReturnStatement, {  // GoToActions
+EXPLORER(ReturnStatement, {  // GetActionCommands
     return vector<ActionCommand>({ { "v", "Return value" } });
 },
 {  // Action
     return node->returnValue;
 })
 
-EXPLORER(ExpressionStatement, {  // GoToActions
+EXPLORER(ExpressionStatement, {  // GetActionCommands
     return vector<ActionCommand>({ { "e", "The expression" } });
 },
 {  // Action
     return node->expr;
 })
 
-EXPLORER(EmptyStatement, {  // GoToActions
+EXPLORER(EmptyStatement, {  // GetActionCommands
     return {};
 },
 {  // Action
     return {};
 })
 
-EXPLORER(CommaExpressions, {  // GoToActions
+EXPLORER(CommaExpressions, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->expressions.size();
     for (int i = 0; i < n; ++i)
@@ -187,7 +189,7 @@ EXPLORER(CommaExpressions, {  // GoToActions
     return node->expressions[StrToInt(command)];
 })
 
-EXPLORER(CommaIdents, {  // GoToActions
+EXPLORER(CommaIdents, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->idents.size();
     for (int i = 0; i < n; ++i)
@@ -199,7 +201,7 @@ EXPLORER(CommaIdents, {  // GoToActions
     return {};
 })
 
-EXPLORER(IdentMemberAccessor, {  // GoToActions
+EXPLORER(IdentMemberAccessor, {  // GetActionCommands
     return vector<ActionCommand>({ { "i", "The identifier" } });
 },
 {  // Action
@@ -207,7 +209,7 @@ EXPLORER(IdentMemberAccessor, {  // GoToActions
     return {};
 })
 
-EXPLORER(IntLiteralMemberAccessor, {  // GoToActions
+EXPLORER(IntLiteralMemberAccessor, {  // GetActionCommands
     return vector<ActionCommand>({ { "i", "The index" } });
 },
 {  // Action
@@ -215,21 +217,21 @@ EXPLORER(IntLiteralMemberAccessor, {  // GoToActions
     return {};
 })
 
-EXPLORER(ParenMemberAccessor, {  // GoToActions
+EXPLORER(ParenMemberAccessor, {  // GetActionCommands
     return vector<ActionCommand>({ { "i", "The index" } });
 },
 {  // Action
     return node->expr;
 })
 
-EXPLORER(IndexAccessor, {  // GoToActions
+EXPLORER(IndexAccessor, {  // GetActionCommands
     return vector<ActionCommand>({ { "i", "The index" } });
 },
 {  // Action
     return node->expressionInBrackets;
 })
 
-EXPLORER(Reference, {  // GoToActions
+EXPLORER(Reference, {  // GetActionCommands
     vector<ActionCommand> res({ { "b", "The base identifier" } });
     int n = node->accessorChain.size();
     for (int i = 0; i < n; ++i) res.emplace_back("a" + to_string(i), "accessor[" + to_string(i) + "]");
@@ -246,7 +248,7 @@ EXPLORER(Reference, {  // GoToActions
     }
 })
 
-EXPLORER(Expression, {  // GoToActions
+EXPLORER(Expression, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->operands.size();
     for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "XOR operands[" + to_string(i) + "]");
@@ -256,7 +258,7 @@ EXPLORER(Expression, {  // GoToActions
     return node->operands[StrToInt(command)];
 })
 
-EXPLORER(OrOperator, {  // GoToActions
+EXPLORER(OrOperator, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->operands.size();
     for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "OR operands[" + to_string(i) + "]");
@@ -266,7 +268,7 @@ EXPLORER(OrOperator, {  // GoToActions
     return node->operands[StrToInt(command)];
 })
 
-EXPLORER(AndOperator, {  // GoToActions
+EXPLORER(AndOperator, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->operands.size();
     for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "AND operands[" + to_string(i) + "]");
@@ -288,7 +290,7 @@ static string to_string(ast::BinaryRelationOperator op) {
     return "<error>";
 }
 
-EXPLORER(BinaryRelation, {  // GoToActions
+EXPLORER(BinaryRelation, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->operands.size();
     for (int i = 0; i < n; ++i) {
@@ -317,7 +319,7 @@ static string to_string(ast::Sum::SumOperator op) {
     return "<error>";
 }
 
-EXPLORER(Sum, {  // GoToActions
+EXPLORER(Sum, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->terms.size();
     for (int i = 0; i < n; ++i) {
@@ -346,7 +348,7 @@ static string to_string(ast::Term::TermOperator op) {
     return "<error>";
 }
 
-EXPLORER(Term, {  // GoToActions
+EXPLORER(Term, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->unaries.size();
     for (int i = 0; i < n; ++i) {
@@ -376,7 +378,7 @@ static string to_string(ast::PrefixOperator::PrefixOperatorKind op) {
     return "<error>";
 }
 
-EXPLORER(Unary, {  // GoToActions
+EXPLORER(Unary, {  // GetActionCommands
     vector<ActionCommand> res;
     int i = 0;
     for (const auto& pref : node->prefixOps) {
@@ -400,8 +402,8 @@ EXPLORER(Unary, {  // GoToActions
     }
 })
 
-EXPLORER(PrefixOperator, {  // GoToActions
-    return vector<ActionCommand>({ { "?", "The precedence of the operator" } });
+EXPLORER(PrefixOperator, {  // GetActionCommands
+    return vector<ActionCommand>({ { "o", "The precedence of the operator" } });
 },
 {  // Action
     output << node->precedence();
@@ -410,88 +412,161 @@ EXPLORER(PrefixOperator, {  // GoToActions
 
 static string to_string(ast::TypeId id) {
     switch (id) {
-case ast::TypeId::
+        case ast::TypeId::String: return "String";
+        case ast::TypeId::Bool: return "Bool";
+        case ast::TypeId::Int: return "Int";
+        case ast::TypeId::Real: return "Real";
+        case ast::TypeId::None: return "None";
+        case ast::TypeId::Func: return "Func";
+        case ast::TypeId::Tuple: return "Tuple";
+        case ast::TypeId::List: return "List";
     }
+    return "<error>";
 }
 
-EXPLORER(TypecheckOperator, {  // GoToActions
-    return 
+EXPLORER(TypecheckOperator, {  // GetActionCommands
+    return vector<ActionCommand>({ { "o", "The precedence of the typecheck operator (is " +
+        to_string(node->precedence()) + ")" }, {"t", "TypeID" } });
 },
 {  // Action
-
+    if (command == "t")
+        output << to_string(node->typeId);
+    else
+        output << node->precedence();
+    return {};
 })
 
-EXPLORER(Call, {  // GoToActions
-
+EXPLORER(Call, {  // GetActionCommands
+    vector<ActionCommand> res({ { "o", "The precedence of the call operator (is " +
+        to_string(node->precedence()) + ")" } });
+    int n = node->args.size();
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "args[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    if (command == "o") {
+        output << node->precedence();
+        return {};
+    }
+    return node->args[StrToInt(command)];
 })
 
-EXPLORER(AccessorOperator, {  // GoToActions
-
+EXPLORER(AccessorOperator, {  // GetActionCommands
+    return vector<ActionCommand>({ { "o", "The precedence of the accessor operator (is " +
+        to_string(node->precedence()) + ")" }, { "a", "The accessor" } });
 },
 {  // Action
-
+    if (command == "o") {
+        output << node->precedence();
+        return {};
+    }
+    return node->accessor;
 })
 
-EXPLORER(PrimaryIdent, {  // GoToActions
-
+EXPLORER(PrimaryIdent, {  // GetActionCommands
+    return vector<ActionCommand>({ { "i", "The identifier" } });
 },
 {  // Action
-
+    output << node->name->identifier;
+    return {};
 })
 
-EXPLORER(ParenthesesExpression, {  // GoToActions
-
+EXPLORER(ParenthesesExpression, {  // GetActionCommands
+    return vector<ActionCommand>({ { "e", "The expression" } });
 },
 {  // Action
-
+    return node->expr;
 })
 
-EXPLORER(TupleLiteralElement, {  // GoToActions
-
+EXPLORER(TupleLiteralElement, {  // GetActionCommands
+    vector<ActionCommand> res;
+    if (node->ident.has_value()) res.emplace_back("n", "The name identifier");
+    res.emplace_back("e", "The item expression");
+    res.emplace_back("v", "The item expression");
+    return res;
 },
 {  // Action
-
+    if (command == "n") {
+        output << node->ident.value()->identifier;
+        return {};
+    } else return node->expression;
 })
 
-EXPLORER(TupleLiteral, {  // GoToActions
-
+EXPLORER(TupleLiteral, {  // GetActionCommands
+    vector<ActionCommand> res;
+    int n = node->elements.size();
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "elements[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    return node->elements[StrToInt(command)];
 })
 
-EXPLORER(ShortFuncBody, {  // GoToActions
-
+EXPLORER(ShortFuncBody, {  // GetActionCommands
+    return vector<ActionCommand>({ { "e", "Return expression" }, { "r", "Return expression" } });
 },
 {  // Action
-
+    return node->expressionToReturn;
 })
 
-EXPLORER(LongFuncBody, {  // GoToActions
-
+EXPLORER(LongFuncBody, {  // GetActionCommands
+    return vector<ActionCommand>({ { "b", "The function body" } });
 },
 {  // Action
-
+    return node->funcBody;
 })
 
-EXPLORER(FuncLiteral, {  // GoToActions
-
+EXPLORER(FuncLiteral, {  // GetActionCommands
+    vector<ActionCommand> res({ { "b", "The function body" } });
+    int n = node->parameters.size();
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "parameters[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    if (command == "b") return node->funcBody;
+    output << node->parameters[StrToInt(command)]->identifier;
+    return {};
 })
 
-EXPLORER(TokenLiteral, {  // GoToActions
+static string to_string(ast::TokenLiteral::TokenLiteralKind tk) {
+    switch (tk) {
+        case ast::TokenLiteral::TokenLiteralKind::String: return "String";
+        case ast::TokenLiteral::TokenLiteralKind::Int: return "Int";
+        case ast::TokenLiteral::TokenLiteralKind::Real: return "Real";
+        case ast::TokenLiteral::TokenLiteralKind::True: return "True";
+        case ast::TokenLiteral::TokenLiteralKind::False: return "False";
+        case ast::TokenLiteral::TokenLiteralKind::None: return "None";
+    }
+    return "<error>";
+}
 
+EXPLORER(TokenLiteral, {  // GetActionCommands
+    string kind = "Token literal kind (is " + to_string(node->kind) + ")";
+    return vector<ActionCommand>({ { "t", kind }, { "k", kind }, { "v", "The literal value" } });
 },
 {  // Action
-
+    if (command == "v") {
+        switch (node->kind) {
+        case ast::TokenLiteral::TokenLiteralKind::String:
+            output << dynamic_pointer_cast<StringLiteral>(node->token)->value;
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Int: 
+            output << dynamic_pointer_cast<IntegerToken>(node->token)->value;
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Real: 
+            output << dynamic_pointer_cast<RealToken>(node->token)->value;
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::True: output << "true"; break;
+        case ast::TokenLiteral::TokenLiteralKind::False: output << "false"; break;
+        case ast::TokenLiteral::TokenLiteralKind::None: output << "none"; break;
+        }
+    } else output << to_string(node->kind);
+    return {};
 })
 
-EXPLORER(ArrayLiteral, {  // GoToActions
+EXPLORER(ArrayLiteral, {  // GetActionCommands
+    vector<ActionCommand> res;
+    int n = node->items.size();
 
 },
 {  // Action
