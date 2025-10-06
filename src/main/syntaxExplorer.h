@@ -10,6 +10,7 @@ public:
         std::string Description;
         ActionCommand(const std::string& command, const std::string& description);
     };
+    virtual std::shared_ptr<ast::ASTNode> GetNode() const = 0;
     virtual std::vector<ActionCommand> GetActionCommands() const = 0;
     virtual std::optional<std::shared_ptr<ast::ASTNode>> Action(std::string command, std::ostream& output) const = 0;
     virtual std::string NodeName() const = 0;
@@ -67,6 +68,6 @@ class ExplorerIO {
     std::shared_ptr<ast::ASTNode> rootNode;
 public:
     ExplorerIO(const std::shared_ptr<ast::ASTNode>& root);
-    static void PrintPrompt(const ASTExplorer& explorer);
+    static void PrintCommands(const ASTExplorer& explorer, std::ostream& output);
     void Explore(std::ostream& output, std::istream& input);
 };

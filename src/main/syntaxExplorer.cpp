@@ -1,8 +1,11 @@
 #include "syntaxExplorer.h"
 #include "syntax.h"
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <set>
 using namespace std;
 
 static int StrToInt(const std::string& s) {
@@ -19,6 +22,7 @@ class classname##literalExplorer : public ASTExplorer {\
     shared_ptr<ast::classname> node;\
 public:\
     classname##literalExplorer(const shared_ptr<ast::classname>& node) : node(node) {}\
+    shared_ptr<ast::ASTNode> GetNode() const override { return node; }\
     vector<ActionCommand> GetActionCommands() const override _gotoactions\
     optional<shared_ptr<ast::ASTNode>> Action(string command, [[maybe_unused]] ostream& output) const override _action\
     string NodeName() const override { return #classname; }\
@@ -386,7 +390,7 @@ EXPLORER(Unary, {  // GetActionCommands
                          "] (is " + to_string(pref->kind) + ")");
         ++i;
     }
-    res.emplace_back("p", "The primary expression");
+    res.emplace_back("x", "The primary expression");
     int n = node->postfixOps.size();
     for (int i = 0; i < n; ++i) res.emplace_back("o" + to_string(i), "postfixOperators[" + to_string(i) + "]");
     return res;
@@ -625,11 +629,91 @@ VISITOR(FuncLiteral)
 VISITOR(TokenLiteral)
 VISITOR(ArrayLiteral)
 
-class ExplorerIO {
-    shared_ptr<ast::ASTNode> rootNode;
-public:
-    ExplorerIO(const shared_ptr<ast::ASTNode>& root);
-    static void PrintPrompt(const ASTExplorer& explorer);
-    void Explore(ostream& output, istream& input);
-};
+static void ExplorerIO_PrintCommands(const vector<ASTExplorer::ActionCommand>& commands, ostream& output, bool goUpOption) {
+    size_t maxwidth = 1;
+    for (auto& a : commands) maxwidth = max(maxwidth, a.Command.size());
+    {
+        string padding = string(maxwidth - 1, ' ');
+        output << 'p' << padding << " : Print out the excerpt\n";
+        if (goUpOption) output << '.' << padding << " : Go up one level\n";
+        output << 'q' << padding << " : Quit\n";
+    }
+    for (auto& a : commands)
+        output << a.Command << string(maxwidth - a.Command.size(), ' ') << " : " << a.Description << '\n';
+}
 
+ExplorerIO::ExplorerIO(const shared_ptr<ast::ASTNode>& root) : rootNode(root) {}
+void ExplorerIO::PrintCommands(const ASTExplorer& explorer, ostream& output) {
+    ExplorerIO_PrintCommands(explorer.GetActionCommands(), output, false);
+}
+
+static void ExplorerIO_WaitForInput(istream& input, ostream& output) {
+    output << "\n\nPress Enter... ";
+    output.flush();
+    string s; getline(input, s);
+}
+
+static void ExplorerIO_SoftClear(ostream& output) {
+    output << "\x1b[H\xb[2J";
+}
+
+void ExplorerIO::Explore(ostream& output, istream& input) {
+    ASTExplorerVisitor vis;
+    vector<shared_ptr<const ASTExplorer>> stack;
+    rootNode->AcceptVisitor(vis);
+    stack.push_back(vis.MakeExplorer());
+    while (stack.size()) {
+        ExplorerIO_SoftClear(output);
+        {
+            bool first = true;
+            for (auto& item : stack) {
+                if (!first) output << " > ";
+                first = false;
+                output << item->NodeName();
+            }
+            output << '\n';
+        }
+        set<string> commands{"p", "q"};
+        {
+            auto opts = stack.back()->GetActionCommands();
+            bool goBack = stack.size() >= 2;
+            ExplorerIO_PrintCommands(opts, output, goBack);
+            if (goBack) commands.insert(".");
+            for (auto& opt : opts) commands.insert(opt.Command);
+        }
+        string command;
+        while (true) {
+            output << "> ";
+            output.flush();
+            string cur;
+            size_t n = cur.size();
+            getline(input, cur);
+            size_t spacesleft = 0;
+            while (spacesleft < n && isspace(cur[spacesleft])) ++spacesleft;
+            if (spacesleft == n) continue;
+            size_t spacesright = 0;
+            while (isspace(cur[n - 1 - spacesright])) ++spacesright;
+            cur = cur.substr(spacesleft, n - spacesleft - spacesright);
+            if (commands.contains(cur)) break;
+            output << "Unrecognized command\n";
+        }
+        if (command == "p") {
+            ExplorerIO_SoftClear(output);
+            output << stack.back()->GetNode()->pos.Excerpt();
+            ExplorerIO_WaitForInput(input, output);
+            continue;
+        }
+        if (command == ".") {
+            stack.pop_back();
+            continue;
+        }
+        if (command == "q") break;
+        auto optNextNode = stack.back()->Action(command, output);
+        if (!optNextNode.has_value()) {
+            ExplorerIO_WaitForInput(input, output);
+            continue;
+        }
+        optNextNode.value()->AcceptVisitor(vis);
+        stack.push_back(vis.MakeExplorer());
+    }
+}
