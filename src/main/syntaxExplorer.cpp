@@ -1,12 +1,39 @@
 #include "syntaxExplorer.h"
+#include <sstream>
 using namespace std;
 
-class BodyExplorer : public ASTExplorer {
-public:
-    BodyExplorer(const std::shared_ptr<ast::Body>& node) {
+static int StrToInt(const std::string& s) {
+    istringstream ss(s);
+    int res; ss >> res;
+    return res;
+}
 
-    }
+#define EXPLORER_HELP(classname, _gotoactions, _GoTo, literalExplorer)\
+class classname##literalExplorer : public ASTExplorer {\
+    shared_ptr<ast::classname> node;\
+public:\
+    classname##literalExplorer(const shared_ptr<ast::classname>& node) : node(node) {}\
+    vector<GotoAction> GetGotoActions() const override _gotoactions\
+    shared_ptr<ast::ASTNode> GoTo(string command) const override _GoTo\
+    string NodeName() const override { return #classname; }\
+    virtual ~classname##literalExplorer() override = default;\
 };
+
+#define EXPLORER(classname, _gotoactions, _GoTo)\
+    EXPLORER_HELP(classname, _gotoactions, _GoTo, Explorer)
+
+EXPLORER(Body, { // GoToActions
+    vector<GotoAction> res;
+    int i = 0;
+    for (const auto& pstatement : node->statements) {
+        res.emplace_back(to_string(i), "statements[" + to_string(i) + "]");
+        i++;
+    }
+    return res;
+},
+{  // GoTo
+    return node->statements[StrToInt(command)];
+})
 
 class VarStatementExplorer : public ASTExplorer {
 public:
@@ -286,7 +313,7 @@ shared_ptr<const ASTExplorer> ASTExplorerVisitor::MakeExplorer() { return this->
 
 #define VISITOR_HELP(classname, literalExplorer)\
 void ASTExplorerVisitor::Visit##classname(ast::classname& node) {\
-    this->explorer = make_shared<classname##literalExplorer>(node);\
+    this->explorer = make_shared<classname##literalExplorer>(make_shared<ast::classname>(node));\
 }
 
 #define VISITOR(classname) VISITOR_HELP(classname, Explorer)
