@@ -567,10 +567,11 @@ EXPLORER(TokenLiteral, {  // GetActionCommands
 EXPLORER(ArrayLiteral, {  // GetActionCommands
     vector<ActionCommand> res;
     int n = node->items.size();
-
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "items[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    return node->items[StrToInt(command)];
 })
 
 
