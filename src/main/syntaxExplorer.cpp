@@ -1,4 +1,5 @@
 #include "syntaxExplorer.h"
+#include "syntax.h"
 #include <sstream>
 using namespace std;
 
@@ -256,56 +257,165 @@ EXPLORER(Expression, {  // GoToActions
 })
 
 EXPLORER(OrOperator, {  // GoToActions
-
+    vector<ActionCommand> res;
+    int n = node->operands.size();
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "OR operands[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    return node->operands[StrToInt(command)];
 })
 
 EXPLORER(AndOperator, {  // GoToActions
-
+    vector<ActionCommand> res;
+    int n = node->operands.size();
+    for (int i = 0; i < n; ++i) res.emplace_back(to_string(i), "AND operands[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    return node->operands[StrToInt(command)];
 })
+
+static string to_string(ast::BinaryRelationOperator op) {
+    switch (op) {
+        case ast::BinaryRelationOperator::Equal: return     "Equal     =";
+        case ast::BinaryRelationOperator::Less: return      "Less      <";
+        case ast::BinaryRelationOperator::LessEq: return    "LessEq    <=";
+        case ast::BinaryRelationOperator::Greater: return   "Greater   >";
+        case ast::BinaryRelationOperator::GreaterEq: return "GreaterEq >=";
+        case ast::BinaryRelationOperator::NotEqual: return  "NotEqual  /=";
+    }
+    return "<error>";
+}
 
 EXPLORER(BinaryRelation, {  // GoToActions
-
+    vector<ActionCommand> res;
+    int n = node->operands.size();
+    for (int i = 0; i < n; ++i) {
+        res.emplace_back("s" + to_string(i), " operands[" + to_string(i) + "]");
+        if (i != n - 1)
+            res.emplace_back("o" + to_string(i), "operators[" + to_string(i) +
+                             "] (is " + to_string(node->operators[i]) + ")");
+    }
+    return res;
 },
 {  // Action
-
+    bool operand = command[0] == 's';
+    command.erase(0, 1);
+    int index = StrToInt(command);
+    if (operand) {
+        output << to_string(node->operators[index]);
+        return {};
+    } else return node->operands[index];
 })
+
+static string to_string(ast::Sum::SumOperator op) {
+    switch (op) {
+        case ast::Sum::SumOperator::Plus: return  "Plus  +";
+        case ast::Sum::SumOperator::Minus: return "Minus -";
+    }
+    return "<error>";
+}
 
 EXPLORER(Sum, {  // GoToActions
-
+    vector<ActionCommand> res;
+    int n = node->terms.size();
+    for (int i = 0; i < n; ++i) {
+        res.emplace_back("t" + to_string(i),     "    terms[" + to_string(i) + "]");
+        if (i != n - 1)
+            res.emplace_back("o" + to_string(i), "operators[" + to_string(i) +
+                             "] (is " + to_string(node->operators[i]) + ")");
+    }
+    return res;
 },
 {  // Action
-
+    bool operand = command[0] == 't';
+    command.erase(0, 1);
+    int index = StrToInt(command);
+    if (operand) {
+        output << to_string(node->operators[index]);
+        return {};
+    } else return node->terms[index];
 })
+
+static string to_string(ast::Term::TermOperator op) {
+    switch (op) {
+        case ast::Term::TermOperator::Times: return  "Times  *";
+        case ast::Term::TermOperator::Divide: return "Divide /";
+    }
+    return "<error>";
+}
 
 EXPLORER(Term, {  // GoToActions
-
+    vector<ActionCommand> res;
+    int n = node->unaries.size();
+    for (int i = 0; i < n; ++i) {
+        res.emplace_back("u" + to_string(i),     "  unaries[" + to_string(i) + "]");
+        if (i != n - 1)
+            res.emplace_back("o" + to_string(i), "operators[" + to_string(i) +
+                             "] (is " + to_string(node->operators[i]) + ")");
+    }
+    return res;
 },
 {  // Action
-
+    bool operand = command[0] == 'u';
+    command.erase(0, 1);
+    int index = StrToInt(command);
+    if (operand) {
+        output << to_string(node->operators[index]);
+        return {};
+    } else return node->unaries[index];
 })
 
-EXPLORER(Unary, {  // GoToActions
+static string to_string(ast::PrefixOperator::PrefixOperatorKind op) {
+    switch (op) {
+        case ast::PrefixOperator::PrefixOperatorKind::Plus: return  "Plus  +";
+        case ast::PrefixOperator::PrefixOperatorKind::Minus: return "Minus -";
+        case ast::PrefixOperator::PrefixOperatorKind::Not: return   "Not";
+    }
+    return "<error>";
+}
 
+EXPLORER(Unary, {  // GoToActions
+    vector<ActionCommand> res;
+    int i = 0;
+    for (const auto& pref : node->prefixOps) {
+        res.emplace_back("e" + to_string(i), "prefixOperators[" + to_string(i) +
+                         "] (is " + to_string(pref->kind) + ")");
+        ++i;
+    }
+    res.emplace_back("p", "The primary expression");
+    int n = node->postfixOps.size();
+    for (int i = 0; i < n; ++i) res.emplace_back("o" + to_string(i), "postfixOperators[" + to_string(i) + "]");
+    return res;
 },
 {  // Action
-
+    char kind = command[0];
+    command.erase(0, 1);
+    int index = command.empty() ? 0 : StrToInt(command);
+    switch (kind) {
+        case 'e': return node->prefixOps[index];
+        case 'o': return node->postfixOps[index];
+        default: return node->expr;
+    }
 })
 
 EXPLORER(PrefixOperator, {  // GoToActions
-
+    return vector<ActionCommand>({ { "?", "The precedence of the operator" } });
 },
 {  // Action
-
+    output << node->precedence();
+    return {};
 })
 
-EXPLORER(TypecheckOperator, {  // GoToActions
+static string to_string(ast::TypeId id) {
+    switch (id) {
+case ast::TypeId::
+    }
+}
 
+EXPLORER(TypecheckOperator, {  // GoToActions
+    return 
 },
 {  // Action
 
