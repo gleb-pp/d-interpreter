@@ -441,7 +441,7 @@ public:
 // TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
 //     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
 enum class TypeId {
-    Int, Real, String, Book, None, Func, Tuple, List
+    Int, Real, String, Bool, None, Func, Tuple, List
 };
 std::optional<TypeId> parseTypeId(SyntaxContext& context, size_t& pos);
 
