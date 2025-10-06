@@ -840,7 +840,7 @@ public:
 class ArrayLiteral : public Primary {
 public:
     ArrayLiteral(const locators::SpanLocator& pos);
-    optional<shared_ptr<Expression>> items;
+    vector<shared_ptr<Expression>> items;
     optional<shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ArrayLiteral() override = default;

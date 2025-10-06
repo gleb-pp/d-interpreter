@@ -576,7 +576,7 @@ public:
 class ArrayLiteral : public Primary {
 public:
     ArrayLiteral(const locators::SpanLocator& pos);
-    std::optional<std::shared_ptr<Expression>> items;
+    std::vector<std::shared_ptr<Expression>> items;
     std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ArrayLiteral() override = default;
