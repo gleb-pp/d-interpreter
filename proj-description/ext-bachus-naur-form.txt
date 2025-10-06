@@ -87,11 +87,11 @@ IndexAccessor -> tkOpenBracket < Expression > tkClosedBracket
 // 3. obj is type
 // 4. not value
 
-Expression -> XorOperand { tkXor XorOperand }
-XorOperand -> OrOperand { tkOr OrOperand }
-OrOperand -> AndOperand { tkAnd AndOperand }
-AndOperand -> Sum { BinaryRelation Sum }
-BinaryRelation -> tkLess | tkLessEq
+Expression -> OrOperator { tkXor OrOperator }
+OrOperator -> AndOperator { tkOr AndOperator }
+AndOperator -> BinaryRelation { tkAnd BinaryRelation }
+BinaryRelation -> Sum { BinaryRelationOperator Sum }
+BinaryRelationOperator -> tkLess | tkLessEq
     | tkGreater | tkGreaterEq
     | tkEqual | tkNotEqual
 Sum -> Term { (tkPlus | tkMinus) Term }

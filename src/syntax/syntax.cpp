@@ -533,10 +533,10 @@ void Reference::AcceptVisitor(IASTVisitor& vis) {
     vis.VisitReference(*this);
 }
 
-// Expression -> XorOperand { tkXor XorOperand }
+// Expression -> OrOperator { tkXor OrOperator }
 Expression::Expression(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<Expression>> parse(SyntaxContext& context, size_t& pos) {
-    vector<shared_ptr<XorOperand>> operands;
+    vector<shared_ptr<OrOperator>> operands;
     size_t startpos = pos;
     bool first = true;
     while (true) {
@@ -548,7 +548,7 @@ optional<shared_ptr<Expression>> parse(SyntaxContext& context, size_t& pos) {
                 ++pos;
         }
         first = false;
-        auto op = XorOperand::parse(context, pos);
+        auto op = OrOperator::parse(context, pos);
         if (!op.has_value()) {
             pos = prevpos;
             break;
@@ -565,36 +565,36 @@ void Expression::AcceptVisitor(IASTVisitor& vis) {
 }
 
 /*
-// XorOperand -> OrOperand { tkOr OrOperand }
-class XorOperand : public ASTNode {  // value = OR of elements
+// OrOperator -> AndOperator { tkOr AndOperator }
+class OrOperator : public ASTNode {  // value = OR of elements
 public:
-    vector<shared_ptr<OrOperand>> operands;
+    vector<shared_ptr<AndOperator>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static optional<shared_ptr<XorOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~XorOperand() override = default;
+    static optional<shared_ptr<OrOperator>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~OrOperator() override = default;
 };
 
-// OrOperand -> AndOperand { tkAnd AndOperand }
-class OrOperand : public ASTNode {  // value = AND of elements
+// AndOperator -> BinaryRelation { tkAnd BinaryRelation }
+class AndOperator : public ASTNode {  // value = AND of elements
 public:
-    vector<shared_ptr<AndOperand>> operands;
+    vector<shared_ptr<BinaryRelation>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static optional<shared_ptr<OrOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~OrOperand() override = default;
+    static optional<shared_ptr<AndOperator>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~AndOperator() override = default;
 };
 
-// AndOperand -> Sum { BinaryRelation Sum }
-class AndOperand : public ASTNode {  // value = AND of comparisons of elements
+// BinaryRelation -> Sum { BinaryRelationOperator Sum }
+class BinaryRelation : public ASTNode {  // value = AND of comparisons of elements
 public:
     vector<shared_ptr<Sum>> operands;
-    vector<BinaryRelation> operators;
+    vector<BinaryRelationOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static optional<shared_ptr<AndOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~AndOperand() override = default;
+    static optional<shared_ptr<BinaryRelation>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~BinaryRelation() override = default;
 };
 
-// BinaryRelation -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
-optional<BinaryRelation> parseBinaryRelation(SyntaxContext& context, size_t& pos);
+// BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
+optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context, size_t& pos);
 
 // Sum -> Term { (tkPlus | tkMinus) Term }
 class Sum : public ASTNode {

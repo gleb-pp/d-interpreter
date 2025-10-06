@@ -295,61 +295,61 @@ public:
     virtual ~Reference() override = default;
 };
 
-class XorOperand;
-class OrOperand;
-class AndOperand;
+class OrOperator;
+class AndOperator;
+class BinaryRelation;
 class Sum;
-enum class BinaryRelation;
+enum class BinaryRelationOperator;
 class Term;
 class Unary;
 class Primary;
 
-// Expression -> XorOperand { tkXor XorOperand }
+// Expression -> OrOperator { tkXor OrOperator }
 class Expression : public ASTNode {  // value = XOR of elements
 public:
     Expression(const locators::SpanLocator& pos);
-    std::vector<std::shared_ptr<XorOperand>> operands;
+    std::vector<std::shared_ptr<OrOperator>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context, size_t& pos);
     virtual ~Expression() override = default;
 };
 
-// XorOperand -> OrOperand { tkOr OrOperand }
-class XorOperand : public ASTNode {  // value = OR of elements
+// OrOperator -> AndOperator { tkOr AndOperator }
+class OrOperator : public ASTNode {  // value = OR of elements
 public:
-    XorOperand(const locators::SpanLocator& pos);
-    std::vector<std::shared_ptr<OrOperand>> operands;
+    OrOperator(const locators::SpanLocator& pos);
+    std::vector<std::shared_ptr<AndOperator>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<XorOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~XorOperand() override = default;
+    static std::optional<std::shared_ptr<OrOperator>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~OrOperator() override = default;
 };
 
-// OrOperand -> AndOperand { tkAnd AndOperand }
-class OrOperand : public ASTNode {  // value = AND of elements
+// AndOperator -> BinaryRelation { tkAnd BinaryRelation }
+class AndOperator : public ASTNode {  // value = AND of elements
 public:
-    OrOperand(const locators::SpanLocator& pos);
-    std::vector<std::shared_ptr<AndOperand>> operands;
+    AndOperator(const locators::SpanLocator& pos);
+    std::vector<std::shared_ptr<BinaryRelation>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<OrOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~OrOperand() override = default;
+    static std::optional<std::shared_ptr<AndOperator>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~AndOperator() override = default;
 };
 
-// AndOperand -> Sum { BinaryRelation Sum }
-class AndOperand : public ASTNode {  // value = AND of comparisons of elements
+// BinaryRelation -> Sum { BinaryRelationOperator Sum }
+class BinaryRelation : public ASTNode {  // value = AND of comparisons of elements
 public:
-    AndOperand(const locators::SpanLocator& pos);
+    BinaryRelation(const locators::SpanLocator& pos);
     std::vector<std::shared_ptr<Sum>> operands;
-    std::vector<BinaryRelation> operators;
+    std::vector<BinaryRelationOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<AndOperand>> parse(SyntaxContext& context, size_t& pos);
-    virtual ~AndOperand() override = default;
+    static std::optional<std::shared_ptr<BinaryRelation>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~BinaryRelation() override = default;
 };
 
-// BinaryRelation -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
-enum class BinaryRelation {
+// BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
+enum class BinaryRelationOperator {
     Less, LessEq, Greater, GreaterEq, Equal, NotEqual
 };
-std::optional<BinaryRelation> parseBinaryRelation(SyntaxContext& context, size_t& pos);
+std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context, size_t& pos);
 
 // Sum -> Term { (tkPlus | tkMinus) Term }
 class Sum : public ASTNode {
@@ -606,9 +606,9 @@ public:
     virtual void VisitIndexAccessor(IndexAccessor& node) = 0;
     virtual void VisitReference(Reference& node) = 0;
     virtual void VisitExpression(Expression& node) = 0;
-    virtual void VisitXorOperand(XorOperand& node) = 0;
-    virtual void VisitOrOperand(OrOperand& node) = 0;
-    virtual void VisitAndOperand(AndOperand& node) = 0;
+    virtual void VisitOrOperator(OrOperator& node) = 0;
+    virtual void VisitAndOperator(AndOperator& node) = 0;
+    virtual void VisitBinaryRelation(BinaryRelation& node) = 0;
     virtual void VisitSum(Sum& node) = 0;
     virtual void VisitTerm(Term& node) = 0;
     virtual void VisitUnary(Unary& node) = 0;
