@@ -41,9 +41,9 @@ public:
     void VisitIndexAccessor(ast::IndexAccessor& node) override;
     void VisitReference(ast::Reference& node) override;
     void VisitExpression(ast::Expression& node) override;
-    void VisitXorOperand(ast::XorOperand& node) override;
-    void VisitOrOperand(ast::OrOperand& node) override;
-    void VisitAndOperand(ast::AndOperand& node) override;
+    void VisitOrOperator(ast::OrOperator& node) override;
+    void VisitAndOperator(ast::AndOperator& node) override;
+    void VisitBinaryRelation(ast::BinaryRelation& node) override;
     void VisitSum(ast::Sum& node) override;
     void VisitTerm(ast::Term& node) override;
     void VisitUnary(ast::Unary& node) override;

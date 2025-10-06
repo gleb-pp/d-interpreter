@@ -255,21 +255,21 @@ EXPLORER(Expression, {  // GoToActions
     return node->operands[StrToInt(command)];
 })
 
-EXPLORER(XorOperand, {  // GoToActions
+EXPLORER(OrOperator, {  // GoToActions
 
 },
 {  // Action
 
 })
 
-EXPLORER(OrOperand, {  // GoToActions
+EXPLORER(AndOperator, {  // GoToActions
 
 },
 {  // Action
 
 })
 
-EXPLORER(AndOperand, {  // GoToActions
+EXPLORER(BinaryRelation, {  // GoToActions
 
 },
 {  // Action
@@ -419,9 +419,9 @@ VISITOR(ParenMemberAccessor)
 VISITOR(IndexAccessor)
 VISITOR(Reference)
 VISITOR(Expression)
-VISITOR(XorOperand)
-VISITOR(OrOperand)
-VISITOR(AndOperand)
+VISITOR(OrOperator)
+VISITOR(AndOperator)
+VISITOR(BinaryRelation)
 VISITOR(Sum)
 VISITOR(Term)
 VISITOR(Unary)
