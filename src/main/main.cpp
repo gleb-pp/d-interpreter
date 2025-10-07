@@ -10,17 +10,21 @@
 #include "lexer.h"
 #include "locators/CodeFile.h"
 #include "tokenTypeStrings.h"
+#include "syntax.h"
+#include "syntaxExplorer.h"
 using namespace std;
 
 class Options {
 public:
     bool Lexer = false;
+    bool Syntaxer = false;
     bool Help = false;
     bool Check = false;
     bool Examples = false;
     bool NoContext = false;
     optional<bool*> GetLongFlag(string name) {
         if (name == "lexer") return &Lexer;
+        if (name == "syntaxer") return &Syntaxer;
         if (name == "help") return &Help;
         if (name == "check") return &Check;
         if (name == "examples") return &Examples;
@@ -29,16 +33,12 @@ public:
     }
     optional<bool*> GetShortFlag(char name) {
         switch (name) {
-            case 'l':
-                return &Lexer;
-            case 'h':
-                return &Help;
-            case 'c':
-                return &Check;
-            case 'C':
-                return &NoContext;
-            default:
-                return {};
+            case 'l': return &Lexer;
+            case 's': return &Syntaxer;
+            case 'h': return &Help;
+            case 'c': return &Check;
+            case 'C': return &NoContext;
+            default: return {};
         }
     }
     bool SetLongFlag(string name) {
@@ -63,6 +63,7 @@ Options:
     --check      -c  Only check for errors, do not run.
     --examples       Show some usage examples.
     --lexer      -l  Stop after lexical analysis, output the tokens.
+    --syntaxer   -s  Stop after syntactic analysis, start interactive AST traversal.
     --nocontext  -C  Do not show code excerpts below errors.
 
 Every argument after -- is assumed to be a file name.
@@ -81,6 +82,9 @@ dinterp *.d -lc
 
 Run a program named -abc.d:
 dinterp -- -abc.d
+
+Explore the syntax of a program:
+dinterp -s prog.d
 )%%";
 };
 
@@ -153,8 +157,23 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         return false;
     }
     auto& tokens = maybeTokens.value();
-    // Currently, show tokens even if --lexer is not set
-    if (!opts.Check) PrintTokens(*file, tokens);
+    if (opts.Lexer) {
+        if (!opts.Check) PrintTokens(*file, tokens);
+        return true;
+    }
+    auto maybeProg = SyntaxAnalyzer::analyze(tokens, file, log);
+    if (!maybeProg.has_value()) {
+        cerr << "A syntax error was encountered in " << filename << ", stopping.\n";
+        return false;
+    }
+    auto& prog = maybeProg.value();
+    if (true || opts.Syntaxer) {  // Currently we stop at the syntaxer step anyway
+        if (!opts.Check) {
+            ExplorerIO io(prog);
+            io.Explore(cout, cin);
+        }
+        return true;
+    }
     return true;
 }
 
@@ -178,8 +197,9 @@ int main(int argc, char** argv) {
     if (opts.NoContext) format = format.WithoutContext();
     complog::StreamingCompilationLog log(cerr, format);
 
-    for (auto filename : files)
+    for (auto filename : files) {
         if (!ProcessFile(filename, opts, log)) failed = true;
+    }
 
     if (!doneSomething) {
         cerr << "Nothing to do. Type 'dinterp -h' for help.\n";
