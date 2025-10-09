@@ -72,8 +72,6 @@ SyntaxContext::SyntaxContext(const vector<shared_ptr<Token>>& tokens,
 // If a class has an ::AcceptVisitor(vis) method, the implementation simply calls
 //  vis.VisitMyClass(*this);
 
-// Gleb, I encourage you to add constructors to the classes!
-
 namespace ast {
 
 ASTNode::ASTNode(const locators::SpanLocator& pos) : pos(pos) { }
@@ -166,13 +164,6 @@ optional<shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos) {
 
 Statement::Statement(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t& pos) {
-    // It is tempting to write something like:
-    //if (firstToken->type == Token::Type::tkVar)
-    //    return VarStatement::parse(context, pos);
-    // However, it is better to still run all variants of SmthStatement::parse(...)
-    // because this will automatically handle error reports for the first token.
-    // That is, if the first token is, for example, tkRange "..", which makes no sense,
-    // the compiler should produce messages that at this position, 'var', 'if', 'for', etc. were expected.
     {
         auto res = VarStatement::parse(context, pos);
         if (res.has_value()) return res;
@@ -220,20 +211,15 @@ optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t&
     return EmptyStatement::parse();
 }
 
-// These are to be implemented!
-
-/*
 // VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
 //     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
-class VarStatement : public Statement {
-public:
-    VarStatement(const locators::SpanLocator& pos);
-    vector<pair<string, optional<shared_ptr<Expression>>>> definitions;
-    static optional<shared_ptr<VarStatement>> parse(SyntaxContext& context, size_t& pos);
-    void AcceptVisitor(IASTVisitor& vis) override;
-    virtual ~VarStatement() override = default;
-};
+VarStatement::VarStatement(const locators::SpanLocator& pos) : Statement(pos) {}
+optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context, size_t& pos) {
 
+}
+void VarStatement::AcceptVisitor(IASTVisitor& vis) { vis.VisitVarStatement(*this); }
+
+/*
 // IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
 //     [ tkElse [tkNewLine] Body ] tkEnd
 class IfStatement : public Statement {
