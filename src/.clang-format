@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+IndentWidth: 4
+ColumnLimit: 120
+---
+Language: Cpp
+PointerAlignment: Left
+AccessModifierOffset: -4
+SortIncludes: true
