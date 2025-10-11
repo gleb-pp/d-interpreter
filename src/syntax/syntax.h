@@ -2,12 +2,19 @@
 
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <vector>
 
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/locator.h"
+
+class WrongNumberOfOperatorsSupplied : public std::invalid_argument {
+public:
+    WrongNumberOfOperatorsSupplied(const std::string& astclass, size_t operandscount, size_t operatorscount);
+    virtual ~WrongNumberOfOperatorsSupplied() override = default;
+};
 
 class SyntaxErrorReport {
 public:
@@ -504,7 +511,7 @@ public:
     std::optional<std::shared_ptr<IdentifierToken>> ident;
     std::shared_ptr<Expression> expression;
     void AcceptVisitor(IASTVisitor& vis) override;
-    std::optional<std::shared_ptr<TupleLiteralElement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TupleLiteralElement>> parse(SyntaxContext& context, size_t& pos);
     virtual ~TupleLiteralElement() override = default;
 };
 
@@ -513,7 +520,7 @@ class TupleLiteral : public Primary {
 public:
     TupleLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<TupleLiteralElement>>& elements);
     std::vector<std::shared_ptr<TupleLiteralElement>> elements;
-    std::optional<std::shared_ptr<TupleLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TupleLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~TupleLiteral() override = default;
 };
@@ -554,7 +561,7 @@ public:
                 const std::optional<std::shared_ptr<FuncBody>>& funcBody);
     std::vector<std::shared_ptr<IdentifierToken>> parameters;
     std::optional<std::shared_ptr<FuncBody>> funcBody;
-    std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~FuncLiteral() override = default;
 };
@@ -568,7 +575,7 @@ public:
     // Yes, technically, `kind` is useless because `token->type` exists.
     // Still, it is nice when you have all the available options and nothing else.
     std::shared_ptr<Token> token;
-    std::optional<std::shared_ptr<TokenLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TokenLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~TokenLiteral() override = default;
 };
@@ -578,7 +585,7 @@ class ArrayLiteral : public Primary {
 public:
     ArrayLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& items);
     std::vector<std::shared_ptr<Expression>> items;
-    std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ArrayLiteral() override = default;
 };

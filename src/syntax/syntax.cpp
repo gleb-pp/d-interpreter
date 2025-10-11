@@ -11,6 +11,11 @@ using namespace std;
 
 // Auxiliary classes & functions
 
+WrongNumberOfOperatorsSupplied::WrongNumberOfOperatorsSupplied(const std::string& astclass, size_t operandscount,
+                                                               size_t operatorscount)
+    : std::invalid_argument("\"" + astclass + "\"'s constructor received " + to_string(operandscount) +
+                            " operands and " + to_string(operatorscount) + " operators.") {}
+
 class EmptyVarStatement : public complog::CompilationMessage {
 private:
     locators::Locator loc;
@@ -224,7 +229,7 @@ optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t&
         auto res = ExpressionStatement::parse(context, pos);
         if (res.has_value()) return res;
     }
-    return EmptyStatement::parse();
+    return EmptyStatement::parse(context, pos);
 }
 
 // VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
@@ -670,36 +675,173 @@ optional<shared_ptr<Expression>> Expression::parse(SyntaxContext& context, size_
 }
 VISITOR(Expression)
 
-/*
 // OrOperator -> AndOperator { tkOr AndOperator }
-OrOperator::OrOperator(const locators::SpanLocator& pos, const vector<shared_ptr<AndOperator>>& operands);
-optional<shared_ptr<OrOperator>> OrOperator::parse(SyntaxContext& context, size_t& pos);
+OrOperator::OrOperator(const locators::SpanLocator& pos, const vector<shared_ptr<AndOperator>>& operands)
+    : ASTNode(pos), operands(operands) {}
+optional<shared_ptr<OrOperator>> OrOperator::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    vector<shared_ptr<AndOperator>> ops;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            if (!AssertToken(context, pos, Token::Type::tkOr)) break;
+            ++pos;
+        }
+        first = false;
+        auto optAnd = AndOperator::parse(context, pos);
+        if (!optAnd.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        ops.push_back(*optAnd);
+    }
+    if (ops.empty()) return {};
+    return make_shared<OrOperator>(context.MakeSpanFromTokens(startpos, pos), ops);
+}
 VISITOR(OrOperator)
 
 // AndOperator -> BinaryRelation { tkAnd BinaryRelation }
-AndOperator::AndOperator(const locators::SpanLocator& pos, const vector<shared_ptr<BinaryRelation>>& operands);
-vector<shared_ptr<BinaryRelation>> operands;
-optional<shared_ptr<AndOperator>> AndOperator::parse(SyntaxContext& context, size_t& pos);
+AndOperator::AndOperator(const locators::SpanLocator& pos, const vector<shared_ptr<BinaryRelation>>& operands)
+    : ASTNode(pos), operands(operands) {}
+optional<shared_ptr<AndOperator>> AndOperator::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    vector<shared_ptr<BinaryRelation>> ops;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            if (!AssertToken(context, pos, Token::Type::tkOr)) break;
+            ++pos;
+        }
+        first = false;
+        auto optBinRel = BinaryRelation::parse(context, pos);
+        if (!optBinRel.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        ops.push_back(*optBinRel);
+    }
+    if (ops.empty()) return {};
+    return make_shared<AndOperator>(context.MakeSpanFromTokens(startpos, pos), ops);
+}
 VISITOR(AndOperator)
 
 // BinaryRelation -> Sum { BinaryRelationOperator Sum }
 BinaryRelation::BinaryRelation(const locators::SpanLocator& pos, const vector<shared_ptr<Sum>>& operands,
-    const vector<BinaryRelationOperator>& operators);
-optional<shared_ptr<BinaryRelation>> BinaryRelation::parse(SyntaxContext& context, size_t& pos);
+                               const vector<BinaryRelationOperator>& operators)
+    : ASTNode(pos), operands(operands), operators(operators) {
+    size_t nds = operands.size(), ors = operators.size();
+    if (nds != ors + 1) throw WrongNumberOfOperatorsSupplied("BinaryRelation", nds, ors);
+}
+optional<shared_ptr<BinaryRelation>> BinaryRelation::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    vector<shared_ptr<Sum>> nds;
+    vector<BinaryRelationOperator> ors;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            auto binOperator = parseBinaryRelationOperator(context, pos);
+            if (!binOperator.has_value()) break;
+            ors.push_back(*binOperator);
+        }
+        first = false;
+        auto optSum = Sum::parse(context, pos);
+        if (!optSum.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        nds.push_back(*optSum);
+    }
+    if (nds.empty()) return {};
+    return make_shared<BinaryRelation>(context.MakeSpanFromTokens(startpos, pos), nds, ors);
+}
 VISITOR(BinaryRelation)
 
 // BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
-optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context, size_t& pos);
+optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context, size_t& pos) {
+#define TRY(tk, op)                                   \
+    if (AssertToken(context, pos, Token::Type::tk)) { \
+        ++pos;                                        \
+        return BinaryRelationOperator::op;            \
+    }
+    TRY(tkLess, Less)
+    TRY(tkLessEq, LessEq)
+    TRY(tkGreater, Greater)
+    TRY(tkGreaterEq, GreaterEq)
+    TRY(tkEqual, Equal)
+    TRY(tkNotEqual, NotEqual)
+    return {};
+#undef TRY
+}
 
 // Sum -> Term { (tkPlus | tkMinus) Term }
-Sum::Sum(const locators::SpanLocator& pos, const vector<shared_ptr<Term>>& terms, const vector<SumOperator>& operators);
-optional<shared_ptr<Sum>> Sum::parse(SyntaxContext& context, size_t& pos);
+Sum::Sum(const locators::SpanLocator& pos, const vector<shared_ptr<Term>>& terms, const vector<SumOperator>& operators)
+    : ASTNode(pos), terms(terms), operators(operators) {}
+optional<shared_ptr<Sum>> Sum::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    vector<shared_ptr<Term>> nds;
+    vector<SumOperator> ors;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            if (AssertToken(context, pos, Token::Type::tkPlus)) {
+                ++pos;
+                ors.push_back(SumOperator::Plus);
+            } else if (AssertToken(context, pos, Token::Type::tkMinus)) {
+                ++pos;
+                ors.push_back(SumOperator::Minus);
+            } else
+                break;
+        }
+        first = false;
+        auto optTerm = Term::parse(context, pos);
+        if (!optTerm.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        nds.push_back(*optTerm);
+    }
+    if (nds.empty()) return {};
+    return make_shared<Sum>(context.MakeSpanFromTokens(startpos, pos), nds, ors);
+}
 VISITOR(Sum)
 
 // Term -> Unary { (tkTimes | tkDivide) Unary }
-Term::Term(const locators::SpanLocator& pos, const vector<shared_ptr<Term>>& terms, const vector<TermOperator>&
-operators); optional<shared_ptr<Term>> Term::parse(SyntaxContext& context, size_t& pos); VISITOR(Term)
-*/
+Term::Term(const locators::SpanLocator& pos, const vector<shared_ptr<Unary>>& unaries,
+           const vector<TermOperator>& operators)
+    : ASTNode(pos), unaries(unaries), operators(operators) {}
+optional<shared_ptr<Term>> Term::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    vector<shared_ptr<Unary>> nds;
+    vector<TermOperator> ors;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            if (AssertToken(context, pos, Token::Type::tkTimes)) {
+                ++pos;
+                ors.push_back(TermOperator::Times);
+            } else if (AssertToken(context, pos, Token::Type::tkDivide)) {
+                ++pos;
+                ors.push_back(TermOperator::Divide);
+            } else
+                break;
+        }
+        first = false;
+        auto optUnary = Unary::parse(context, pos);
+        if (!optUnary.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        nds.push_back(*optUnary);
+    }
+    if (nds.empty()) return {};
+    return make_shared<Term>(context.MakeSpanFromTokens(startpos, pos), nds, ors);
+}
+VISITOR(Term)
 
 // Unary -> {PrefixOperator} Primary {PostfixOperator}
 Unary::Unary(const locators::SpanLocator& pos, const vector<shared_ptr<PrefixOperator>>& prefixOps,
@@ -766,88 +908,325 @@ optional<shared_ptr<PrefixOperator>> PrefixOperator::parse(SyntaxContext& contex
     return res;
 }
 
-/*
 // PostfixOperator -> TypecheckOperator | Call | AccessorOperator
-PostfixOperator::PostfixOperator(const locators::SpanLocator& pos);
-optional<shared_ptr<PostfixOperator>> PostfixOperator::parse(SyntaxContext& context, size_t& pos);
-VISITOR(PostfixOperator)
+PostfixOperator::PostfixOperator(const locators::SpanLocator& pos) : ASTNode(pos) {}
+optional<shared_ptr<PostfixOperator>> PostfixOperator::parse(SyntaxContext& context, size_t& pos) {
+#define TRY(classname)                             \
+    {                                              \
+        auto res = classname::parse(context, pos); \
+        if (res.has_value()) return res;           \
+    }
+    TRY(TypecheckOperator)
+    TRY(Call)
+    TRY(AccessorOperator)
+    return {};
+#undef TRY
+}
 
 // TypecheckOperator -> tkIs TypeId
-TypecheckOperator::TypecheckOperator(const locators::SpanLocator& pos, TypeId typeId);
-int TypecheckOperator::precedence();  // = 3
-optional<shared_ptr<TypecheckOperator>> TypecheckOperator::parse(SyntaxContext& context, size_t& pos);
+TypecheckOperator::TypecheckOperator(const locators::SpanLocator& pos, TypeId typeId)
+    : PostfixOperator(pos), typeId(typeId) {}
+int TypecheckOperator::precedence() { return 3; }
+optional<shared_ptr<TypecheckOperator>> TypecheckOperator::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    if (!AssertToken(context, pos, Token::Type::tkIs)) return {};
+    ++pos;
+    auto op = parseTypeId(context, pos);
+    if (!op.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    return make_shared<TypecheckOperator>(context.MakeSpanFromTokens(startpos, pos), *op);
+}
 VISITOR(TypecheckOperator)
 
 // TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
 //     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
-optional<TypeId> parseTypeId(SyntaxContext& context, size_t& pos);
+optional<TypeId> parseTypeId(SyntaxContext& context, size_t& pos) {
+#define TRY(name)                                           \
+    if (AssertToken(context, pos, Token::Type::tk##name)) { \
+        ++pos;                                              \
+        return TypeId::name;                                \
+    }
+    TRY(Int)
+    TRY(Real)
+    TRY(String)
+    TRY(Bool)
+    TRY(None)
+    TRY(Func)
+#undef TRY
+    if (AssertToken(context, pos, Token::Type::tkOpenBracket)) {
+        ++pos;
+        if (AssertToken(context, pos, Token::Type::tkClosedBracket)) {
+            ++pos;
+            return TypeId::List;
+        }
+        --pos;
+    }
+    if (AssertToken(context, pos, Token::Type::tkOpenCurlyBrace)) {
+        ++pos;
+        if (AssertToken(context, pos, Token::Type::tkClosedCurlyBrace)) {
+            ++pos;
+            return TypeId::Tuple;
+        }
+        --pos;
+    }
+    return {};
+}
 
 // Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
-Call::Call(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& args);
-int Call::precedence();  // = 1
-optional<shared_ptr<Call>> Call::parse(SyntaxContext& context, size_t& pos);
+Call::Call(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& args)
+    : PostfixOperator(pos), args(args) {}
+int Call::precedence() { return 1; }
+optional<shared_ptr<Call>> Call::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    if (!AssertToken(context, pos, Token::Type::tkOpenParenthesis)) return {};
+    auto comexpr = CommaExpressions::parse(context, pos);
+    vector<shared_ptr<Expression>> args;
+    if (comexpr.has_value()) args = comexpr.value()->expressions;
+    if (!AssertToken(context, pos, Token::Type::tkClosedParenthesis)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    return make_shared<Call>(context.MakeSpanFromTokens(startpos, pos), args);
+}
 VISITOR(Call)
 
 // AccessorOperator -> Accessor
-AccessorOperator::AccessorOperator(const locators::SpanLocator& pos, const shared_ptr<Accessor>& accessor);
-int AccessorOperator::precedence();  // = 1
-optional<shared_ptr<AccessorOperator>> AccessorOperator::parse(SyntaxContext& context, size_t& pos);
+AccessorOperator::AccessorOperator(const locators::SpanLocator& pos, const shared_ptr<Accessor>& accessor)
+    : PostfixOperator(pos), accessor(accessor) {}
+int AccessorOperator::precedence() { return 1; }
+optional<shared_ptr<AccessorOperator>> AccessorOperator::parse(SyntaxContext& context, size_t& pos) {
+    auto res = Accessor::parse(context, pos);
+    if (!res.has_value()) return {};
+    return make_shared<AccessorOperator>(res.value()->pos, res.value());
+}
 VISITOR(AccessorOperator)
 
 // Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
-Primary::Primary(const locators::SpanLocator& pos);
-optional<shared_ptr<Primary>> Primary::parse(SyntaxContext& context, size_t& pos);
+Primary::Primary(const locators::SpanLocator& pos) : ASTNode(pos) {}
+optional<shared_ptr<Primary>> Primary::parse(SyntaxContext& context, size_t& pos) {
+#define TRY(classname)                             \
+    {                                              \
+        auto res = classname::parse(context, pos); \
+        if (res.has_value()) return res;           \
+    }
+    TRY(PrimaryIdent)
+    TRY(ParenthesesExpression)
+    TRY(FuncLiteral)
+    TRY(TokenLiteral)
+    TRY(ArrayLiteral)
+    TRY(TupleLiteral)
+#undef TRY
+    return {};
+}
 
 // PrimaryIdent -> tkIdent
-PrimaryIdent::PrimaryIdent(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& name);
-optional<shared_ptr<PrimaryIdent>> PrimaryIdent::parse(SyntaxContext& context, size_t& pos);
+PrimaryIdent::PrimaryIdent(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& name)
+    : Primary(pos), name(name) {}
+optional<shared_ptr<PrimaryIdent>> PrimaryIdent::parse(SyntaxContext& context, size_t& pos) {
+    if (!AssertToken(context, pos, Token::Type::tkIdent)) return {};
+    auto res = make_shared<PrimaryIdent>(context.MakeSpanFromTokens(pos, pos + 1),
+                                         dynamic_pointer_cast<IdentifierToken>(context.tokens[pos]));
+    ++pos;
+    return res;
+}
 VISITOR(PrimaryIdent)
 
 // ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
-ParenthesesExpression::ParenthesesExpression(const locators::SpanLocator& pos, const shared_ptr<Expression>& expr);
-optional<shared_ptr<ParenthesesExpression>> ParenthesesExpression::parse(SyntaxContext& context, size_t& pos);
+ParenthesesExpression::ParenthesesExpression(const locators::SpanLocator& pos, const shared_ptr<Expression>& expr)
+    : Primary(pos), expr(expr) {}
+optional<shared_ptr<ParenthesesExpression>> ParenthesesExpression::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    if (!AssertToken(context, pos, Token::Type::tkOpenParenthesis)) return {};
+    ++pos;
+    auto expr = Expression::parse(context, pos);
+    if (!expr.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    if (!AssertToken(context, pos, Token::Type::tkClosedParenthesis)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    return make_shared<ParenthesesExpression>(context.MakeSpanFromTokens(startpos, pos), *expr);
+}
 VISITOR(ParenthesesExpression)
 
 // TupleLiteralElement -> [ tkIdent tkAssign ] Expression
-TupleLiteralElement::TupleLiteralElement(const locators::SpanLocator& pos, const optional<shared_ptr<IdentifierToken>>&
-ident, const shared_ptr<Expression>& expression); optional<shared_ptr<TupleLiteralElement>>
-TupleLiteralElement::parse(SyntaxContext& context, size_t& pos); VISITOR(TupleLiteralElement)
+TupleLiteralElement::TupleLiteralElement(const locators::SpanLocator& pos,
+                                         const optional<shared_ptr<IdentifierToken>>& ident,
+                                         const shared_ptr<Expression>& expression)
+    : ASTNode(pos), ident(ident), expression(expression) {}
+optional<shared_ptr<TupleLiteralElement>> TupleLiteralElement::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    optional<shared_ptr<IdentifierToken>> ident;
+    if (AssertToken(context, pos, Token::Type::tkIdent)) {
+        ++pos;
+        if (AssertToken(context, pos, Token::Type::tkAssign)) {
+            ident = dynamic_pointer_cast<IdentifierToken>(context.tokens[pos - 1]);
+            ++pos;
+        } else pos = startpos;
+    }
+    auto optExpr = Expression::parse(context, pos);
+    if (!optExpr.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    return make_shared<TupleLiteralElement>(context.MakeSpanFromTokens(startpos, pos), ident, *optExpr);
+}
+VISITOR(TupleLiteralElement)
 
 // TupleLiteral -> tkOpenCurlyBrace < [ TupleLiteralElement { tkComma TupleLiteralElement } ] > tkClosedCurlyBrace
-TupleLiteral::TupleLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<TupleLiteralElement>>& elements);
-optional<shared_ptr<TupleLiteral>> TupleLiteral::parse(SyntaxContext& context, size_t& pos);
+TupleLiteral::TupleLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<TupleLiteralElement>>& elements)
+    : Primary(pos), elements(elements) {}
+optional<shared_ptr<TupleLiteral>> TupleLiteral::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    if (!AssertToken(context, pos, Token::Type::tkOpenCurlyBrace)) return {};
+    ++pos;
+    vector<shared_ptr<TupleLiteralElement>> elems;
+    bool first = true;
+    while (true) {
+        const size_t prevpos = pos;
+        if (!first) {
+            if (!AssertToken(context, pos, Token::Type::tkComma))
+                break;
+            ++pos;
+        }
+        first = false;
+        auto elem = TupleLiteralElement::parse(context, pos);
+        if (!elem.has_value()) {
+            pos = prevpos;
+            break;
+        }
+        elems.push_back(*elem);
+    }
+    if (!AssertToken(context, pos, Token::Type::tkClosedCurlyBrace)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    return make_shared<TupleLiteral>(context.MakeSpanFromTokens(startpos, pos), elems);
+}
 VISITOR(TupleLiteral)
 
 // FuncBody -> ShortFuncBody | LongFuncBody
-FuncBody::FuncBody(const locators::SpanLocator& pos);
-optional<shared_ptr<FuncBody>> FuncBody::parse(SyntaxContext& context, size_t& pos);
-VISITOR(FuncBody)
+FuncBody::FuncBody(const locators::SpanLocator& pos) : ASTNode(pos) {}
+optional<shared_ptr<FuncBody>> FuncBody::parse(SyntaxContext& context, size_t& pos) {
+#define TRY(classname) { auto res = classname::parse(context, pos); if (res.has_value()) return res; }
+    TRY(ShortFuncBody)
+    TRY(LongFuncBody)
+#undef TRY
+    return {};
+}
 
 // ShortFuncBody -> tkArrow Expression
-ShortFuncBody::ShortFuncBody(const locators::SpanLocator& pos, const shared_ptr<Expression>& expressionToReturn);
-optional<shared_ptr<ShortFuncBody>> ShortFuncBody::parse(SyntaxContext& context, size_t& pos);
+ShortFuncBody::ShortFuncBody(const locators::SpanLocator& pos, const shared_ptr<Expression>& expressionToReturn)
+    : FuncBody(pos), expressionToReturn(expressionToReturn) {}
+optional<shared_ptr<ShortFuncBody>> ShortFuncBody::parse(SyntaxContext& context, size_t& pos) {
+    if (!AssertToken(context, pos, Token::Type::tkArrow)) return {};
+    const size_t startpos = pos++;
+    auto optExpr = Expression::parse(context, pos);
+    if (!optExpr.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    return make_shared<ShortFuncBody>(context.MakeSpanFromTokens(startpos, pos), *optExpr);
+}
 VISITOR(ShortFuncBody)
 
 // LongFuncBody -> tkIs Body tkEnd
-LongFuncBody::LongFuncBody(const locators::SpanLocator& pos, const shared_ptr<Body>& funcBody);
-optional<shared_ptr<LongFuncBody>> LongFuncBody::parse(SyntaxContext& context, size_t& pos);
+LongFuncBody::LongFuncBody(const locators::SpanLocator& pos, const shared_ptr<Body>& funcBody)
+    : FuncBody(pos), funcBody(funcBody) {}
+optional<shared_ptr<LongFuncBody>> LongFuncBody::parse(SyntaxContext& context, size_t& pos) {
+    if (!AssertToken(context, pos, Token::Type::tkIs)) return {};
+    const size_t startpos = pos++;
+    auto optBody = Body::parse(context, pos);
+    if (!optBody.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    if (!AssertToken(context, pos, Token::Type::tkEnd)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    return make_shared<LongFuncBody>(context.MakeSpanFromTokens(startpos, pos), *optBody);
+}
 VISITOR(LongFuncBody)
 
 // FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters, const
-optional<shared_ptr<FuncBody>>& funcBody); optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context,
-size_t& pos); VISITOR(FuncLiteral)
+    optional<shared_ptr<FuncBody>>& funcBody) : Primary(pos), parameters(parameters), funcBody(funcBody) {}
+optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context, size_t& pos) {
+    const size_t startpos = pos;
+    if (!AssertToken(context, pos, Token::Type::tkFunc)) return {};
+    ++pos;
+    if (!AssertToken(context, pos, Token::Type::tkOpenParenthesis)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    vector<shared_ptr<IdentifierToken>> params;
+    {
+        auto optIdents = CommaIdents::parse(context, pos);
+        if (optIdents.has_value()) params = optIdents.value()->idents;
+    }
+    if (!AssertToken(context, pos, Token::Type::tkClosedParenthesis)) {
+        pos = startpos;
+        return {};
+    }
+    ++pos;
+    auto body = FuncBody::parse(context, pos);
+    if (!body.has_value()) {
+        pos = startpos;
+        return {};
+    }
+    return make_shared<FuncLiteral>(context.MakeSpanFromTokens(startpos, pos), params, *body);
+}
+VISITOR(FuncLiteral)
 
 // TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
-TokenLiteral::TokenLiteral(const locators::SpanLocator& pos, TokenLiteralKind kind, const shared_ptr<Token>& token);
-optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context, size_t& pos);
+TokenLiteral::TokenLiteral(const locators::SpanLocator& pos, TokenLiteralKind kind, const shared_ptr<Token>& token)
+    : Primary(pos), kind(kind), token(token) {}
+optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context, size_t& pos) {
+#define TRY(tktype, reskind)\
+if (AssertToken(context, pos, Token::Type::tk##tktype)) {\
+    kind = TokenLiteralKind::reskind;\
+    token = context.tokens[pos++];\
+} else
+    TokenLiteralKind kind;
+    shared_ptr<Token> token;
+    TRY(StringLiteral, String)
+    TRY(IntLiteral, Int)
+    TRY(RealLiteral, Real)
+    TRY(True, True)
+    TRY(False, False)
+    TRY(None, None)
+    return {};
+#undef TRY
+    return make_shared<TokenLiteral>(context.MakeSpanFromTokens(pos - 1, pos), kind, token);
+}
 VISITOR(TokenLiteral)
 
 // ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
-ArrayLiteral::ArrayLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& items);
-optional<shared_ptr<ArrayLiteral>> ArrayLiteral::parse(SyntaxContext& context, size_t& pos);
+ArrayLiteral::ArrayLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& items)
+    : Primary(pos), items(items) {}
+optional<shared_ptr<ArrayLiteral>> ArrayLiteral::parse(SyntaxContext& context, size_t& pos) {
+    if (!AssertToken(context, pos, Token::Type::tkOpenBracket)) return {};
+    const size_t startpos = pos++;
+    vector<shared_ptr<Expression>> exprs;
+    auto optexprs = CommaExpressions::parse(context, pos);
+    if (optexprs.has_value()) exprs = optexprs.value()->expressions;
+    if (!AssertToken(context, pos, Token::Type::tkClosedBracket)) {
+        pos = startpos;
+        return {};
+    }
+    return make_shared<ArrayLiteral>(context.MakeSpanFromTokens(startpos, pos), exprs);
+}
 VISITOR(ArrayLiteral)
-*/
 }  // namespace ast
 
 optional<shared_ptr<ast::Body>> analyze(const vector<shared_ptr<Token>>& tokens,
