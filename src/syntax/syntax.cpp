@@ -23,7 +23,7 @@ private:
 public:
     EmptyVarStatement(locators::Locator position)
         : CompilationMessage(complog::Severity::Error(), "EmptyVarStatement"), loc(position) {}
-    void WriteMessageToStream(ostream& out, const FormatOptions& options) const override {
+    void WriteMessageToStream(ostream& out, [[maybe_unused]] const FormatOptions& options) const override {
         out << "The \"var\" statement at " << loc.Pretty() << "must contain at least one declaration.\n";
     }
     vector<locators::Locator> Locators() const override { return {loc}; }
@@ -41,7 +41,7 @@ public:
           loc(position),
           expected(expected),
           found(found) {}
-    void WriteMessageToStream(ostream& out, const FormatOptions& options) const override {
+    void WriteMessageToStream(ostream& out, [[maybe_unused]] const FormatOptions& options) const override {
         out << "Unexpected token at " << loc.Pretty() << "; expected " << Token::TypeToString(expected)
             << ", but found " << Token::TypeToString(found) << ".\n";
     }
@@ -81,6 +81,15 @@ locators::SpanLocator SyntaxContext::MakeSpanFromTokens(size_t firsttoken, size_
 SyntaxContext::SyntaxContext(const vector<shared_ptr<Token>>& tokens, const shared_ptr<const locators::CodeFile>& file,
                              complog::ICompilationLog& log)
     : tokens(tokens), compilationLog(&log), file(file) {}
+
+void SyntaxErrorReport::Report(size_t pos, const std::shared_ptr<complog::CompilationMessage>& msg) {
+    if (rightmostPos > pos) return;
+    if (rightmostPos < pos) {
+        rightmostPos = pos;
+        messages.clear();
+    }
+    messages.push_back(msg);
+}
 
 // AST Node classes
 // Every class in the ::parse implementation must:
@@ -1229,14 +1238,15 @@ optional<shared_ptr<ArrayLiteral>> ArrayLiteral::parse(SyntaxContext& context, s
         pos = startpos;
         return {};
     }
+    ++pos;
     return make_shared<ArrayLiteral>(context.MakeSpanFromTokens(startpos, pos), exprs);
 }
 VISITOR(ArrayLiteral)
 }  // namespace ast
 
-optional<shared_ptr<ast::Body>> analyze(const vector<shared_ptr<Token>>& tokens,
-                                        const shared_ptr<const locators::CodeFile>& file,
-                                        complog::ICompilationLog& log) {
+optional<shared_ptr<ast::Body>> SyntaxAnalyzer::analyze(const vector<shared_ptr<Token>>& tokens,
+                                                        const shared_ptr<const locators::CodeFile>& file,
+                                                        complog::ICompilationLog& log) {
     SyntaxContext context(tokens, file, log);
     size_t pos = 0;
     auto res = ast::parseProgram(context, pos);

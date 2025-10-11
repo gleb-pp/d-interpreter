@@ -121,6 +121,8 @@ string Token::TypeToString(Token::Type type) {
             return "<identifier>";
         case Token::Type::tkEof:
             return "<end of file>";
+        case Token::Type::tkNewLine:
+            return "<line break>";
         default:
             break;
     }

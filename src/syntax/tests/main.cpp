@@ -99,7 +99,9 @@ TEST_F(FileSample, Basic10) {
     auto var = dynamic_pointer_cast<ast::VarStatement>(program->statements[0]);
     ASSERT_NE(var, nullptr);
     ASSERT_EQ(var->definitions.size(), 1);
-    auto expr = var->definitions[0].second;
+    auto optexpr = var->definitions[0].second;
+    ASSERT_TRUE(optexpr.has_value());
+    auto expr = *optexpr;
     ASSERT_EQ(expr->pos.Excerpt(), "{a:=1, b:=\"hi\"}");
     ExtractTheOnlyPrimary(expr, tuple_generic);
     auto tuple = dynamic_pointer_cast<ast::TupleLiteral>(tuple_generic);

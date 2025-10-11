@@ -431,7 +431,6 @@ public:
     PostfixOperator(const locators::SpanLocator& pos);
     virtual int precedence() = 0;  // the less, the more priority
     static std::optional<std::shared_ptr<PostfixOperator>> parse(SyntaxContext& context, size_t& pos);
-    void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~PostfixOperator() override = default;
 };
 
@@ -530,7 +529,6 @@ class FuncBody : public ASTNode {
 public:
     FuncBody(const locators::SpanLocator& pos);
     static std::optional<std::shared_ptr<FuncBody>> parse(SyntaxContext& context, size_t& pos);
-    void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~FuncBody() override = default;
 };
 
