@@ -1,11 +1,13 @@
 #include <gtest/gtest.h>
+
 #include <memory>
+
 #include "complog/CompilationLog.h"
 #include "lexer.h"
 using namespace std;
 
 static const char* CODE =
-R"%%(var i := 5.5
+    R"%%(var i := 5.5
                 ;;;
 for if  _somename90311 007othername
 "A string lite\\\\ral that does not support escape sequences """
@@ -22,33 +24,33 @@ TEST(goodtests, test1) {
     constexpr size_t COUNT = 5 + 4 + 6 + 3 + 3 + 1;
     ASSERT_EQ(tokens.size(), COUNT);
     pair<Token::Type, Span> tokenInfo[] = {
-        {Token::Type::tkVar,         {file->Position(0, 0), 3}},  // var
-        {Token::Type::tkIdent,       {file->Position(0, 4), 1}},  // i
-        {Token::Type::tkAssign,      {file->Position(0, 6), 2}},  // :=
+        {Token::Type::tkVar, {file->Position(0, 0), 3}},          // var
+        {Token::Type::tkIdent, {file->Position(0, 4), 1}},        // i
+        {Token::Type::tkAssign, {file->Position(0, 6), 2}},       // :=
         {Token::Type::tkRealLiteral, {file->Position(0, 9), 3}},  // 5.5
-        {Token::Type::tkNewLine,     {file->Position(0, 12), 1}}, // \n
+        {Token::Type::tkNewLine, {file->Position(0, 12), 1}},     // \n
 
-        {Token::Type::tkSemicolon,   {file->Position(1, 16), 1}}, // ;
-        {Token::Type::tkSemicolon,   {file->Position(1, 17), 1}}, // ;
-        {Token::Type::tkSemicolon,   {file->Position(1, 18), 1}}, // ;
-        {Token::Type::tkNewLine,     {file->Position(1, 19), 1}}, // \n
+        {Token::Type::tkSemicolon, {file->Position(1, 16), 1}},  // ;
+        {Token::Type::tkSemicolon, {file->Position(1, 17), 1}},  // ;
+        {Token::Type::tkSemicolon, {file->Position(1, 18), 1}},  // ;
+        {Token::Type::tkNewLine, {file->Position(1, 19), 1}},    // \n
 
-        {Token::Type::tkFor,         {file->Position(2, 0), 3}},  // for
-        {Token::Type::tkIf,          {file->Position(2, 4), 2}},  // if
-        {Token::Type::tkIdent,       {file->Position(2, 8), 14}}, // _somename90311
-        {Token::Type::tkIntLiteral,  {file->Position(2, 23), 3}}, // 007
-        {Token::Type::tkIdent,       {file->Position(2, 26), 9}}, // othername
-        {Token::Type::tkNewLine,     {file->Position(2, 35), 1}}, // \n
+        {Token::Type::tkFor, {file->Position(2, 0), 3}},          // for
+        {Token::Type::tkIf, {file->Position(2, 4), 2}},           // if
+        {Token::Type::tkIdent, {file->Position(2, 8), 14}},       // _somename90311
+        {Token::Type::tkIntLiteral, {file->Position(2, 23), 3}},  // 007
+        {Token::Type::tkIdent, {file->Position(2, 26), 9}},       // othername
+        {Token::Type::tkNewLine, {file->Position(2, 35), 1}},     // \n
 
-        {Token::Type::tkStringLiteral, {file->Position(3, 0), 62}}, // the first string
-        {Token::Type::tkStringLiteral, {file->Position(3, 62), 2}}, // the empty string
-        {Token::Type::tkNewLine,     {file->Position(3, 64), 1}}, // \n
-        
-        {Token::Type::tkIdent,       {file->Position(4, 0), 7}},  // goodbye
-        {Token::Type::tkEnd,         {file->Position(4, 8), 3}},  // end
-        {Token::Type::tkNewLine,     {file->Position(4, 11), 1}}, // \n
+        {Token::Type::tkStringLiteral, {file->Position(3, 0), 62}},  // the first string
+        {Token::Type::tkStringLiteral, {file->Position(3, 62), 2}},  // the empty string
+        {Token::Type::tkNewLine, {file->Position(3, 64), 1}},        // \n
 
-        {Token::Type::tkEof,         {string(CODE).size(), 0}},
+        {Token::Type::tkIdent, {file->Position(4, 0), 7}},     // goodbye
+        {Token::Type::tkEnd, {file->Position(4, 8), 3}},       // end
+        {Token::Type::tkNewLine, {file->Position(4, 11), 1}},  // \n
+
+        {Token::Type::tkEof, {string(CODE).size(), 0}},
     };
     for (size_t i = 0; i < COUNT; i++) {
         auto& tk = *tokens[i];

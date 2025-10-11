@@ -1,10 +1,12 @@
 #pragma once
-#include <vector>
-#include <memory>
 #include <gtest/gtest.h>
+
+#include <memory>
+#include <vector>
+
 #include "complog/CompilationLog.h"
-#include "locators/CodeFile.h"
 #include "lexer.h"
+#include "locators/CodeFile.h"
 #include "syntax.h"
 
 class FileSample : public testing::Test {

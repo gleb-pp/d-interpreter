@@ -1,19 +1,19 @@
 #include "lexer.h"
+
+#include <cctype>
+#include <utility>
+
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
 #include "locators/CodeFile.h"
 #include "locators/locator.h"
-#include <cctype>
-#include <utility>
 
 using namespace std;
 
-static bool isLatin(char ch) {
-    return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z');
-}
+static bool isLatin(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'); }
 
 LexerError::LexerError(const locators::Locator& position)
-: complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) { }
+    : complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) {}
 
 void LexerError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
     out << "Cannot tokenize the file: error at " << position.Pretty() << ".\n";
@@ -21,33 +21,33 @@ void LexerError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const 
 
 std::vector<locators::Locator> LexerError::Locators() const { return {position}; }
 
-NewlineInStringLiteralError::NewlineInStringLiteralError(const locators::Locator& position) 
-: complog::CompilationMessage(complog::Severity::Error(), "EolnInStringError"), position(position) { }
+NewlineInStringLiteralError::NewlineInStringLiteralError(const locators::Locator& position)
+    : complog::CompilationMessage(complog::Severity::Error(), "EolnInStringError"), position(position) {}
 
-void NewlineInStringLiteralError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
-    out << "A string literal cannot span several lines.\n" <<
-        "Line break at " << position.Pretty() << ".\n";
+void NewlineInStringLiteralError::WriteMessageToStream(std::ostream& out,
+                                                       [[maybe_unused]] const FormatOptions& opts) const {
+    out << "A string literal cannot span several lines.\n" << "Line break at " << position.Pretty() << ".\n";
 }
 
-std::vector<locators::Locator> NewlineInStringLiteralError::Locators() const {
-    return {position};
-}
+std::vector<locators::Locator> NewlineInStringLiteralError::Locators() const { return {position}; }
 
-WrongEscapeSequenceError::WrongEscapeSequenceError(const locators::Locator& position,
-                                                   const std::string& badsequence) 
-: complog::CompilationMessage(complog::Severity::Error(), "EscapeSequenceError"),
-  position(position), badsequence(badsequence) { }
+WrongEscapeSequenceError::WrongEscapeSequenceError(const locators::Locator& position, const std::string& badsequence)
+    : complog::CompilationMessage(complog::Severity::Error(), "EscapeSequenceError"),
+      position(position),
+      badsequence(badsequence) {}
 
-void WrongEscapeSequenceError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+void WrongEscapeSequenceError::WriteMessageToStream(std::ostream& out,
+                                                    [[maybe_unused]] const FormatOptions& opts) const {
     out << "At " << position.Pretty() << ": this escape sequence is not supported: \"" << badsequence << "\".\n";
 }
 
 std::vector<locators::Locator> WrongEscapeSequenceError::Locators() const { return {position}; }
 
 UnclosedStringLiteralError::UnclosedStringLiteralError(const locators::Locator& position)
-: complog::CompilationMessage(complog::Severity::Error(), "UnclosedStringLiteralError"), position(position) { }
+    : complog::CompilationMessage(complog::Severity::Error(), "UnclosedStringLiteralError"), position(position) {}
 
-void UnclosedStringLiteralError::WriteMessageToStream(std::ostream& out, [[maybe_unused]] const FormatOptions& opts) const {
+void UnclosedStringLiteralError::WriteMessageToStream(std::ostream& out,
+                                                      [[maybe_unused]] const FormatOptions& opts) const {
     out << "Closing quote expected at " << position.Pretty() << ".\n";
 }
 
@@ -107,21 +107,25 @@ const std::vector<std::pair<std::string, Token::Type>> Token::typeChars = {
     std::make_pair("<", Token::Type::tkLess),
 
     std::make_pair("/=", Token::Type::tkNotEqual),
-    std::make_pair("/", Token::Type::tkDivide)
-};
+    std::make_pair("/", Token::Type::tkDivide)};
 
 string Token::TypeToString(Token::Type type) {
     switch (type) {
-        case Token::Type::tkIntLiteral: return "<int literal>";
-        case Token::Type::tkRealLiteral: return "<real literal>";
-        case Token::Type::tkStringLiteral: return "<string literal>";
-        case Token::Type::tkIdent: return "<identifier>";
-        case Token::Type::tkEof: return "<end of file>";
-        default: break;
+        case Token::Type::tkIntLiteral:
+            return "<int literal>";
+        case Token::Type::tkRealLiteral:
+            return "<real literal>";
+        case Token::Type::tkStringLiteral:
+            return "<string literal>";
+        case Token::Type::tkIdent:
+            return "<identifier>";
+        case Token::Type::tkEof:
+            return "<end of file>";
+        default:
+            break;
     }
     for (auto& p : Token::typeChars) {
-        if (p.second == type)
-            return "\"" + p.first + "\"";
+        if (p.second == type) return "\"" + p.first + "\"";
     }
     return "<?>";
 }
@@ -248,7 +252,10 @@ optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locat
     const std::string& code = file->AllText();
     size_t n = code.length();
     while (i < n) {
-        if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') { i++; continue; }
+        if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') {
+            i++;
+            continue;
+        }
         if (checkComments(i, n, code)) continue;
         if (checkStringLiterals(i, n, file, tokens, log)) continue;
         if (checkNumbers(i, n, code, tokens)) continue;

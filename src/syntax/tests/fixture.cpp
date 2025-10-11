@@ -1,9 +1,11 @@
 #include "fixture.h"
-#include "complog/CompilationLog.h"
-#include "lexer.h"
-#include "gtest/gtest.h"
+
 #include <fstream>
 #include <sstream>
+
+#include "complog/CompilationLog.h"
+#include "gtest/gtest.h"
+#include "lexer.h"
 #include "syntax.h"
 using namespace std;
 
@@ -15,8 +17,7 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
     file = make_shared<locators::CodeFile>(name, text.str());
     log = make_unique<complog::AccumulatedCompilationLog>();
     auto optTokens = Lexer::tokenize(file, *log);
-    log->WriteToStream(cout, complog::Severity::Error(),
-                       complog::CompilationMessage::FormatOptions::All(80));
+    log->WriteToStream(cout, complog::Severity::Error(), complog::CompilationMessage::FormatOptions::All(80));
     ASSERT_TRUE(optTokens.has_value());
     tokens = optTokens.value();
     log.reset();
@@ -24,8 +25,7 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
     log = make_unique<complog::AccumulatedCompilationLog>();
     auto optProgram = SyntaxAnalyzer::analyze(tokens, file, *log);
     if (expectSuccess) {
-        log->WriteToStream(cout, complog::Severity::Error(),
-                           complog::CompilationMessage::FormatOptions::All(80));
+        log->WriteToStream(cout, complog::Severity::Error(), complog::CompilationMessage::FormatOptions::All(80));
         ASSERT_TRUE(optProgram.has_value());
     }
     program = *optProgram;
@@ -34,8 +34,8 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
 void FileSample::ExpectFailure(size_t line, size_t col) {
     for (auto& msg : log->Messages()) {
         if (msg->MessageSeverity() == complog::Severity::Error()) {
-            for (auto& loc : msg->Locators()) if (loc.LineCol() == make_pair(line, col))
-                return;
+            for (auto& loc : msg->Locators())
+                if (loc.LineCol() == make_pair(line, col)) return;
         }
     }
     cout << "The test was expected to fail.\nFull compilation log:\n";

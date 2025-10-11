@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include "locators/locator.h"
+
 #include "complog/CompilationLog.h"
 #include "lexer.h"
+#include "locators/locator.h"
 using namespace std;
 
 static const char* CODE = R"%%(
@@ -22,8 +23,7 @@ TEST(badtests, stringliteral_newline) {
     size_t newlinePosition = file->Position(2, 37);
     for (auto& msg : msgs) {
         hasErrors = hasErrors || msg->MessageSeverity() == complog::Severity::Error();
-        for (auto& loc : msg->Locators())
-            pointsToNewline = pointsToNewline || loc.Position() == newlinePosition;
+        for (auto& loc : msg->Locators()) pointsToNewline = pointsToNewline || loc.Position() == newlinePosition;
     }
     EXPECT_TRUE(hasErrors);
     EXPECT_TRUE(pointsToNewline);

@@ -20,8 +20,8 @@ CodeContext Locator::Context(size_t toleft, size_t toright) const { return file-
 const shared_ptr<const CodeFile>& Locator::File() const { return file; }
 
 SpanLocator::SpanLocator(const std::shared_ptr<const CodeFile>& file, size_t pos, size_t length)
-: pos(pos), length(length), file(file) { }
-SpanLocator::SpanLocator(const Locator& loc, size_t length) : SpanLocator(loc.File(), loc.Position(), length) { }
+    : pos(pos), length(length), file(file) {}
+SpanLocator::SpanLocator(const Locator& loc, size_t length) : SpanLocator(loc.File(), loc.Position(), length) {}
 Locator SpanLocator::Start() const { return {file, pos}; }
 Locator SpanLocator::End() const { return {file, pos + length}; }
 size_t SpanLocator::Length() const { return length; }

@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include "locators/locator.h"
+
 #include "complog/CompilationLog.h"
 #include "lexer.h"
+#include "locators/locator.h"
 using namespace std;
 
 static const char* CODE = "var a := \"hello";
@@ -17,8 +18,7 @@ TEST(badtests, unclosed_quote) {
     bool pointsToEnd = false;
     for (auto& msg : msgs) {
         hasErrors = hasErrors || msg->MessageSeverity() == complog::Severity::Error();
-        for (auto& loc : msg->Locators())
-            pointsToEnd = pointsToEnd || loc.Position() == 15;
+        for (auto& loc : msg->Locators()) pointsToEnd = pointsToEnd || loc.Position() == 15;
     }
     EXPECT_TRUE(hasErrors);
     EXPECT_TRUE(pointsToEnd);

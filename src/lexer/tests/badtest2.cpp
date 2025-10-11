@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include "locators/locator.h"
+
 #include "complog/CompilationLog.h"
 #include "lexer.h"
+#include "locators/locator.h"
 using namespace std;
 
 static const char* CODE = R"%%(
@@ -20,8 +21,7 @@ TEST(badtests, invalid_colon) {
     size_t colonPosition = file->Position(1, 9);
     for (auto& msg : msgs) {
         hasErrors = hasErrors || msg->MessageSeverity() == complog::Severity::Error();
-        for (auto& loc : msg->Locators())
-            pointsToColon = pointsToColon || loc.Position() == colonPosition;
+        for (auto& loc : msg->Locators()) pointsToColon = pointsToColon || loc.Position() == colonPosition;
     }
     EXPECT_TRUE(hasErrors);
     EXPECT_TRUE(pointsToColon);

@@ -1,13 +1,13 @@
 #pragma once
-#include "locators/locator.h"
-#include "locators/CodeFile.h"
-#include "complog/CompilationLog.h"
-
-#include <vector>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
-#include <optional>
+#include <vector>
+
+#include "complog/CompilationLog.h"
+#include "locators/CodeFile.h"
+#include "locators/locator.h"
 
 struct Span {
 public:
@@ -20,6 +20,7 @@ public:
 class LexerError : public complog::CompilationMessage {
 private:
     locators::Locator position;
+
 public:
     LexerError(const locators::Locator& position);
     void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
@@ -30,6 +31,7 @@ public:
 class NewlineInStringLiteralError : public complog::CompilationMessage {
 private:
     locators::Locator position;
+
 public:
     NewlineInStringLiteralError(const locators::Locator& position);
     void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
@@ -41,6 +43,7 @@ class WrongEscapeSequenceError : public complog::CompilationMessage {
 private:
     locators::Locator position;
     std::string badsequence;
+
 public:
     WrongEscapeSequenceError(const locators::Locator& position, const std::string& badsequence);
     void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
@@ -52,6 +55,7 @@ class UnclosedStringLiteralError : public complog::CompilationMessage {
 private:
     locators::Locator position;
     std::string badsequence;
+
 public:
     UnclosedStringLiteralError(const locators::Locator& position);
     void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
@@ -60,7 +64,7 @@ public:
 };
 
 class Token {
-public: 
+public:
     Span span;
     enum class Type {
         tkGreater,
@@ -122,7 +126,6 @@ public:
     static std::string TypeToString(Type type);
     virtual ~Token() = default;
 };
-
 
 class IdentifierToken : public Token {
 public:

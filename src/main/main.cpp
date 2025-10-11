@@ -1,9 +1,10 @@
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <fstream>
 #include <sstream>
+
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
@@ -28,11 +29,16 @@ public:
     }
     optional<bool*> GetShortFlag(char name) {
         switch (name) {
-            case 'l': return &Lexer;
-            case 'h': return &Help;
-            case 'c': return &Check;
-            case 'C': return &NoContext;
-            default: return {};
+            case 'l':
+                return &Lexer;
+            case 'h':
+                return &Help;
+            case 'c':
+                return &Check;
+            case 'C':
+                return &NoContext;
+            default:
+                return {};
         }
     }
     bool SetLongFlag(string name) {
@@ -48,7 +54,7 @@ public:
         return true;
     }
     static constexpr const char* HELP =
-R"%%(dinterp - an interpreter for the D language.
+        R"%%(dinterp - an interpreter for the D language.
 
 Usage: dinterp [OPTIONS] [--] [file1.d file2.d ...]
 
@@ -62,7 +68,7 @@ Options:
 Every argument after -- is assumed to be a file name.
 )%%";
     static constexpr const char* EXAMPLES =
-R"%%(-- EXAMPLES --
+        R"%%(-- EXAMPLES --
 
 Tokenize files:
 dinterp -l abc.d program.d
@@ -115,17 +121,15 @@ bool InterpretArgs(int argc, char** argv, Options& opts, vector<string>& files) 
     return true;
 }
 
-
 void PrintTokens(const locators::CodeFile& file, const vector<shared_ptr<Token>>& tokens) {
     cout << file.FileName() << '\n';
     size_t padding = 0;
-    for (auto& ptoken : tokens)
-        padding = max(padding, TokenTypeToString(ptoken->type).length());
+    for (auto& ptoken : tokens) padding = max(padding, TokenTypeToString(ptoken->type).length());
     padding += 2;
     for (auto& ptoken : tokens) {
         auto typestr = TokenTypeToString(ptoken->type);
-        cout << typestr << string(padding - typestr.size(), ' ') <<
-            file.AllText().substr(ptoken->span.position, ptoken->span.length) << '\n';
+        cout << typestr << string(padding - typestr.size(), ' ')
+             << file.AllText().substr(ptoken->span.position, ptoken->span.length) << '\n';
     }
     cout << "Total: " << tokens.size() << " tokens\n\n";
 }

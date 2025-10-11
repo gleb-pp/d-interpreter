@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+
 #include <memory>
+
 #include "complog/CompilationLog.h"
 #include "lexer.h"
 using namespace std;
@@ -15,20 +17,20 @@ TEST(goodtests, test2) {
     ASSERT_EQ(log.Messages().size(), 0ul);
     auto& tokens = maybeTokens.value();
     pair<Token::Type, Span> tokenInfo[] = {
-        {Token::Type::tkLess,      {0, 1}},  // <
-        {Token::Type::tkLessEq,    {1, 2}},  // <=
-        {Token::Type::tkEqual,     {3, 1}},  // =
-        {Token::Type::tkArrow,     {4, 2}},  // =>
-        {Token::Type::tkGreaterEq, {6, 2}}, // >=
-        {Token::Type::tkGreater,   {8, 1}}, // >
-        {Token::Type::tkLess,      {9, 1}}, // <
-        {Token::Type::tkDivide,    {10, 1}}, // /
-        {Token::Type::tkNotEqual,  {12, 2}}, // /=
-        {Token::Type::tkNotEqual,  {14, 2}},  // /=
-        {Token::Type::tkRange,     {16, 2}},  // ..
-        {Token::Type::tkDot,       {18, 1}},  // .
-        {Token::Type::tkNewLine,   {22, 1}},  // \n
-        {Token::Type::tkEof,       {string(CODE).size(), 0}},
+        {Token::Type::tkLess, {0, 1}},       // <
+        {Token::Type::tkLessEq, {1, 2}},     // <=
+        {Token::Type::tkEqual, {3, 1}},      // =
+        {Token::Type::tkArrow, {4, 2}},      // =>
+        {Token::Type::tkGreaterEq, {6, 2}},  // >=
+        {Token::Type::tkGreater, {8, 1}},    // >
+        {Token::Type::tkLess, {9, 1}},       // <
+        {Token::Type::tkDivide, {10, 1}},    // /
+        {Token::Type::tkNotEqual, {12, 2}},  // /=
+        {Token::Type::tkNotEqual, {14, 2}},  // /=
+        {Token::Type::tkRange, {16, 2}},     // ..
+        {Token::Type::tkDot, {18, 1}},       // .
+        {Token::Type::tkNewLine, {22, 1}},   // \n
+        {Token::Type::tkEof, {string(CODE).size(), 0}},
     };
 
     constexpr size_t COUNT = sizeof(tokenInfo) / sizeof(tokenInfo[0]);

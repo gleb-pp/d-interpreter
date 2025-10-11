@@ -1068,7 +1068,8 @@ optional<shared_ptr<TupleLiteralElement>> TupleLiteralElement::parse(SyntaxConte
         if (AssertToken(context, pos, Token::Type::tkAssign)) {
             ident = dynamic_pointer_cast<IdentifierToken>(context.tokens[pos - 1]);
             ++pos;
-        } else pos = startpos;
+        } else
+            pos = startpos;
     }
     auto optExpr = Expression::parse(context, pos);
     if (!optExpr.has_value()) {
@@ -1091,8 +1092,7 @@ optional<shared_ptr<TupleLiteral>> TupleLiteral::parse(SyntaxContext& context, s
     while (true) {
         const size_t prevpos = pos;
         if (!first) {
-            if (!AssertToken(context, pos, Token::Type::tkComma))
-                break;
+            if (!AssertToken(context, pos, Token::Type::tkComma)) break;
             ++pos;
         }
         first = false;
@@ -1115,7 +1115,11 @@ VISITOR(TupleLiteral)
 // FuncBody -> ShortFuncBody | LongFuncBody
 FuncBody::FuncBody(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<FuncBody>> FuncBody::parse(SyntaxContext& context, size_t& pos) {
-#define TRY(classname) { auto res = classname::parse(context, pos); if (res.has_value()) return res; }
+#define TRY(classname)                             \
+    {                                              \
+        auto res = classname::parse(context, pos); \
+        if (res.has_value()) return res;           \
+    }
     TRY(ShortFuncBody)
     TRY(LongFuncBody)
 #undef TRY
@@ -1158,8 +1162,9 @@ optional<shared_ptr<LongFuncBody>> LongFuncBody::parse(SyntaxContext& context, s
 VISITOR(LongFuncBody)
 
 // FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
-FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters, const
-    optional<shared_ptr<FuncBody>>& funcBody) : Primary(pos), parameters(parameters), funcBody(funcBody) {}
+FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters,
+                         const optional<shared_ptr<FuncBody>>& funcBody)
+    : Primary(pos), parameters(parameters), funcBody(funcBody) {}
 optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context, size_t& pos) {
     const size_t startpos = pos;
     if (!AssertToken(context, pos, Token::Type::tkFunc)) return {};
@@ -1192,11 +1197,11 @@ VISITOR(FuncLiteral)
 TokenLiteral::TokenLiteral(const locators::SpanLocator& pos, TokenLiteralKind kind, const shared_ptr<Token>& token)
     : Primary(pos), kind(kind), token(token) {}
 optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context, size_t& pos) {
-#define TRY(tktype, reskind)\
-if (AssertToken(context, pos, Token::Type::tk##tktype)) {\
-    kind = TokenLiteralKind::reskind;\
-    token = context.tokens[pos++];\
-} else
+#define TRY(tktype, reskind)                                  \
+    if (AssertToken(context, pos, Token::Type::tk##tktype)) { \
+        kind = TokenLiteralKind::reskind;                     \
+        token = context.tokens[pos++];                        \
+    } else
     TokenLiteralKind kind;
     shared_ptr<Token> token;
     TRY(StringLiteral, String)
