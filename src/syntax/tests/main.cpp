@@ -136,6 +136,12 @@ TEST_F(FileSample, Complex13) { ReadFile("complex/13.d", true); }
 TEST_F(FileSample, Complex14) { ReadFile("complex/14.d", true); }
 TEST_F(FileSample, Complex15) { ReadFile("complex/15.d", true); }
 
+TEST_F(FileSample, CustomEmptyVar) {
+    ReadFile("custom/empty-var.d", false);
+    ExpectFailure(0, 0);
+    ExpectFailure(0, 3);
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -4,3 +4,4 @@ add_test(NAME syntaxer_test COMMAND syntaxer_test)
 
 add_subdirectory(basic)
 add_subdirectory(complex)
+add_subdirectory(custom)
