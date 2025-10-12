@@ -28,7 +28,7 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
         log->WriteToStream(cout, complog::Severity::Error(), complog::CompilationMessage::FormatOptions::All(80));
         ASSERT_TRUE(optProgram.has_value());
     }
-    program = *optProgram;
+    program = optProgram.has_value() ? *optProgram : nullptr;
 }
 
 void FileSample::ExpectFailure(size_t line, size_t col) {

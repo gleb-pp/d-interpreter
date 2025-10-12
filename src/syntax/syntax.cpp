@@ -960,8 +960,8 @@ Call::Call(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>
     : PostfixOperator(pos), args(args) {}
 int Call::precedence() { return 1; }
 optional<shared_ptr<Call>> Call::parse(SyntaxContext& context, size_t& pos) {
-    const size_t startpos = pos;
     if (!AssertToken(context, pos, Token::Type::tkOpenParenthesis)) return {};
+    const size_t startpos = pos++;
     auto comexpr = CommaExpressions::parse(context, pos);
     vector<shared_ptr<Expression>> args;
     if (comexpr.has_value()) args = comexpr.value()->expressions;

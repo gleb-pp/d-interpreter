@@ -1,5 +1,6 @@
 #include "lexer.h"
 
+#include <algorithm>
 #include <cctype>
 #include <utility>
 
@@ -220,9 +221,48 @@ static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_
     return true;
 }
 
+static Token::Type alphabeticTokens[] = {
+    /*19*/ Token::Type::tkVar,
+    /*20*/ Token::Type::tkWhile,
+    /*21*/ Token::Type::tkFor,
+    /*22*/ Token::Type::tkIf,
+    /*23*/ Token::Type::tkThen,
+    /*24*/ Token::Type::tkEnd,
+    /*26*/ Token::Type::tkExit,
+    /*27*/ Token::Type::tkPrint,
+    /*29*/ Token::Type::tkIn,
+    /*30*/ Token::Type::tkElse,
+    /*31*/ Token::Type::tkLoop,
+    /*34*/ Token::Type::tkAnd,
+    /*35*/ Token::Type::tkOr,
+    /*36*/ Token::Type::tkNot,
+    /*37*/ Token::Type::tkXor,
+    /*38*/ Token::Type::tkInt,
+    /*39*/ Token::Type::tkReal,
+    /*40*/ Token::Type::tkBool,
+    /*41*/ Token::Type::tkString,
+    /*42*/ Token::Type::tkNone,
+    /*43*/ Token::Type::tkFunc,
+    /*44*/ Token::Type::tkTrue,
+    /*45*/ Token::Type::tkFalse,
+    /*46*/ Token::Type::tkIs,
+    /*47*/ Token::Type::tkReturn,
+};  // VERY IMPORTANT that this is sorted
+
+static bool isAlphabeticToken(Token::Type tktype) {  // O(log sizeof(alphabeticTokens))
+    constexpr size_t N = sizeof(alphabeticTokens) / sizeof(alphabeticTokens[0]);
+    auto found = std::lower_bound(alphabeticTokens, alphabeticTokens + N, tktype) - alphabeticTokens;
+    return found < static_cast<long>(N) && alphabeticTokens[found] == tktype;
+}
+
 static bool checkToken(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     for (const pair<string, Token::Type>& tok : Token::typeChars) {
         if (i + tok.first.length() <= n && equal(tok.first.begin(), tok.first.end(), code.begin() + i)) {
+            auto tktype = tok.second;
+            if (isAlphabeticToken(tktype) && i + tok.first.length() < n) {
+                char nx = code[i + tok.first.length()];
+                if (isLatin(nx) || isdigit(nx) || nx == '_') continue;
+            }
             auto token = make_shared<Token>();
             token->type = tok.second;
             token->span = {i, tok.first.length()};
