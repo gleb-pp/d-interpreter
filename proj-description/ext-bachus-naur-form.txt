@@ -36,10 +36,10 @@ VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
 
 AssignExpression -> tkAssign Expression
 
-IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
+IfStatement -> tkIf < Expression > [tkNewLine] tkThen [tkNewLine] Body
     [ tkElse [tkNewLine] Body ] tkEnd
 
-ShortIfStatement -> tkIf < Expression > tkArrow Statement
+ShortIfStatement -> tkIf < Expression > [tkNewLine] tkArrow [tkNewLine] Statement
 
 WhileStatement -> tkWhile < Expression > LoopBody
 

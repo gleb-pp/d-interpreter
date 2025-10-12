@@ -24,7 +24,7 @@ public:
     EmptyVarStatement(locators::Locator position)
         : CompilationMessage(complog::Severity::Error(), "EmptyVarStatement"), loc(position) {}
     void WriteMessageToStream(ostream& out, [[maybe_unused]] const FormatOptions& options) const override {
-        out << "The \"var\" statement at " << loc.Pretty() << "must contain at least one declaration.\n";
+        out << "The \"var\" statement at " << loc.Pretty() << " must contain at least one declaration.\n";
     }
     vector<locators::Locator> Locators() const override { return {loc}; }
     virtual ~EmptyVarStatement() override = default;
@@ -109,10 +109,9 @@ ASTNode::ASTNode(const locators::SpanLocator& pos) : pos(pos) {}
 
 optional<shared_ptr<Body>> parseProgram(SyntaxContext& context, size_t& pos) {
     vector<shared_ptr<Statement>> sts;
-    size_t startpos = pos;
+    const size_t startpos = pos;
     while (true) {
-        auto& tk = *context.tokens[pos];
-        if (tk.type == Token::Type::tkEof) {
+        if (AssertToken(context, pos, Token::Type::tkEof)) {
             ++pos;
             break;
         }
@@ -122,14 +121,13 @@ optional<shared_ptr<Body>> parseProgram(SyntaxContext& context, size_t& pos) {
             return {};
         }
         sts.push_back(*optStatement);
-        if (!parseSep(context, pos)) {
-            if (!AssertToken(context, pos, Token::Type::tkEof))
-                return {};
-            else {
-                ++pos;
-                break;
-            }
+        if (parseSep(context, pos)) continue;
+        if (AssertToken(context, pos, Token::Type::tkEof)) {
+            ++pos;
+            break;
         }
+        pos = startpos;
+        return {};
     }
     auto res = make_shared<Body>(context.MakeSpanFromTokens(startpos, pos));
     res->statements = sts;
@@ -145,8 +143,10 @@ bool parseSep(SyntaxContext& context, size_t& pos) {
 
 optional<shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context, size_t& pos) {
     if (!AssertToken(context, pos, Token::Type::tkAssign)) return {};
-    ++pos;
-    return Expression::parse(context, pos);
+    const size_t startpos = pos++;
+    auto res = Expression::parse(context, pos);
+    if (!res.has_value()) pos = startpos;
+    return res;
 }
 
 Body::Body(const locators::SpanLocator& pos) : ASTNode(pos) {}
@@ -194,50 +194,19 @@ optional<shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos) {
 
 Statement::Statement(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t& pos) {
-    {
-        auto res = VarStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = IfStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = ShortIfStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = WhileStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = ForStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = LoopStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = ExitStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = AssignStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = PrintStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = ReturnStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
-    {
-        auto res = ExpressionStatement::parse(context, pos);
-        if (res.has_value()) return res;
-    }
+#define TRY(classname) { auto res = classname::parse(context, pos); if (res.has_value()) return res; }
+    TRY(VarStatement)
+    TRY(IfStatement)
+    TRY(ShortIfStatement)
+    TRY(WhileStatement)
+    TRY(ForStatement)
+    TRY(LoopStatement)
+    TRY(ExitStatement)
+    TRY(AssignStatement)
+    TRY(PrintStatement)
+    TRY(ReturnStatement)
+    TRY(ExpressionStatement)
+#undef TRY
     return EmptyStatement::parse(context, pos);
 }
 
@@ -290,6 +259,7 @@ optional<shared_ptr<IfStatement>> IfStatement::parse(SyntaxContext& context, siz
         pos = startpos;
         return {};
     }
+    pos += AssertToken(context, pos, Token::Type::tkNewLine);
     if (!AssertToken(context, pos, Token::Type::tkThen)) {
         pos = startpos;
         return {};
@@ -320,7 +290,7 @@ optional<shared_ptr<IfStatement>> IfStatement::parse(SyntaxContext& context, siz
 }
 VISITOR(IfStatement)
 
-// ShortIfStatement -> tkIf < Expression > tkArrow Statement
+// ShortIfStatement -> tkIf < Expression > [tkNewLine] tkArrow [tkNewLine] Statement
 ShortIfStatement::ShortIfStatement(const locators::SpanLocator& pos, const shared_ptr<Expression>& condition,
                                    const shared_ptr<Statement>& doIfTrue)
     : Statement(pos), condition(condition), doIfTrue(doIfTrue) {}
@@ -332,11 +302,13 @@ optional<shared_ptr<ShortIfStatement>> ShortIfStatement::parse(SyntaxContext& co
         pos = startpos;
         return {};
     }
+    pos += AssertToken(context, pos, Token::Type::tkNewLine);
     if (!AssertToken(context, pos, Token::Type::tkArrow)) {
         pos = startpos;
         return {};
     }
     ++pos;
+    pos += AssertToken(context, pos, Token::Type::tkNewLine);
     auto optStatement = Statement::parse(context, pos);
     if (!optStatement.has_value()) {
         pos = startpos;
@@ -352,7 +324,7 @@ WhileStatement::WhileStatement(const locators::SpanLocator& pos, const shared_pt
     : Statement(pos), condition(condition), action(action) {}
 optional<shared_ptr<WhileStatement>> WhileStatement::parse(SyntaxContext& context, size_t& pos) {
     if (!AssertToken(context, pos, Token::Type::tkWhile)) return {};
-    size_t startpos = pos;
+    const size_t startpos = pos++;
     auto optExpr = Expression::parse(context, pos);
     if (!optExpr.has_value()) {
         pos = startpos;
@@ -629,7 +601,7 @@ optional<shared_ptr<IndexAccessor>> IndexAccessor::parse(SyntaxContext& context,
         pos = startpos;
         return {};
     }
-    if (!AssertToken(context, pos, Token::Type::tkOpenBracket)) {
+    if (!AssertToken(context, pos, Token::Type::tkClosedBracket)) {
         pos = startpos;
         return {};
     }
@@ -720,7 +692,7 @@ optional<shared_ptr<AndOperator>> AndOperator::parse(SyntaxContext& context, siz
     while (true) {
         const size_t prevpos = pos;
         if (!first) {
-            if (!AssertToken(context, pos, Token::Type::tkOr)) break;
+            if (!AssertToken(context, pos, Token::Type::tkAnd)) break;
             ++pos;
         }
         first = false;

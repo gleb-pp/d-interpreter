@@ -106,7 +106,7 @@ public:
     virtual ~VarStatement() override = default;
 };
 
-// IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
+// IfStatement -> tkIf < Expression > [tkNewLine] tkThen [tkNewLine] Body
 //     [ tkElse [tkNewLine] Body ] tkEnd
 class IfStatement : public Statement {
 public:
@@ -120,7 +120,7 @@ public:
     virtual ~IfStatement() override = default;
 };
 
-// ShortIfStatement -> tkIf < Expression > tkArrow Statement
+// ShortIfStatement -> tkIf < Expression > [tkNewLine] kArrow [tkNewLine] Statement
 class ShortIfStatement : public Statement {
 public:
     ShortIfStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& condition,
