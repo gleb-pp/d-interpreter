@@ -4,10 +4,13 @@
 #include <optional>
 #include <stdexcept>
 #include <vector>
+#include <set>
+#include <map>
 
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
+#include "locators/CodeFile.h"
 #include "locators/locator.h"
 
 class WrongNumberOfOperatorsSupplied : public std::invalid_argument {
@@ -17,10 +20,13 @@ public:
 };
 
 class SyntaxErrorReport {
-public:
+    std::shared_ptr<const locators::CodeFile> file;
     size_t rightmostPos = 0;
-    std::vector<std::shared_ptr<complog::CompilationMessage>> messages;
-    void Report(size_t pos, const std::shared_ptr<complog::CompilationMessage>& msg);
+    std::map<Token::Type, std::set<Token::Type>> unexpTokens;
+public:
+    SyntaxErrorReport(const std::shared_ptr<const locators::CodeFile>& file);
+    void ReportUnexpectedToken(size_t pos, Token::Type expected, Token::Type found);
+    std::vector<std::shared_ptr<complog::CompilationMessage>> MakeReport() const;
 };
 
 struct SyntaxContext {

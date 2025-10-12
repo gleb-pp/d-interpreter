@@ -33,17 +33,27 @@ public:
 class UnexpectedTokenTypeError : public complog::CompilationMessage {
 private:
     locators::Locator loc;
-    Token::Type expected, found;
+    vector<Token::Type> expected;
+    Token::Type found;
 
 public:
-    UnexpectedTokenTypeError(locators::Locator position, Token::Type expected, Token::Type found)
+    UnexpectedTokenTypeError(locators::Locator position, const vector<Token::Type>& expected, Token::Type found)
         : CompilationMessage(complog::Severity::Error(), "UnexpectedTokenTypeError"),
           loc(position),
           expected(expected),
           found(found) {}
     void WriteMessageToStream(ostream& out, [[maybe_unused]] const FormatOptions& options) const override {
-        out << "Unexpected token at " << loc.Pretty() << "; expected " << Token::TypeToString(expected)
-            << ", but found " << Token::TypeToString(found) << ".\n";
+        out << "Unexpected token at " << loc.Pretty() << "; expected ";
+        if (!expected.empty()) {
+            out << Token::TypeToString(expected[0]);
+            if (expected.size() == 2)
+                out << " or " << Token::TypeToString(expected[1]);
+            else {
+                size_t n = expected.size();
+                for (size_t i = 1; i < n; ++i) out << ", or " << Token::TypeToString(expected[i]);
+            }
+        }
+        out << ", but found " << Token::TypeToString(found) << ".\n";
     }
     vector<locators::Locator> Locators() const override { return {loc}; }
     virtual ~UnexpectedTokenTypeError() override = default;
@@ -55,8 +65,7 @@ bool AssertToken(SyntaxContext& context, size_t pos, Token::Type expected) {
     auto& token = *context.tokens[pos];
     if (token.type == expected) return true;
     size_t textpos = token.span.position;
-    context.report.Report(textpos,
-                          make_shared<UnexpectedTokenTypeError>(context.MakeLocator(textpos), expected, token.type));
+    context.report.ReportUnexpectedToken(textpos, expected, token.type);
     return false;
 }
 
@@ -80,15 +89,24 @@ locators::SpanLocator SyntaxContext::MakeSpanFromTokens(size_t firsttoken, size_
 
 SyntaxContext::SyntaxContext(const vector<shared_ptr<Token>>& tokens, const shared_ptr<const locators::CodeFile>& file,
                              complog::ICompilationLog& log)
-    : tokens(tokens), compilationLog(&log), file(file) {}
+    : tokens(tokens), compilationLog(&log), report(file), file(file) {}
 
-void SyntaxErrorReport::Report(size_t pos, const std::shared_ptr<complog::CompilationMessage>& msg) {
+SyntaxErrorReport::SyntaxErrorReport(const shared_ptr<const locators::CodeFile>& file) : file(file) {}
+void SyntaxErrorReport::ReportUnexpectedToken(size_t pos, Token::Type expected, Token::Type found) {
     if (rightmostPos > pos) return;
     if (rightmostPos < pos) {
         rightmostPos = pos;
-        messages.clear();
+        unexpTokens.clear();
     }
-    messages.push_back(msg);
+    unexpTokens[found].insert(expected);
+}
+vector<shared_ptr<complog::CompilationMessage>> SyntaxErrorReport::MakeReport() const {
+    vector<shared_ptr<complog::CompilationMessage>> res;
+    for (auto& p : unexpTokens) {
+        res.push_back(make_shared<UnexpectedTokenTypeError>(
+            locators::Locator(file, rightmostPos), vector<Token::Type>(p.second.begin(), p.second.end()), p.first));
+    }
+    return res;
 }
 
 // AST Node classes
@@ -242,6 +260,7 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context, s
     if (defs.empty()) {
         context.compilationLog->Log(
             make_shared<EmptyVarStatement>(context.MakeLocator(context.tokens[startpos]->span.position)));
+        pos = startpos;
         return {};
     }
     auto res = make_shared<VarStatement>(context.MakeSpanFromTokens(startpos, pos));
@@ -763,7 +782,10 @@ optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& cont
 
 // Sum -> Term { (tkPlus | tkMinus) Term }
 Sum::Sum(const locators::SpanLocator& pos, const vector<shared_ptr<Term>>& terms, const vector<SumOperator>& operators)
-    : ASTNode(pos), terms(terms), operators(operators) {}
+    : ASTNode(pos), terms(terms), operators(operators) {
+    size_t nds = terms.size(), ors = operators.size();
+    if (nds != ors + 1) throw WrongNumberOfOperatorsSupplied("Sum", nds, ors);
+}
 optional<shared_ptr<Sum>> Sum::parse(SyntaxContext& context, size_t& pos) {
     const size_t startpos = pos;
     vector<shared_ptr<Term>> nds;
@@ -797,7 +819,10 @@ VISITOR(Sum)
 // Term -> Unary { (tkTimes | tkDivide) Unary }
 Term::Term(const locators::SpanLocator& pos, const vector<shared_ptr<Unary>>& unaries,
            const vector<TermOperator>& operators)
-    : ASTNode(pos), unaries(unaries), operators(operators) {}
+    : ASTNode(pos), unaries(unaries), operators(operators) {
+    size_t nds = unaries.size(), ors = operators.size();
+    if (nds != ors + 1) throw WrongNumberOfOperatorsSupplied("Term", nds, ors);
+}
 optional<shared_ptr<Term>> Term::parse(SyntaxContext& context, size_t& pos) {
     const size_t startpos = pos;
     vector<shared_ptr<Unary>> nds;
@@ -1227,6 +1252,6 @@ optional<shared_ptr<ast::Body>> SyntaxAnalyzer::analyze(const vector<shared_ptr<
     size_t pos = 0;
     auto res = ast::parseProgram(context, pos);
     if (!res.has_value())
-        for (auto& err : context.report.messages) log.Log(err);
+        for (auto& err : context.report.MakeReport()) log.Log(err);
     return res;
 }
