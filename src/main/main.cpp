@@ -9,9 +9,9 @@
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
-#include "tokenTypeStrings.h"
 #include "syntax.h"
 #include "syntaxExplorer.h"
+#include "tokenTypeStrings.h"
 using namespace std;
 
 class Options {
@@ -33,12 +33,18 @@ public:
     }
     optional<bool*> GetShortFlag(char name) {
         switch (name) {
-            case 'l': return &Lexer;
-            case 's': return &Syntaxer;
-            case 'h': return &Help;
-            case 'c': return &Check;
-            case 'C': return &NoContext;
-            default: return {};
+            case 'l':
+                return &Lexer;
+            case 's':
+                return &Syntaxer;
+            case 'h':
+                return &Help;
+            case 'c':
+                return &Check;
+            case 'C':
+                return &NoContext;
+            default:
+                return {};
         }
     }
     bool SetLongFlag(string name) {

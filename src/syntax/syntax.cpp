@@ -194,7 +194,11 @@ optional<shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos) {
 
 Statement::Statement(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context, size_t& pos) {
-#define TRY(classname) { auto res = classname::parse(context, pos); if (res.has_value()) return res; }
+#define TRY(classname)                             \
+    {                                              \
+        auto res = classname::parse(context, pos); \
+        if (res.has_value()) return res;           \
+    }
     TRY(VarStatement)
     TRY(IfStatement)
     TRY(ShortIfStatement)

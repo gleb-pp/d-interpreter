@@ -1,6 +1,7 @@
 #pragma once
-#include <vector>
 #include <iostream>
+#include <vector>
+
 #include "syntax.h"
 
 class ASTExplorer {
@@ -19,6 +20,7 @@ public:
 
 class ASTExplorerVisitor : public ast::IASTVisitor {
     std::shared_ptr<const ASTExplorer> explorer;
+
 public:
     std::shared_ptr<const ASTExplorer> MakeExplorer();
     void VisitBody(ast::Body& node) override;
@@ -66,6 +68,7 @@ public:
 
 class ExplorerIO {
     std::shared_ptr<ast::ASTNode> rootNode;
+
 public:
     ExplorerIO(const std::shared_ptr<ast::ASTNode>& root);
     static void PrintCommands(const ASTExplorer& explorer, std::ostream& output);
