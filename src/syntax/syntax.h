@@ -1,11 +1,11 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <vector>
-#include <set>
-#include <map>
 
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
@@ -23,6 +23,7 @@ class SyntaxErrorReport {
     std::shared_ptr<const locators::CodeFile> file;
     size_t rightmostPos = 0;
     std::map<Token::Type, std::set<Token::Type>> unexpTokens;
+
 public:
     SyntaxErrorReport(const std::shared_ptr<const locators::CodeFile>& file);
     void ReportUnexpectedToken(size_t pos, Token::Type expected, Token::Type found);
