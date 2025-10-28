@@ -22,14 +22,14 @@ public:
     virtual std::optional<std::shared_ptr<Type>> BinaryMul(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> BinaryDiv(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> BinaryLogical(const Type& other) const;
-    virtual std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const;
-    virtual std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const;
+    virtual std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const;        // = /=
+    virtual std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const;  // < <= > >=
     virtual std::optional<std::shared_ptr<Type>> UnaryMinus(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> UnaryPlus(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> UnaryNot(const Type& other) const;
-    virtual std::optional<std::shared_ptr<Type>> Field(const std::string& name) const;
-    virtual std::optional<std::shared_ptr<Type>> Field(const Type& other) const;
-    virtual std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const;
+    virtual std::optional<std::shared_ptr<Type>> Field(const std::string& name) const;  // a.fieldname
+    virtual std::optional<std::shared_ptr<Type>> Field(const Type& other) const;        // a.(2 + 3)
+    virtual std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const;    // a[3 + 2]
     virtual ~Type() = default;
 };
 
@@ -86,6 +86,10 @@ public:
  * + Split: function (string) -> []
  * + SplitWS: function () -> []
  * + Join: function ([]) -> string
+ * + Lower: string
+ * + Upper: string
+ * + Slice: function (int, int, int) -> string  // start, stop, step
+ * + Length: int
  */
 class StringType : public Type {
 public:
@@ -95,7 +99,6 @@ public:
     std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
-    std::optional<std::shared_ptr<Type>> Field(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const override;
     virtual ~StringType() override = default;
 };
@@ -141,15 +144,15 @@ class FuncType : public Type {
     bool pure;
     std::optional<std::vector<std::shared_ptr<Type>>> argTypes;
     std::shared_ptr<Type> returnType;
+
 public:
-    FuncType(size_t argCount, const std::shared_ptr<Type>& returnType); // pure = false
+    FuncType(size_t argCount, const std::shared_ptr<Type>& returnType);  // pure = false
     FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes, const std::shared_ptr<Type>& returnType);
-    FuncType(); // pure = false, argTypes = ?, returnType = UnknownType
+    FuncType();  // pure = false, argTypes = ?, returnType = UnknownType
     bool Pure() const;
     std::optional<std::vector<std::shared_ptr<Type>>> ArgTypes() const;
     std::shared_ptr<Type> ReturnType() const;
     bool TypeEq(const Type& other) const override;
-    bool CheckArgs(const std::vector<std::shared_ptr<Type>>& argTypes) const;
     virtual std::string Name() const override;
     virtual ~FuncType() override = default;
 };
