@@ -13,6 +13,7 @@ public:
     BigInt(const std::vector<size_t>& bigEndianRepr, size_t base);
     BigInt(const BigInt& other) = default;
     BigInt(BigInt&& other) = default;
+    explicit BigInt(long double val);
     BigInt& operator=(long val);
     BigInt& operator=(const BigInt& other) = default;
     BigInt& operator=(BigInt&& other) = default;
@@ -31,6 +32,7 @@ public:
     std::pair<BigInt, BigInt> DivMod(const BigInt& other) const;
     int operator<=>(const BigInt& other) const;
     int operator<=>(long other) const;
+    long double ToFloat() const;
 };
 
 int operator<=>(long a, const BigInt& b);
