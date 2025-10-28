@@ -618,7 +618,6 @@ public:
     virtual ~ArrayLiteral() override = default;
 };
 
-// This is needed for the **demo** program!!! I promise!
 class IASTVisitor {
 public:
     virtual void VisitBody(Body& node) = 0;
@@ -661,6 +660,7 @@ public:
     virtual void VisitFuncLiteral(FuncLiteral& node) = 0;
     virtual void VisitTokenLiteral(TokenLiteral& node) = 0;
     virtual void VisitArrayLiteral(ArrayLiteral& node) = 0;
+    virtual void VisitCustom(ASTNode& node);
     virtual ~IASTVisitor() = default;
 };
 }  // namespace ast
