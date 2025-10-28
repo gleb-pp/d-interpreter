@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <map>
 #include <memory>
 #include <optional>
@@ -28,20 +29,6 @@ public:
     SyntaxErrorReport(const std::shared_ptr<const locators::CodeFile>& file);
     void ReportUnexpectedToken(size_t pos, Token::Type expected, Token::Type found);
     std::vector<std::shared_ptr<complog::CompilationMessage>> MakeReport() const;
-};
-
-struct SyntaxContext {
-    const std::vector<std::shared_ptr<Token>> tokens;
-    complog::ICompilationLog* const compilationLog;
-    SyntaxErrorReport report;
-    std::shared_ptr<const locators::CodeFile> file;
-    locators::Locator MakeLocator(size_t pos) const;
-    locators::SpanLocator MakeSpanLocator(size_t position, size_t length) const;
-    // pastTheLastToken = index of the last token + 1. This is the value
-    // of size_t& pos at the end of any class::parse method.
-    locators::SpanLocator MakeSpanFromTokens(size_t firstToken, size_t pastTheLastToken) const;
-    SyntaxContext(const std::vector<std::shared_ptr<Token>>& tokens,
-                  const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& complog);
 };
 
 class TokenScanner {
@@ -79,6 +66,13 @@ public:
     const SyntaxErrorReport& Report() const;
 };
 
+struct SyntaxContext {
+    TokenScanner tokens;
+    complog::ICompilationLog* const compilationLog;
+    SyntaxContext(const std::vector<std::shared_ptr<Token>>& tokens,
+                  const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& complog);
+};
+
 namespace ast {
 class IASTVisitor;
 
@@ -94,15 +88,15 @@ class Statement;
 class Body;
 
 // PROGRAM -> <* [ { Statement Sep } Statement [Sep] ] *>
-std::optional<std::shared_ptr<Body>> parseProgram(SyntaxContext& context, size_t& pos);
+std::optional<std::shared_ptr<Body>> parseProgram(SyntaxContext& context);
 
 class Expression;
 
 // Sep -> tkSemicolon | tkNewLine
-bool parseSep(SyntaxContext& context, size_t& pos);
+bool parseSep(SyntaxContext& context);
 
 // AssignExpression -> tkAssign Expression
-std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context, size_t& pos);
+std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context);
 
 // Body -> <* { Statement Sep } *>
 class Body : public ASTNode {
@@ -110,13 +104,13 @@ public:
     Body(const locators::SpanLocator& pos);
     Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
     std::vector<std::shared_ptr<Statement>> statements;
-    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~Body() override = default;
 };
 
 // LoopBody -> tkLoop [tkNewLine] Body tkEnd
-std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_t& pos);
+std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context);
 
 // Statement -> VarStatement // var a := 3
 //     | IfStatement         // if a = 3 then ... else ...
@@ -133,7 +127,7 @@ std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context, size_
 class Statement : public ASTNode {
 public:
     Statement(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<Statement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Statement>> parse(SyntaxContext& context);
     virtual ~Statement() override = default;
 };
 
@@ -143,7 +137,7 @@ class VarStatement : public Statement {
 public:
     VarStatement(const locators::SpanLocator& pos);
     std::vector<std::pair<std::string, std::optional<std::shared_ptr<Expression>>>> definitions;
-    static std::optional<std::shared_ptr<VarStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<VarStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~VarStatement() override = default;
 };
@@ -157,7 +151,7 @@ public:
     std::shared_ptr<Expression> condition;
     std::shared_ptr<Body> doIfTrue;
     std::optional<std::shared_ptr<Body>> doIfFalse;
-    static std::optional<std::shared_ptr<IfStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<IfStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~IfStatement() override = default;
 };
@@ -169,7 +163,7 @@ public:
                      const std::shared_ptr<Statement>& doIfTrue);
     std::shared_ptr<Expression> condition;
     std::shared_ptr<Statement> doIfTrue;
-    static std::optional<std::shared_ptr<ShortIfStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ShortIfStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ShortIfStatement() override = default;
 };
@@ -181,7 +175,7 @@ public:
                    const std::shared_ptr<Body>& action);
     std::shared_ptr<Expression> condition;
     std::shared_ptr<Body> action;
-    static std::optional<std::shared_ptr<WhileStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<WhileStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~WhileStatement() override = default;
 };
@@ -194,7 +188,7 @@ public:
     std::shared_ptr<Expression> startOrList;
     std::optional<std::shared_ptr<Expression>> end;
     std::shared_ptr<Body> action;
-    static std::optional<std::shared_ptr<ForStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ForStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ForStatement() override = default;
 };
@@ -204,7 +198,7 @@ class LoopStatement : public Statement {
 public:
     LoopStatement(const locators::SpanLocator& pos, const std::shared_ptr<Body>& body);
     std::shared_ptr<Body> body;
-    static std::optional<std::shared_ptr<LoopStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<LoopStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~LoopStatement() override = default;
 };
@@ -213,7 +207,7 @@ public:
 class ExitStatement : public Statement {
 public:
     ExitStatement(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<ExitStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ExitStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ExitStatement() override = default;
 };
@@ -227,7 +221,7 @@ public:
                     const std::shared_ptr<Expression>& src);
     std::shared_ptr<Reference> dest;
     std::shared_ptr<Expression> src;
-    static std::optional<std::shared_ptr<AssignStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<AssignStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~AssignStatement() override = default;
 };
@@ -237,7 +231,7 @@ class PrintStatement : public Statement {
 public:
     PrintStatement(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& expressions);
     std::vector<std::shared_ptr<Expression>> expressions;
-    static std::optional<std::shared_ptr<PrintStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<PrintStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~PrintStatement() override = default;
 };
@@ -247,7 +241,7 @@ class ReturnStatement : public Statement {
 public:
     ReturnStatement(const locators::SpanLocator& pos, const std::optional<std::shared_ptr<Expression>>& returnValue);
     std::optional<std::shared_ptr<Expression>> returnValue;
-    static std::optional<std::shared_ptr<ReturnStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ReturnStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ReturnStatement() override = default;
 };
@@ -257,19 +251,9 @@ class ExpressionStatement : public Statement {
 public:
     ExpressionStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expr);
     std::shared_ptr<Expression> expr;
-    static std::optional<std::shared_ptr<ExpressionStatement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ExpressionStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ExpressionStatement() override = default;
-};
-
-// EmptyStatement ->
-class EmptyStatement : public Statement {
-public:
-    EmptyStatement(const locators::SpanLocator& pos);
-    // parse does nothing and always succeeds
-    static std::shared_ptr<EmptyStatement> parse(const SyntaxContext& context, size_t pos);
-    void AcceptVisitor(IASTVisitor& vis) override;
-    virtual ~EmptyStatement() override = default;
 };
 
 // CommaExpressions -> Expression { tkComma Expression }
@@ -278,7 +262,7 @@ public:
     CommaExpressions(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& expressions);
     std::vector<std::shared_ptr<Expression>> expressions;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<CommaExpressions>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<CommaExpressions>> parse(SyntaxContext& context);
     virtual ~CommaExpressions() override = default;
 };
 
@@ -288,7 +272,7 @@ public:
     CommaIdents(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<IdentifierToken>>& idents);
     std::vector<std::shared_ptr<IdentifierToken>> idents;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<CommaIdents>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<CommaIdents>> parse(SyntaxContext& context);
     virtual ~CommaIdents() override = default;
 };
 
@@ -298,7 +282,7 @@ public:
 class Accessor : public ASTNode {
 public:
     Accessor(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<Accessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Accessor>> parse(SyntaxContext& context);
     virtual ~Accessor() override = default;
 };
 
@@ -306,7 +290,7 @@ class IdentMemberAccessor : public Accessor {
 public:
     IdentMemberAccessor(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& name);
     std::shared_ptr<IdentifierToken> name;
-    static std::optional<std::shared_ptr<IdentMemberAccessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<IdentMemberAccessor>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~IdentMemberAccessor() override = default;
 };
@@ -315,7 +299,7 @@ class IntLiteralMemberAccessor : public Accessor {
 public:
     IntLiteralMemberAccessor(const locators::SpanLocator& pos, const std::shared_ptr<IntegerToken>& index);
     std::shared_ptr<IntegerToken> index;
-    static std::optional<std::shared_ptr<IntLiteralMemberAccessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<IntLiteralMemberAccessor>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~IntLiteralMemberAccessor() override = default;
 };
@@ -324,7 +308,7 @@ class ParenMemberAccessor : public Accessor {
 public:
     ParenMemberAccessor(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expr);
     std::shared_ptr<Expression> expr;
-    static std::optional<std::shared_ptr<ParenMemberAccessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ParenMemberAccessor>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ParenMemberAccessor() override = default;
 };
@@ -334,7 +318,7 @@ class IndexAccessor : public Accessor {
 public:
     IndexAccessor(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expressionInBrackets);
     std::shared_ptr<Expression> expressionInBrackets;
-    static std::optional<std::shared_ptr<IndexAccessor>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<IndexAccessor>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~IndexAccessor() override = default;
 };
@@ -347,7 +331,7 @@ public:
     std::string baseIdent;
     std::vector<std::shared_ptr<Accessor>> accessorChain;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Reference>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Reference>> parse(SyntaxContext& context);
     virtual ~Reference() override = default;
 };
 
@@ -360,91 +344,95 @@ class Term;
 class Unary;
 class Primary;
 
-// Expression -> OrOperator { tkXor OrOperator }
-class Expression : public ASTNode {  // value = XOR of elements
+class Expression : public ASTNode {
 public:
-    Expression(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<OrOperator>>& operands);
-    std::vector<std::shared_ptr<OrOperator>> operands;
-    void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context, size_t& pos);
+    Expression(const locators::SpanLocator& pos);
+    std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context,
+                                                     int max_precedence = std::numeric_limits<int>::max());
     virtual ~Expression() override = default;
 };
 
-// OrOperator -> AndOperator { tkOr AndOperator }
-class OrOperator : public ASTNode {  // value = OR of elements
+class XorOperator : public Expression {  // value = XOR of elements
 public:
-    OrOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<AndOperator>>& operands);
-    std::vector<std::shared_ptr<AndOperator>> operands;
+    XorOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    std::vector<std::shared_ptr<Expression>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<OrOperator>> parse(SyntaxContext& context, size_t& pos);
+    virtual ~XorOperator() override = default;
+};
+
+class OrOperator : public Expression {  // value = OR of elements
+public:
+    OrOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    std::vector<std::shared_ptr<Expression>> operands;
+    void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~OrOperator() override = default;
 };
 
-// AndOperator -> BinaryRelation { tkAnd BinaryRelation }
-class AndOperator : public ASTNode {  // value = AND of elements
+class AndOperator : public Expression {  // value = AND of elements
 public:
-    AndOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<BinaryRelation>>& operands);
-    std::vector<std::shared_ptr<BinaryRelation>> operands;
+    AndOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    std::vector<std::shared_ptr<Expression>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<AndOperator>> parse(SyntaxContext& context, size_t& pos);
     virtual ~AndOperator() override = default;
 };
 
-// BinaryRelation -> Sum { BinaryRelationOperator Sum }
-class BinaryRelation : public ASTNode {  // value = AND of comparisons of elements
+class BinaryRelation : public Expression {  // value = AND of comparisons of elements
 public:
-    BinaryRelation(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Sum>>& operands,
+    BinaryRelation(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands,
                    const std::vector<BinaryRelationOperator>& operators);
-    std::vector<std::shared_ptr<Sum>> operands;
+    std::vector<std::shared_ptr<Expression>> operands;
     std::vector<BinaryRelationOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<BinaryRelation>> parse(SyntaxContext& context, size_t& pos);
     virtual ~BinaryRelation() override = default;
 };
 
 // BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
 enum class BinaryRelationOperator { Less, LessEq, Greater, GreaterEq, Equal, NotEqual };
-std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context, size_t& pos);
+std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context);
 
-// Sum -> Term { (tkPlus | tkMinus) Term }
-class Sum : public ASTNode {
+class Sum : public Expression {
 public:
     enum class SumOperator { Plus, Minus };
-    Sum(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Term>>& terms,
+    Sum(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& terms,
         const std::vector<SumOperator>& operators);
-    std::vector<std::shared_ptr<Term>> terms;
+    std::vector<std::shared_ptr<Expression>> terms;
     std::vector<SumOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Sum>> parse(SyntaxContext& context, size_t& pos);
     virtual ~Sum() override = default;
 };
 
-// Term -> Unary { (tkTimes | tkDivide) Unary }
-class Term : public ASTNode {
+class Term : public Expression {
 public:
     enum class TermOperator { Times, Divide };
-    Term(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Unary>>& unaries,
+    Term(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& unaries,
          const std::vector<TermOperator>& operators);
-    std::vector<std::shared_ptr<Unary>> unaries;
+    std::vector<std::shared_ptr<Expression>> unaries;
     std::vector<TermOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Term>> parse(SyntaxContext& context, size_t& pos);
     virtual ~Term() override = default;
+};
+
+class UnaryNot : public Expression {
+public:
+    std::shared_ptr<Expression> nested;
+    UnaryNot(const locators::SpanLocator& pos, const std::shared_ptr<Expression> nested);
+    std::optional<std::shared_ptr<UnaryNot>> parse(SyntaxContext& context);
+    virtual ~UnaryNot() override = default;
 };
 
 class PrefixOperator;
 class PostfixOperator;
 
 // Unary -> {PrefixOperator} Primary {PostfixOperator}
-class Unary : public ASTNode {
+class Unary : public Expression {
 public:
     Unary(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<PrefixOperator>>& prefixOps,
-          const std::vector<std::shared_ptr<PostfixOperator>>& postfixOps, const std::shared_ptr<Primary>& expr);
+          const std::vector<std::shared_ptr<PostfixOperator>>& postfixOps, const std::shared_ptr<Expression>& expr);
     std::vector<std::shared_ptr<PrefixOperator>> prefixOps;
     std::vector<std::shared_ptr<PostfixOperator>> postfixOps;
-    std::shared_ptr<Primary> expr;
+    std::shared_ptr<Expression> expr;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<Unary>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Unary>> parse(SyntaxContext& context);
     virtual ~Unary() override = default;
 };
 
@@ -457,13 +445,13 @@ public:
 // PrefixOperator -> tkNot | tkMinus | tkPlus
 class PrefixOperator : public ASTNode {
 public:
-    enum class PrefixOperatorKind { Not, Plus, Minus };
+    enum class PrefixOperatorKind { Plus, Minus };
     PrefixOperator(const locators::SpanLocator& pos, PrefixOperatorKind kind);
     PrefixOperatorKind kind;
     int precedence();  // the less, the more priority
     static int precedence(PrefixOperatorKind op);
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<PrefixOperator>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<PrefixOperator>> parse(SyntaxContext& context);
     virtual ~PrefixOperator() override = default;
 };
 
@@ -472,7 +460,7 @@ class PostfixOperator : public ASTNode {
 public:
     PostfixOperator(const locators::SpanLocator& pos);
     virtual int precedence() = 0;  // the less, the more priority
-    static std::optional<std::shared_ptr<PostfixOperator>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<PostfixOperator>> parse(SyntaxContext& context);
     virtual ~PostfixOperator() override = default;
 };
 
@@ -484,7 +472,7 @@ public:
     TypecheckOperator(const locators::SpanLocator& pos, TypeId typeId);
     TypeId typeId;
     virtual int precedence() override;  // = 3
-    static std::optional<std::shared_ptr<TypecheckOperator>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TypecheckOperator>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~TypecheckOperator() override = default;
 };
@@ -492,7 +480,7 @@ public:
 // TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
 //     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
 enum class TypeId { Int, Real, String, Bool, None, Func, Tuple, List };
-std::optional<TypeId> parseTypeId(SyntaxContext& context, size_t& pos);
+std::optional<TypeId> parseTypeId(SyntaxContext& context);
 
 // Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
 class Call : public PostfixOperator {
@@ -500,7 +488,7 @@ public:
     Call(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& args);
     std::vector<std::shared_ptr<Expression>> args;
     virtual int precedence() override;  // = 1
-    static std::optional<std::shared_ptr<Call>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Call>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~Call() override = default;
 };
@@ -511,16 +499,16 @@ public:
     AccessorOperator(const locators::SpanLocator& pos, const std::shared_ptr<Accessor>& accessor);
     std::shared_ptr<Accessor> accessor;
     virtual int precedence() override;  // = 1
-    static std::optional<std::shared_ptr<AccessorOperator>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<AccessorOperator>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~AccessorOperator() override = default;
 };
 
 // Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
-class Primary : public ASTNode {
+class Primary : public Expression {
 public:
     Primary(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<Primary>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<Primary>> parse(SyntaxContext& context);
     virtual ~Primary() override = default;
 };
 
@@ -529,7 +517,7 @@ class PrimaryIdent : public Primary {
 public:
     PrimaryIdent(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& name);
     std::shared_ptr<IdentifierToken> name;
-    static std::optional<std::shared_ptr<PrimaryIdent>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<PrimaryIdent>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~PrimaryIdent() override = default;
 };
@@ -539,7 +527,7 @@ class ParenthesesExpression : public Primary {
 public:
     ParenthesesExpression(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expr);
     std::shared_ptr<Expression> expr;
-    static std::optional<std::shared_ptr<ParenthesesExpression>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ParenthesesExpression>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ParenthesesExpression() override = default;
 };
@@ -552,7 +540,7 @@ public:
     std::optional<std::shared_ptr<IdentifierToken>> ident;
     std::shared_ptr<Expression> expression;
     void AcceptVisitor(IASTVisitor& vis) override;
-    static std::optional<std::shared_ptr<TupleLiteralElement>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TupleLiteralElement>> parse(SyntaxContext& context);
     virtual ~TupleLiteralElement() override = default;
 };
 
@@ -561,7 +549,7 @@ class TupleLiteral : public Primary {
 public:
     TupleLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<TupleLiteralElement>>& elements);
     std::vector<std::shared_ptr<TupleLiteralElement>> elements;
-    static std::optional<std::shared_ptr<TupleLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TupleLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~TupleLiteral() override = default;
 };
@@ -570,7 +558,7 @@ public:
 class FuncBody : public ASTNode {
 public:
     FuncBody(const locators::SpanLocator& pos);
-    static std::optional<std::shared_ptr<FuncBody>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<FuncBody>> parse(SyntaxContext& context);
     virtual ~FuncBody() override = default;
 };
 
@@ -579,7 +567,7 @@ class ShortFuncBody : public FuncBody {
 public:
     ShortFuncBody(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expressionToReturn);
     std::shared_ptr<Expression> expressionToReturn;
-    static std::optional<std::shared_ptr<ShortFuncBody>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ShortFuncBody>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ShortFuncBody() override = default;
 };
@@ -589,7 +577,7 @@ class LongFuncBody : public FuncBody {
 public:
     LongFuncBody(const locators::SpanLocator& pos, const std::shared_ptr<Body>& funcBody);
     std::shared_ptr<Body> funcBody;
-    static std::optional<std::shared_ptr<LongFuncBody>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<LongFuncBody>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~LongFuncBody() override = default;
 };
@@ -601,7 +589,7 @@ public:
                 const std::optional<std::shared_ptr<FuncBody>>& funcBody);
     std::vector<std::shared_ptr<IdentifierToken>> parameters;
     std::optional<std::shared_ptr<FuncBody>> funcBody;
-    static std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~FuncLiteral() override = default;
 };
@@ -615,7 +603,7 @@ public:
     // Yes, technically, `kind` is useless because `token->type` exists.
     // Still, it is nice when you have all the available options and nothing else.
     std::shared_ptr<Token> token;
-    static std::optional<std::shared_ptr<TokenLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<TokenLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~TokenLiteral() override = default;
 };
@@ -625,7 +613,7 @@ class ArrayLiteral : public Primary {
 public:
     ArrayLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& items);
     std::vector<std::shared_ptr<Expression>> items;
-    static std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context, size_t& pos);
+    static std::optional<std::shared_ptr<ArrayLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~ArrayLiteral() override = default;
 };
@@ -645,7 +633,6 @@ public:
     virtual void VisitPrintStatement(PrintStatement& node) = 0;
     virtual void VisitReturnStatement(ReturnStatement& node) = 0;
     virtual void VisitExpressionStatement(ExpressionStatement& node) = 0;
-    virtual void VisitEmptyStatement(EmptyStatement& node) = 0;
     virtual void VisitCommaExpressions(CommaExpressions& node) = 0;
     virtual void VisitCommaIdents(CommaIdents& node) = 0;
     virtual void VisitIdentMemberAccessor(IdentMemberAccessor& node) = 0;
@@ -660,6 +647,7 @@ public:
     virtual void VisitSum(Sum& node) = 0;
     virtual void VisitTerm(Term& node) = 0;
     virtual void VisitUnary(Unary& node) = 0;
+    virtual void VisitUnaryNot(UnaryNot& node) = 0;
     virtual void VisitPrefixOperator(PrefixOperator& node) = 0;
     virtual void VisitTypecheckOperator(TypecheckOperator& node) = 0;
     virtual void VisitCall(Call& node) = 0;
