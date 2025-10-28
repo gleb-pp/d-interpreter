@@ -44,6 +44,41 @@ struct SyntaxContext {
                   const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& complog);
 };
 
+class TokenScanner {
+private:
+    struct StackBlock {
+        int StartIndex;
+        int Index;
+        bool IgnoreEoln;
+        StackBlock(int index, bool ignoreEoln);
+    };
+
+    std::shared_ptr<const locators::CodeFile> codeFile;
+    std::vector<std::shared_ptr<Token>> tokens;
+    std::vector<StackBlock> stack;
+    SyntaxErrorReport report;
+
+public:
+    TokenScanner(const std::vector<std::shared_ptr<Token>>& tokens,
+                 const std::shared_ptr<const locators::CodeFile>& file);
+    locators::Locator PositionInFile() const;
+    locators::Locator StartPositionInFile() const;
+    locators::SpanLocator ReadSinceStart() const;
+    size_t Index() const;
+    const std::vector<std::shared_ptr<Token>>& Tokens() const;
+    void Start();
+    void StartIgnoreEoln();
+    void StartUseEoln();
+    void EndFail();
+    void EndSuccess();
+    std::shared_ptr<Token> Peek();
+    std::shared_ptr<Token> Read();
+    void Advance(size_t count = 1);
+    std::optional<std::shared_ptr<Token>> Read(Token::Type type);
+    SyntaxErrorReport& Report();
+    const SyntaxErrorReport& Report() const;
+};
+
 namespace ast {
 class IASTVisitor;
 
