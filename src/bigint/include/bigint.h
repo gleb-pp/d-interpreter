@@ -1,3 +1,4 @@
+#pragma once
 #include <cstdint>
 #include <vector>
 #include <string>
@@ -32,7 +33,9 @@ public:
     std::pair<BigInt, BigInt> DivMod(const BigInt& other) const;
     int operator<=>(const BigInt& other) const;
     int operator<=>(long other) const;
+    int operator<=>(long double other) const;
     long double ToFloat() const;
 };
 
 int operator<=>(long a, const BigInt& b);
+int operator<=>(long double a, const BigInt& b);

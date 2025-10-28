@@ -1,3 +1,4 @@
+#pragma once
 #include <map>
 #include <memory>
 #include <optional>
@@ -26,7 +27,6 @@ public:
     virtual std::optional<std::shared_ptr<Type>> UnaryPlus(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> UnaryNot(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> Field(const std::string& name) const;
-    virtual std::optional<std::shared_ptr<Type>> Field(size_t index) const;
     virtual std::optional<std::shared_ptr<Type>> Field(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const;
     virtual ~Type() = default;
@@ -45,7 +45,6 @@ public:
     std::optional<std::shared_ptr<Type>> UnaryMinus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
-    std::optional<std::shared_ptr<Type>> Field(size_t index) const override;
     std::optional<std::shared_ptr<Type>> Field(const Type& other) const override;
     virtual ~IntegerType() override = default;
 };
@@ -63,7 +62,6 @@ public:
     std::optional<std::shared_ptr<Type>> UnaryMinus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
-    std::optional<std::shared_ptr<Type>> Field(size_t index) const override;
     std::optional<std::shared_ptr<Type>> Field(const Type& other) const override;
     virtual ~RealType() override = default;
 };
@@ -76,7 +74,6 @@ public:
     std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
-    std::optional<std::shared_ptr<Type>> Field(size_t index) const override;
     std::optional<std::shared_ptr<Type>> Field(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const override;
     virtual ~StringType() override = default;
@@ -115,7 +112,6 @@ public:
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
-    std::optional<std::shared_ptr<Type>> Field(size_t index) const override;
     std::optional<std::shared_ptr<Type>> Field(const Type& other) const override;
     virtual ~TupleType() override = default;
 };
