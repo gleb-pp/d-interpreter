@@ -8,6 +8,7 @@
 #include "complog/CompilationLog.h"
 #include "locators/CodeFile.h"
 #include "locators/locator.h"
+#include "bigint.h"
 
 struct Span {
 public:
@@ -135,7 +136,7 @@ public:
 
 class IntegerToken : public Token {
 public:
-    long value;
+    BigInt value;
     virtual ~IntegerToken() override = default;
 };
 
