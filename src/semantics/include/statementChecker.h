@@ -6,18 +6,23 @@
 #include "valueTimeline.h"
 
 // may modify the syntax tree
-class ExpressionChecker : public ast::IASTVisitor {
+class StatementChecker : public ast::IASTVisitor {
     complog::ICompilationLog& log;
     bool pure;
-    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> res;
+    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> returned;
     ValueTimeline values;
+    bool inFunction, inCycle;
+    enum class TerminationKind {
+        ReachedEnd, Exited, Returned
+    };
+    TerminationKind terminationKind;
 
 public:
-    ExpressionChecker(complog::ICompilationLog& log, const ValueTimeline& values);
-    bool HasResult() const;  // false in case of error
+    StatementChecker(complog::ICompilationLog& log, const ValueTimeline& values, bool inFunction, bool inCycle);
     bool Pure() const;
-    std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> Result() const;
+    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> Result() const;
     const ValueTimeline& ProgramState() const;
+    TerminationKind Terminated() const;
     virtual void VisitBody(ast::Body& node) = 0;
     virtual void VisitVarStatement(ast::VarStatement& node) = 0;
     virtual void VisitIfStatement(ast::IfStatement& node) = 0;
@@ -59,5 +64,5 @@ public:
     virtual void VisitTokenLiteral(ast::TokenLiteral& node) = 0;
     virtual void VisitArrayLiteral(ast::ArrayLiteral& node) = 0;
     virtual void VisitCustom(ast::ASTNode& node);
-    virtual ~ExpressionChecker() = default;
+    virtual ~StatementChecker() = default;
 };
