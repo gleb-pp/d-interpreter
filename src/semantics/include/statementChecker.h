@@ -13,7 +13,7 @@ class StatementChecker : public ast::IASTVisitor {
     ValueTimeline values;
     bool inFunction, inCycle;
     enum class TerminationKind {
-        ReachedEnd, Exited, Returned
+        ReachedEnd, Exited, Returned, Errored
     };
     TerminationKind terminationKind;
 
