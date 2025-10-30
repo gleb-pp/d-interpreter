@@ -7,6 +7,7 @@ class BigInt {
 private:
     std::vector<std::uint32_t> v;
     bool sign;
+    void initBigEndianRepr(const std::vector<size_t>& bigEndianRepr, size_t base);
 public:
     BigInt(long val);
     BigInt();
@@ -30,6 +31,11 @@ public:
     BigInt operator/(const BigInt& other) const;
     BigInt& operator%=(const BigInt& other);
     BigInt operator%(const BigInt& other) const;
+    BigInt operator-() const;
+    BigInt& operator++();
+    BigInt operator++(int);
+    BigInt& operator--();
+    BigInt operator--(int);
     std::pair<BigInt, BigInt> DivMod(const BigInt& other) const;
     int operator<=>(const BigInt& other) const;
     int operator<=>(long other) const;
