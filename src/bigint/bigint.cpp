@@ -1,31 +1,41 @@
 #include "bigint.h"
 
 #include <ieee754.h>
+
 #include <algorithm>
 #include <bit>
-#include <bitset>
 #include <cmath>
 #include <compare>
 #include <cstdint>
-#include <execution>
 #include <limits>
 #include <stdexcept>
 #include <vector>
+#include <sstream>
 using namespace std;
+
+/*
+template<class T>
+static ostream& operator<<(ostream& out, const vector<T>& v) {
+    out << '{';
+    bool first = true;
+    for (auto& i : v) {
+        if (!first) out << ", ";
+        first = false;
+        out << i;
+    }
+    return out << '}';
+}
+*/
 
 ZeroDivisionException::ZeroDivisionException() : runtime_error("Tried to divide by BigInt(0)") {}
 
-BigInt::BigInt(const vector<uint32_t>& v, bool sign) : v(v), sign(sign) {
-    normalize();
+BigInt::BigInt(const vector<uint32_t>& v, bool sign) : v(v), sign(sign) { normalize(); }
+
+static void assert_base_ge2(size_t base) {
+    if (!base || base == 1) throw std::invalid_argument("base cannot be 0 or 1");
 }
 
-static void assert_base_nonzero(size_t base) {
-    if (!base) throw std::invalid_argument("base cannot be 0");
-}
-
-bool BigInt::IsNegative() const {
-    return sign;
-}
+bool BigInt::IsNegative() const { return sign; }
 
 void BigInt::normalize() {
     while (v.size() && !v.back()) v.pop_back();
@@ -36,12 +46,12 @@ void BigInt::normalize() {
 }
 
 void BigInt::initBigEndianRepr(const std::vector<size_t>& bigEndianRepr, size_t base) {
-    assert_base_nonzero(base);
+    assert_base_ge2(base);
     if (base > (1ul << 32)) throw std::invalid_argument("base was > 2**32");
     size_t n = bigEndianRepr.size();
     if (!n) return;
     if (base & (base - 1))  // not a power of 2
-        for (int i = n - 1; i >= 0; i--) {
+        for (size_t i = 0; i < n; i++) {
             size_t cur = bigEndianRepr[i];
             if (cur >= base)
                 throw std::invalid_argument("bigEndianRepr[" + to_string(i) + "] >= base (" + to_string(cur) +
@@ -82,32 +92,46 @@ BigInt::BigInt(long val) {
     sign = val < 0;
     val = abs(val);
     v = {static_cast<uint32_t>(val), static_cast<uint32_t>(val >> 32)};
+    normalize();
 }
 
 BigInt::BigInt(size_t val) : v(2, 0), sign(false) {
     v[0] = static_cast<uint32_t>(val);
     v[1] = static_cast<uint32_t>(val >> 32);
+    normalize();
 }
+
+BigInt::BigInt(int val) : v(1, abs(val)), sign(val < 0) { normalize(); }
 
 BigInt::BigInt() : v({0u}), sign(false) {}
 
 BigInt::BigInt(const std::string& repr, size_t base) : BigInt() {
-    assert_base_nonzero(base);
+    assert_base_ge2(base);
     size_t n = repr.size();
     vector<size_t> bigEndianRepr(n);
-    for (size_t i = 0; i < n; i++) {
+    if (repr.empty()) return;
+    bool minus = false;
+    if (repr[0] == '-')
+        minus = true;
+    for (size_t i = minus; i < n; i++) {
         char cur = repr[i];
-        if ('0' <= cur && cur <= '9') bigEndianRepr[i] = cur - '0';
-        if ('a' <= cur && cur <= 'z') bigEndianRepr[i] = cur - 'a' + 10;
-        if ('A' <= cur && cur <= 'Z') bigEndianRepr[i] = cur - 'A' + 10;
-        throw std::invalid_argument("repr[" + to_string(i) + "] is not an alphanumeric character ('" + string(1, cur) +
-                                    "')");
+        if ('0' <= cur && cur <= '9')
+            bigEndianRepr[i] = cur - '0';
+        else if ('a' <= cur && cur <= 'z')
+            bigEndianRepr[i] = cur - 'a' + 10;
+        else if ('A' <= cur && cur <= 'Z')
+            bigEndianRepr[i] = cur - 'A' + 10;
+        else
+            throw std::invalid_argument("repr[" + to_string(i) + "] is not an alphanumeric character ('" +
+                                        string(1, cur) + "')");
     }
     initBigEndianRepr(bigEndianRepr, base);
+    sign = minus;
+    normalize();
 }
 
 BigInt::BigInt(const std::vector<size_t>& bigEndianRepr, size_t base) : BigInt() {
-    assert_base_nonzero(base);
+    assert_base_ge2(base);
     initBigEndianRepr(bigEndianRepr, base);
 }
 
@@ -120,11 +144,11 @@ BigInt::BigInt(long double val) : BigInt() {
     uint64_t man_whole = (static_cast<uint64_t>(ld.ieee.mantissa0) << 32) | ld.ieee.mantissa1;
     int rshift = max(0, 64 - bits);
     man_whole >>= rshift;
-    bits -= rshift;
-    v.assign(bits / 32, 0u);
-    bits %= 32;
-    v.push_back(static_cast<uint32_t>(man_whole) << bits);
-    man_whole >>= 32 - bits;
+    int zeros = max(0, bits - 64);
+    v.assign(zeros / 32, 0u);
+    zeros %= 32;
+    v.push_back(static_cast<uint32_t>(man_whole) << zeros);
+    man_whole >>= 32 - zeros;
     v.push_back(static_cast<uint32_t>(man_whole));
     v.push_back(static_cast<uint32_t>(man_whole >> 32));
     sign = ld.ieee.negative;
@@ -146,16 +170,24 @@ BigInt& BigInt::operator=(size_t val) {
 }
 
 std::vector<size_t> BigInt::Repr(size_t base) {
-    assert_base_nonzero(base);
+    assert_base_ge2(base);
     vector<size_t> res;
     if (base & (base - 1)) {  // not a power of 2
         BigInt cur = *this;
+        cur.sign = false;
         while (cur) {
-            auto [d, r] = cur.DivMod(base);
-            res.push_back(static_cast<uint64_t>(r.v[0]) | (static_cast<uint64_t>(r.v[1]) << 32));
+            auto [d, r] = *cur.DivMod(base);
+            res.push_back(0);
+            size_t& resi = res.back();
+            if (r.v.size() == 2)
+                resi = static_cast<uint64_t>(r.v[1]) << 32;
+            else
+                resi = 0;
+            resi |= static_cast<uint64_t>(r.v[0]);
             cur = d;
         }
-    } else { // a power of 2
+        if (res.empty()) res.push_back(0u);
+    } else {  // a power of 2
         int bits = countr_zero(base);
         uint64_t buf = 0;
         int buflen = 0;
@@ -175,17 +207,20 @@ std::vector<size_t> BigInt::Repr(size_t base) {
 }
 
 std::string BigInt::ToString(size_t base) {
-    assert_base_nonzero(base);
+    assert_base_ge2(base);
     if (base > 10 + 26) throw std::invalid_argument("base > 36 for string representation");
     auto repr = Repr(base);
     size_t n = repr.size();
     string res(n, '.');
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         size_t val = repr[i];
         char& dest = res[i];
-        if (val < 10) dest = '0' + val;
-        else dest = 'A' + val - 10;
+        if (val < 10)
+            dest = '0' + val;
+        else
+            dest = 'A' + val - 10;
     }
+    if (sign) res.insert(res.begin(), '-');
     return res;
 }
 
@@ -201,9 +236,7 @@ struct VectorView {
     pair<VectorView, VectorView> Split(size_t lowsize) const {
         return {{v, start, start + lowsize}, {v, start + lowsize, end}};
     }
-    VectorView Subview(size_t from, size_t to) const {
-        return {v, start + from, start + to};
-    }
+    VectorView Subview(size_t from, size_t to) const { return {v, start + from, start + to}; }
 };
 
 struct ConstVectorView {
@@ -219,16 +252,33 @@ struct ConstVectorView {
     pair<ConstVectorView, ConstVectorView> Split(size_t lowsize) const {
         return {{v, start, start + lowsize}, {v, start + lowsize, end}};
     }
-    ConstVectorView Subview(size_t from, size_t to) const {
-        return {v, start + from, start + to};
-    }
+    ConstVectorView Subview(size_t from, size_t to) const { return {v, start + from, start + to}; }
 };
+
+/*
+static ostream& operator<<(ostream& out, ConstVectorView a) {
+    out << '{';
+    for (size_t i = 0; i < a.size(); i++) {
+        if (i) out << ", ";
+        out << a[i];
+    }
+    return out << '}';
+}
+*/
 
 static int UnsignedBigCompare(ConstVectorView a, ConstVectorView b) {
     size_t an = a.size(), bn = b.size();
-    if (an > bn) return 1;
-    if (an < bn) return -1;
-    for (int i = static_cast<int>(an) - 1; i >= 0; i--) {
+    ConstVectorView* pa = &a, * pb = &b;
+    int sign = 1;
+    if (an < bn) {
+        swap(pa, pb);
+        swap(an, bn);
+        sign = -1;
+    }
+    for (int i = static_cast<int>(an) - 1; i >= static_cast<int>(bn); i--) {
+        if (pa->get(i)) return sign;
+    }
+    for (int i = static_cast<int>(bn) - 1; i >= 0; i--) {
         auto av = a[i], bv = b[i];
         if (av > bv) return 1;
         if (av < bv) return -1;
@@ -243,7 +293,7 @@ static int UnsignedBigCompare(const vector<uint32_t>& a, const vector<uint32_t>&
 static uint32_t BigAdd(VectorView dest, ConstVectorView src) {
     uint64_t buf = 0;
     size_t srcn = src.size();
-    for (int i = 0; i < srcn; i++) {
+    for (size_t i = 0; i < srcn; i++) {
         buf += static_cast<uint64_t>(dest[i]) + src[i];
         dest[i] = static_cast<uint32_t>(buf);
         buf >>= 32;
@@ -255,23 +305,22 @@ static void BigAdd(vector<uint32_t>& dest, ConstVectorView src) {
     if (dest.size() < src.size()) dest.resize(src.size());
     uint32_t carry = BigAdd({dest, 0, dest.size()}, src);
     if (carry) {
-        if (dest.size() == src.size()) dest.push_back(static_cast<uint32_t>(carry));
-        else dest[src.size()] = static_cast<uint32_t>(carry);
+        if (dest.size() == src.size())
+            dest.push_back(static_cast<uint32_t>(carry));
+        else
+            dest[src.size()] += static_cast<uint32_t>(carry);
     }
 }
 
-static void BigAdd(vector<uint32_t>& dest, const vector<uint32_t>& src) {
-    BigAdd(dest, {src, 0, src.size()});
-}
+static void BigAdd(vector<uint32_t>& dest, const vector<uint32_t>& src) { BigAdd(dest, {src, 0, src.size()}); }
 
 static void BigSub(VectorView dest, ConstVectorView src) {
     long buf = 0;
     size_t n = dest.size();
     size_t srcn = src.size();
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         buf += dest[i];
-        if (i < srcn)
-            buf -= src[i];
+        if (i < srcn) buf -= src[i];
         dest[i] = static_cast<uint32_t>(bit_cast<uint64_t>(buf));
         buf >>= 32;
     }
@@ -282,7 +331,8 @@ static void BigSub(vector<uint32_t>& dest, const vector<uint32_t>& src) {
 }
 
 BigInt& BigInt::operator+=(const BigInt& other) {
-    if (sign == other.sign) BigAdd(v, other.v);
+    if (sign == other.sign)
+        BigAdd(v, other.v);
     else {
         int comp = UnsignedBigCompare(v, other.v);
         if (comp == -1) {
@@ -293,7 +343,8 @@ BigInt& BigInt::operator+=(const BigInt& other) {
         } else if (comp == 0) {
             v.assign(1, 0u);
             sign = false;
-        } else BigSub(v, other.v);
+        } else
+            BigSub(v, other.v);
     }
     normalize();
     return *this;
@@ -315,8 +366,10 @@ BigInt& BigInt::operator-=(const BigInt& other) {
         } else if (comp == 0) {
             v.assign(1, 0u);
             sign = false;
-        } else BigSub(v, other.v);
-    } else BigAdd(v, other.v);
+        } else
+            BigSub(v, other.v);
+    } else
+        BigAdd(v, other.v);
     normalize();
     return *this;
 }
@@ -329,7 +382,7 @@ BigInt BigInt::operator-(const BigInt& other) const {
 static uint32_t BigMul(VectorView a, uint32_t b) {
     uint64_t buf = 0;
     size_t n = a.size();
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         buf += static_cast<uint64_t>(a[i]) * b;
         a[i] = static_cast<uint32_t>(buf);
         buf >>= 32;
@@ -356,7 +409,7 @@ static vector<uint32_t> KaratsubaMul(ConstVectorView a, ConstVectorView b) {
     // a = wc + x; b = yc + z
     // a * b = wycc + (wz + xy)c + xz
     // wz + xy = (w + x)(y + z) - wy - xz
-    ConstVectorView* pa = &a, *pb = &b;
+    ConstVectorView *pa = &a, *pb = &b;
     if (pa->size() < pb->size()) swap(pa, pb);
     if (pb->size() == 1) {
         auto v = pa->Cut();
@@ -371,9 +424,9 @@ static vector<uint32_t> KaratsubaMul(ConstVectorView a, ConstVectorView b) {
         AddFrom(low, half, high);
         return low;
     }
-    auto w_x = pa->Split(half);
-    auto y_z = pb->Split(half);
-    ConstVectorView w = w_x.first, x = w_x.second, y = y_z.first, z = y_z.second;
+    auto x_w = pa->Split(half);
+    auto z_y = pb->Split(half);
+    ConstVectorView w = x_w.second, x = x_w.first, y = z_y.second, z = z_y.first;
     auto wy = KaratsubaMul(w, y);
     auto xz = KaratsubaMul(x, z);
     auto wplusx = w.Cut();
@@ -388,9 +441,7 @@ static vector<uint32_t> KaratsubaMul(ConstVectorView a, ConstVectorView b) {
     return xz;
 }
 
-BigInt& BigInt::operator*=(const BigInt& other) {
-    return *this = *this * other;
-}
+BigInt& BigInt::operator*=(const BigInt& other) { return *this = *this * other; }
 
 BigInt BigInt::operator*(const BigInt& other) const {
     BigInt res;
@@ -430,13 +481,16 @@ BigInt BigInt::operator%(const BigInt& other) const {
 static void OutOfPlaceMul(VectorView dest, ConstVectorView a, uint32_t b) {
     uint64_t buf = 0;
     size_t n = a.size();
-    for (int i = 0; i < n; i++) {
+    for (size_t i = 0; i < n; i++) {
         buf += static_cast<uint64_t>(a[i]) * b;
         dest[i] = static_cast<uint32_t>(buf);
         buf >>= 32;
     }
     size_t dn = dest.size();
-    for (int i = n; i < dn; i++) dest[i] = 0;
+    for (size_t i = n; i < dn; i++) {
+        dest[i] = buf;
+        buf = 0;
+    }
 }
 
 static vector<uint32_t> BigDiv(VectorView a, ConstVectorView b) {
@@ -448,10 +502,10 @@ static vector<uint32_t> BigDiv(VectorView a, ConstVectorView b) {
     VectorView bufview = buf;
     for (int i = static_cast<int>(res.size()) - 1; i >= 0; i--) {
         // alow = i
-        if (ahigh - i < bn) continue;
+        if (ahigh - i < static_cast<long>(bn)) continue;
         auto aview = a.Subview(i, ahigh);
         uint32_t& digit = res[i];
-        for (int bit = 31; i >= 0; i--) {
+        for (int bit = 31; bit >= 0; bit--) {
             digit |= 1u << bit;
             OutOfPlaceMul(bufview, b, digit);
             if (UnsignedBigCompare(bufview, aview) > 0)  // too much
@@ -468,7 +522,7 @@ static vector<uint32_t> BigDiv(VectorView a, ConstVectorView b) {
 
 optional<BigInt> BigInt::DivLeaveMod(const BigInt& other) {
     if (other.v.size() == 1 && !other.v[0]) return {};
-    if (v.size() == 1 && !v[0]) return {{}};
+    if (v.size() == 1 && !v[0]) return {BigInt()};
     auto resv = BigDiv(v, other.v);
     if (sign == other.sign) {
         normalize();
@@ -545,9 +599,9 @@ int BigInt::operator<=>(const BigInt& other) const {
     return UnsignedBigCompare(v, other.v);
 }
 
-int BigInt::operator<=>(long other) const {
-    return *this <=> BigInt(other);
-}
+int BigInt::operator<=>(long other) const { return *this <=> BigInt(other); }
+int BigInt::operator<=>(size_t other) const { return *this <=> BigInt(other); }
+int BigInt::operator<=>(int other) const { return *this <=> BigInt(other); }
 
 std::partial_ordering BigInt::operator<=>(long double other) const {
     if (isnan(other)) return partial_ordering::unordered;
@@ -555,7 +609,8 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
         if (other < 0) return partial_ordering::greater;
         return partial_ordering::less;
     }
-    ieee854_long_double ld; ld.d = other;
+    ieee854_long_double ld;
+    ld.d = other;
     if (sign != ld.ieee.negative) {
         if (sign) return partial_ordering::less;
         return partial_ordering::greater;
@@ -569,7 +624,7 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
         return partial_ordering::less;
     }
     size_t otherbits_ = static_cast<size_t>(otherbits);
-    int mybits = SignificantBits();
+    size_t mybits = SignificantBits();
     if (mybits < otherbits_) {
         if (sign) return partial_ordering::greater;
         return partial_ordering::less;
@@ -580,8 +635,10 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
     }
     int comp = *this <=> BigInt(other);
     switch (comp) {
-        case -1: return partial_ordering::less;
-        case 1: return partial_ordering::greater;
+        case -1:
+            return partial_ordering::less;
+        case 1:
+            return partial_ordering::greater;
     }
     uint32_t man0 = ld.ieee.mantissa0, man1 = ld.ieee.mantissa1;
     int take = min(32, otherbits);
@@ -619,45 +676,44 @@ long double BigInt::ToFloat() const {
 
 bool BigInt::operator<(const BigInt& other) const { return (*this <=> other) < 0; }
 bool BigInt::operator<(long other) const { return (*this <=> other) < 0; }
+bool BigInt::operator<(size_t other) const { return (*this <=> other) < 0; }
+bool BigInt::operator<(int other) const { return (*this <=> other) < 0; }
 bool BigInt::operator<(long double other) const { return (*this <=> other) < 0; }
 bool BigInt::operator<=(const BigInt& other) const { return (*this <=> other) <= 0; }
 bool BigInt::operator<=(long other) const { return (*this <=> other) <= 0; }
+bool BigInt::operator<=(size_t other) const { return (*this <=> other) <= 0; }
+bool BigInt::operator<=(int other) const { return (*this <=> other) <= 0; }
 bool BigInt::operator<=(long double other) const { return (*this <=> other) <= 0; }
 bool BigInt::operator>(const BigInt& other) const { return (*this <=> other) > 0; }
 bool BigInt::operator>(long other) const { return (*this <=> other) > 0; }
+bool BigInt::operator>(size_t other) const { return (*this <=> other) > 0; }
+bool BigInt::operator>(int other) const { return (*this <=> other) > 0; }
 bool BigInt::operator>(long double other) const { return (*this <=> other) > 0; }
 bool BigInt::operator>=(const BigInt& other) const { return (*this <=> other) >= 0; }
 bool BigInt::operator>=(long other) const { return (*this <=> other) >= 0; }
+bool BigInt::operator>=(size_t other) const { return (*this <=> other) >= 0; }
+bool BigInt::operator>=(int other) const { return (*this <=> other) >= 0; }
 bool BigInt::operator>=(long double other) const { return (*this <=> other) >= 0; }
+bool BigInt::operator==(const BigInt& other) const { return !(*this <=> other); }
+bool BigInt::operator==(long other) const { return !(*this <=> other); }
+bool BigInt::operator==(size_t other) const { return !(*this <=> other); }
+bool BigInt::operator==(int other) const { return !(*this <=> other); }
+bool BigInt::operator==(long double other) const { return (*this <=> other) == partial_ordering::equivalent; }
+bool BigInt::operator!=(const BigInt& other) const { return (*this <=> other); }
+bool BigInt::operator!=(long other) const { return !(*this <=> other); }
+bool BigInt::operator!=(size_t other) const { return !(*this <=> other); }
+bool BigInt::operator!=(int other) const { return !(*this <=> other); }
+bool BigInt::operator!=(long double other) const { return (*this <=> other) != partial_ordering::equivalent; }
 
-bool BigInt::operator==(const BigInt& other) const {
-    return !(*this <=> other);
-}
+BigInt::operator bool() const { return v.size() > 1 || v[0]; }
 
-bool BigInt::operator==(long other) const {
-    return !(*this <=> other);
-}
+size_t BigInt::SignificantBits() const { return v.size() * 32 - countl_zero(v.back()); }
 
-bool BigInt::operator!=(const BigInt& other) const {
-    return (*this <=> other);
-}
+int operator<=>(size_t a, const BigInt& b) { return -(b <=> a); }
 
-bool BigInt::operator!=(long other) const {
-    return (*this <=> other);
-}
+int operator<=>(int a, const BigInt& b) { return -(b <=> a); }
 
-BigInt::operator bool() const {
-    return v.size() > 1 || v[0];
-}
-
-size_t BigInt::SignificantBits() const {
-    return v.size() * 32 - countl_zero(v.back());
-}
-
-
-int operator<=>(long a, const BigInt& b) {
-    return -(b <=> a);
-}
+int operator<=>(long a, const BigInt& b) { return -(b <=> a); }
 
 std::partial_ordering operator<=>(long double a, const BigInt& b) {
     auto res = b <=> a;
@@ -673,9 +729,49 @@ bool operator>=(long a, const BigInt& b) { return (a <=> b) >= 0; }
 bool operator==(long a, const BigInt& b) { return (a <=> b) == 0; }
 bool operator!=(long a, const BigInt& b) { return (a <=> b) != 0; }
 
+bool operator<(size_t a, const BigInt& b) { return (a <=> b) < 0; }
+bool operator<=(size_t a, const BigInt& b) { return (a <=> b) <= 0; }
+bool operator>(size_t a, const BigInt& b) { return (a <=> b) > 0; }
+bool operator>=(size_t a, const BigInt& b) { return (a <=> b) >= 0; }
+bool operator==(size_t a, const BigInt& b) { return (a <=> b) == 0; }
+bool operator!=(size_t a, const BigInt& b) { return (a <=> b) != 0; }
+
+bool operator<(int a, const BigInt& b) { return (a <=> b) < 0; }
+bool operator<=(int a, const BigInt& b) { return (a <=> b) <= 0; }
+bool operator>(int a, const BigInt& b) { return (a <=> b) > 0; }
+bool operator>=(int a, const BigInt& b) { return (a <=> b) >= 0; }
+bool operator==(int a, const BigInt& b) { return (a <=> b) == 0; }
+bool operator!=(int a, const BigInt& b) { return (a <=> b) != 0; }
+
 bool operator<(long double a, const BigInt& b) { return (a <=> b) < 0; }
 bool operator<=(long double a, const BigInt& b) { return (a <=> b) <= 0; }
 bool operator>(long double a, const BigInt& b) { return (a <=> b) > 0; }
 bool operator>=(long double a, const BigInt& b) { return (a <=> b) >= 0; }
 bool operator==(long double a, const BigInt& b) { return (a <=> b) == 0; }
 bool operator!=(long double a, const BigInt& b) { return (a <=> b) != 0; }
+
+void BigInt::WriteRawReprToStream(ostream& out) const {
+    out << "BigInt( { ";
+    bool first = true;
+    for (uint32_t i : v) {
+        if (!first) out << ", ";
+        first = false;
+        out << i;
+    }
+    out << " }, sign = " << sign << " }";
+}
+
+ostream& operator<<(ostream& out, const BigInt& a) {
+    a.WriteRawReprToStream(out);
+    return out;
+}
+
+std::string BigInt::RawRepr() const {
+    stringstream ss;
+    WriteRawReprToStream(ss);
+    return ss.str();
+}
+
+std::string to_string(const BigInt& a) {
+    return a.RawRepr();
+}

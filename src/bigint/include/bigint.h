@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
+#include <iostream>
 
 class ZeroDivisionException : public std::runtime_error {
 public:
@@ -22,7 +23,8 @@ private:
 
 public:
     BigInt(long val);
-    BigInt(size_t val);
+    explicit BigInt(size_t val);
+    explicit BigInt(int val);
     BigInt();
     BigInt(const std::string& repr, size_t base);
     BigInt(const std::vector<size_t>& bigEndianRepr, size_t base);
@@ -55,32 +57,50 @@ public:
     std::optional<BigInt> DivLeaveMod(const BigInt& other);
     int operator<=>(const BigInt& other) const;
     int operator<=>(long other) const;
+    int operator<=>(size_t other) const;
+    int operator<=>(int other) const;
     std::partial_ordering operator<=>(long double other) const;
     long double ToFloat() const;
     bool operator<(const BigInt& other) const;
     bool operator<(long other) const;
+    bool operator<(size_t other) const;
+    bool operator<(int other) const;
     bool operator<(long double other) const;
     bool operator<=(const BigInt& other) const;
     bool operator<=(long other) const;
+    bool operator<=(size_t other) const;
+    bool operator<=(int other) const;
     bool operator<=(long double other) const;
     bool operator>(const BigInt& other) const;
     bool operator>(long other) const;
+    bool operator>(size_t other) const;
+    bool operator>(int other) const;
     bool operator>(long double other) const;
     bool operator>=(const BigInt& other) const;
     bool operator>=(long other) const;
+    bool operator>=(size_t other) const;
+    bool operator>=(int other) const;
     bool operator>=(long double other) const;
     bool operator==(const BigInt& other) const;
     bool operator==(long other) const;
+    bool operator==(size_t other) const;
+    bool operator==(int other) const;
     bool operator==(long double other) const;
     bool operator!=(const BigInt& other) const;
     bool operator!=(long other) const;
+    bool operator!=(size_t other) const;
+    bool operator!=(int other) const;
     bool operator!=(long double other) const;
     operator bool() const;
     bool IsNegative() const;
     size_t SignificantBits() const;
+    std::string RawRepr() const;
+    void WriteRawReprToStream(std::ostream& out) const;
 };
 
 int operator<=>(long a, const BigInt& b);
+int operator<=>(size_t a, const BigInt& b);
+int operator<=>(int a, const BigInt& b);
 std::partial_ordering operator<=>(long double a, const BigInt& b);
 bool operator<(long a, const BigInt& b);
 bool operator<=(long a, const BigInt& b);
@@ -88,9 +108,27 @@ bool operator>(long a, const BigInt& b);
 bool operator>=(long a, const BigInt& b);
 bool operator==(long a, const BigInt& b);
 bool operator!=(long a, const BigInt& b);
+
 bool operator<(long double a, const BigInt& b);
 bool operator<=(long double a, const BigInt& b);
 bool operator>(long double a, const BigInt& b);
 bool operator>=(long double a, const BigInt& b);
 bool operator==(long double a, const BigInt& b);
 bool operator!=(long double a, const BigInt& b);
+
+bool operator<(int a, const BigInt& b);
+bool operator<=(int a, const BigInt& b);
+bool operator>(int a, const BigInt& b);
+bool operator>=(int a, const BigInt& b);
+bool operator==(int a, const BigInt& b);
+bool operator!=(int a, const BigInt& b);
+
+bool operator<(size_t a, const BigInt& b);
+bool operator<=(size_t a, const BigInt& b);
+bool operator>(size_t a, const BigInt& b);
+bool operator>=(size_t a, const BigInt& b);
+bool operator==(size_t a, const BigInt& b);
+bool operator!=(size_t a, const BigInt& b);
+
+std::string to_string(const BigInt& a);
+std::ostream& operator<<(std::ostream& out, const BigInt& a);
