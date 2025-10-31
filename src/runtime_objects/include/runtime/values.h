@@ -15,8 +15,6 @@ namespace runtime {
  * If a function accepts an index, it is 1-based (the first element has index 1)
  */
 
-enum class ComparisonResult { Equal, Less, Greater, NotEqual };
-
 class RuntimeValue : public std::enable_shared_from_this<RuntimeValue> {
 public:
     virtual std::shared_ptr<runtime::Type> TypeOfValue() = 0;
@@ -27,7 +25,7 @@ public:
     virtual std::optional<std::shared_ptr<RuntimeValue>> BinaryAnd(const RuntimeValue& other) const;
     virtual std::optional<std::shared_ptr<RuntimeValue>> BinaryOr(const RuntimeValue& other) const;
     virtual std::optional<std::shared_ptr<RuntimeValue>> BinaryXor(const RuntimeValue& other) const;
-    virtual std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const;
+    virtual std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const;
     virtual std::optional<std::shared_ptr<RuntimeValue>> UnaryMinus(const RuntimeValue& other) const;
     virtual std::optional<std::shared_ptr<RuntimeValue>> UnaryPlus(const RuntimeValue& other) const;
     virtual std::optional<std::shared_ptr<RuntimeValue>> UnaryNot(const RuntimeValue& other) const;
@@ -55,7 +53,7 @@ public:
     std::optional<std::shared_ptr<RuntimeValue>> BinaryMinus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryMul(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryDiv(const RuntimeValue& other) const override;
-    std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const override;
+    std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> UnaryMinus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> UnaryPlus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const std::string& name) const override;
@@ -82,7 +80,7 @@ public:
     std::optional<std::shared_ptr<RuntimeValue>> BinaryMinus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryMul(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryDiv(const RuntimeValue& other) const override;
-    std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const override;
+    std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> UnaryMinus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> UnaryPlus(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const std::string& name) const override;
@@ -116,7 +114,7 @@ public:
     // "0123456789".Slice(-7, 9, 4) = "15"
     std::string Slice(const BigInt& start, const BigInt& stop, const BigInt& step) const;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryPlus(const RuntimeValue& other) const override;
-    std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const override;
+    std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const std::string& name) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Subscript(const RuntimeValue& other) const override;
@@ -146,7 +144,7 @@ class ArrayValue : public RuntimeValue {
 public:
     std::shared_ptr<runtime::Type> TypeOfValue() override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryPlus(const RuntimeValue& other) const override;
-    std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const override;
+    std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Subscript(const RuntimeValue& other) const override;
     virtual ~ArrayValue() override = default;
 };
@@ -166,7 +164,7 @@ public:
     std::optional<std::shared_ptr<RuntimeValue>> ValueByIndex(BigInt index) const;
     std::shared_ptr<runtime::Type> TypeOfValue() override;
     std::optional<std::shared_ptr<RuntimeValue>> BinaryPlus(const RuntimeValue& other) const override;
-    std::optional<ComparisonResult> BinaryComparison(const RuntimeValue& other) const override;
+    std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const std::string& name) const override;
     std::optional<std::shared_ptr<RuntimeValue>> Field(const RuntimeValue& index) const override;
     virtual ~TupleValue() override = default;

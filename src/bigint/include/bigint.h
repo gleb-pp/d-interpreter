@@ -1,15 +1,28 @@
 #pragma once
+#include <compare>
 #include <cstdint>
+#include <optional>
+#include <stdexcept>
 #include <vector>
 #include <string>
+
+class ZeroDivisionException : public std::runtime_error {
+public:
+    ZeroDivisionException();
+    ~ZeroDivisionException() override = default;
+};
 
 class BigInt {
 private:
     std::vector<std::uint32_t> v;
     bool sign;
     void initBigEndianRepr(const std::vector<size_t>& bigEndianRepr, size_t base);
+    void normalize();
+    BigInt(const std::vector<std::uint32_t>& v, bool sign);
+
 public:
     BigInt(long val);
+    BigInt(size_t val);
     BigInt();
     BigInt(const std::string& repr, size_t base);
     BigInt(const std::vector<size_t>& bigEndianRepr, size_t base);
@@ -17,6 +30,7 @@ public:
     BigInt(BigInt&& other) = default;
     explicit BigInt(long double val);
     BigInt& operator=(long val);
+    BigInt& operator=(size_t val);
     BigInt& operator=(const BigInt& other) = default;
     BigInt& operator=(BigInt&& other) = default;
     std::vector<size_t> Repr(size_t base);
@@ -32,16 +46,51 @@ public:
     BigInt& operator%=(const BigInt& other);
     BigInt operator%(const BigInt& other) const;
     BigInt operator-() const;
+    BigInt& Negate();
     BigInt& operator++();
     BigInt operator++(int);
     BigInt& operator--();
     BigInt operator--(int);
-    std::pair<BigInt, BigInt> DivMod(const BigInt& other) const;
+    std::optional<std::pair<BigInt, BigInt>> DivMod(const BigInt& other) const;
+    std::optional<BigInt> DivLeaveMod(const BigInt& other);
     int operator<=>(const BigInt& other) const;
     int operator<=>(long other) const;
-    int operator<=>(long double other) const;
+    std::partial_ordering operator<=>(long double other) const;
     long double ToFloat() const;
+    bool operator<(const BigInt& other) const;
+    bool operator<(long other) const;
+    bool operator<(long double other) const;
+    bool operator<=(const BigInt& other) const;
+    bool operator<=(long other) const;
+    bool operator<=(long double other) const;
+    bool operator>(const BigInt& other) const;
+    bool operator>(long other) const;
+    bool operator>(long double other) const;
+    bool operator>=(const BigInt& other) const;
+    bool operator>=(long other) const;
+    bool operator>=(long double other) const;
+    bool operator==(const BigInt& other) const;
+    bool operator==(long other) const;
+    bool operator==(long double other) const;
+    bool operator!=(const BigInt& other) const;
+    bool operator!=(long other) const;
+    bool operator!=(long double other) const;
+    operator bool() const;
+    bool IsNegative() const;
+    size_t SignificantBits() const;
 };
 
 int operator<=>(long a, const BigInt& b);
-int operator<=>(long double a, const BigInt& b);
+std::partial_ordering operator<=>(long double a, const BigInt& b);
+bool operator<(long a, const BigInt& b);
+bool operator<=(long a, const BigInt& b);
+bool operator>(long a, const BigInt& b);
+bool operator>=(long a, const BigInt& b);
+bool operator==(long a, const BigInt& b);
+bool operator!=(long a, const BigInt& b);
+bool operator<(long double a, const BigInt& b);
+bool operator<=(long double a, const BigInt& b);
+bool operator>(long double a, const BigInt& b);
+bool operator>=(long double a, const BigInt& b);
+bool operator==(long double a, const BigInt& b);
+bool operator!=(long double a, const BigInt& b);
