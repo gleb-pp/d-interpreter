@@ -31,5 +31,6 @@ public:
     Locator End() const;
     size_t Length() const;
     std::string Excerpt() const;
+    const std::shared_ptr<const CodeFile>& File() const;
 };
 }  // namespace locators

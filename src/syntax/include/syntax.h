@@ -32,6 +32,17 @@ public:
 };
 
 class TokenScanner {
+public:
+    class AutoBlock {
+        friend TokenScanner;
+        TokenScanner* tk;
+        AutoBlock(TokenScanner* tk);
+        bool success = false;
+    public:
+        void Success();
+        ~AutoBlock();
+    };
+
 private:
     struct StackBlock {
         int StartIndex;
@@ -45,6 +56,10 @@ private:
     std::vector<StackBlock> stack;
     SyntaxErrorReport report;
 
+    size_t StartOfToken(size_t index) const;
+    size_t EndOfToken(size_t index) const;
+    void SkipEolns();
+    
 public:
     TokenScanner(const std::vector<std::shared_ptr<Token>>& tokens,
                  const std::shared_ptr<const locators::CodeFile>& file);
@@ -64,6 +79,9 @@ public:
     std::optional<std::shared_ptr<Token>> Read(Token::Type type);
     SyntaxErrorReport& Report();
     const SyntaxErrorReport& Report() const;
+    AutoBlock AutoStart();
+    AutoBlock AutoStartIgnoreEoln();
+    AutoBlock AutoStartUseEoln();
 };
 
 struct SyntaxContext {
@@ -347,14 +365,14 @@ class Primary;
 class Expression : public ASTNode {
 public:
     Expression(const locators::SpanLocator& pos);
-    std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context,
+    static std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context,
                                                      int max_precedence = std::numeric_limits<int>::max());
     virtual ~Expression() override = default;
 };
 
 class XorOperator : public Expression {  // value = XOR of elements
 public:
-    XorOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    XorOperator(const std::vector<std::shared_ptr<Expression>>& operands);
     std::vector<std::shared_ptr<Expression>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~XorOperator() override = default;
@@ -362,7 +380,7 @@ public:
 
 class OrOperator : public Expression {  // value = OR of elements
 public:
-    OrOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    OrOperator(const std::vector<std::shared_ptr<Expression>>& operands);
     std::vector<std::shared_ptr<Expression>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~OrOperator() override = default;
@@ -370,7 +388,7 @@ public:
 
 class AndOperator : public Expression {  // value = AND of elements
 public:
-    AndOperator(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands);
+    AndOperator(const std::vector<std::shared_ptr<Expression>>& operands);
     std::vector<std::shared_ptr<Expression>> operands;
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~AndOperator() override = default;
@@ -378,7 +396,7 @@ public:
 
 class BinaryRelation : public Expression {  // value = AND of comparisons of elements
 public:
-    BinaryRelation(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& operands,
+    BinaryRelation(const std::vector<std::shared_ptr<Expression>>& operands,
                    const std::vector<BinaryRelationOperator>& operators);
     std::vector<std::shared_ptr<Expression>> operands;
     std::vector<BinaryRelationOperator> operators;
@@ -393,7 +411,7 @@ std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext&
 class Sum : public Expression {
 public:
     enum class SumOperator { Plus, Minus };
-    Sum(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& terms,
+    Sum(const std::vector<std::shared_ptr<Expression>>& terms,
         const std::vector<SumOperator>& operators);
     std::vector<std::shared_ptr<Expression>> terms;
     std::vector<SumOperator> operators;
@@ -404,19 +422,20 @@ public:
 class Term : public Expression {
 public:
     enum class TermOperator { Times, Divide };
-    Term(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& unaries,
-         const std::vector<TermOperator>& operators);
+    Term(const std::vector<std::shared_ptr<Expression>>& unaries, const std::vector<TermOperator>& operators);
     std::vector<std::shared_ptr<Expression>> unaries;
     std::vector<TermOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~Term() override = default;
 };
 
+// UnaryNot -> tkNot Expression(precedence < And::precedence)
 class UnaryNot : public Expression {
 public:
     std::shared_ptr<Expression> nested;
-    UnaryNot(const locators::SpanLocator& pos, const std::shared_ptr<Expression> nested);
+    UnaryNot(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& nested);
     std::optional<std::shared_ptr<UnaryNot>> parse(SyntaxContext& context);
+    void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~UnaryNot() override = default;
 };
 
@@ -640,6 +659,7 @@ public:
     virtual void VisitIndexAccessor(IndexAccessor& node) = 0;
     virtual void VisitReference(Reference& node) = 0;
     virtual void VisitExpression(Expression& node) = 0;
+    virtual void VisitXorOperator(XorOperator& node) = 0;
     virtual void VisitOrOperator(OrOperator& node) = 0;
     virtual void VisitAndOperator(AndOperator& node) = 0;
     virtual void VisitBinaryRelation(BinaryRelation& node) = 0;

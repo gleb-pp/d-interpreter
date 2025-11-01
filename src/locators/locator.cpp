@@ -26,5 +26,6 @@ Locator SpanLocator::Start() const { return {file, pos}; }
 Locator SpanLocator::End() const { return {file, pos + length}; }
 size_t SpanLocator::Length() const { return length; }
 std::string SpanLocator::Excerpt() const { return file->AllText().substr(pos, length); }
+const shared_ptr<const CodeFile>& SpanLocator::File() const { return file; }
 
 }  // namespace locators

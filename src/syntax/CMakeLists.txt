@@ -1,6 +1,6 @@
 add_library(syntaxer syntax.cpp)
 target_link_libraries(syntaxer PUBLIC lexer common_features)
-target_include_directories(syntaxer INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(syntaxer PUBLIC include)
 
 if (CompileTests)
     add_subdirectory(tests)
