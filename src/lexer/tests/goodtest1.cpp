@@ -62,7 +62,7 @@ TEST(goodtests, test1) {
     ASSERT_EQ(pIdent->identifier, "i");
     auto pReal = dynamic_pointer_cast<RealToken>(tokens[3]);
     ASSERT_NE(pReal, nullptr);
-    ASSERT_EQ(pReal->value, 5.5);
+    ASSERT_NEAR(pReal->value, 5.5l, 1e-6);
     pIdent = dynamic_pointer_cast<IdentifierToken>(tokens[11]);
     ASSERT_NE(pIdent, nullptr);
     ASSERT_EQ(pIdent->identifier, "_somename90311");

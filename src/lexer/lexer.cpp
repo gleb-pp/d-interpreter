@@ -192,14 +192,14 @@ static bool checkStringLiterals(size_t& i, size_t n, const shared_ptr<const loca
 static bool checkNumbers(size_t& i, size_t n, const string& code, vector<shared_ptr<Token>>& tokens) {
     if (!isdigit(code[i])) return false;
     size_t position = i;
-    long value = 0;
+    BigInt value = 0;
     while (i < n && isdigit(code[i])) {
-        value = value * 10 + (code[i] - '0');
+        value = value * BigInt(10) + BigInt(code[i] - '0');
         i++;
     }
     if (i < n && code[i] == '.' && i + 1 < n && isdigit(code[i + 1])) {
-        double realValue = value;
-        double fraction = 0.1;
+        long double realValue = value.ToFloat();
+        long double fraction = 0.1;
         i++;
         while (i < n && isdigit(code[i])) {
             realValue += (code[i] - '0') * fraction;
