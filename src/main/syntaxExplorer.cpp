@@ -203,15 +203,6 @@ EXPLORER(
     })
 
 EXPLORER(
-    EmptyStatement,
-    {  // GetActionCommands
-        return {};
-    },
-    {  // Action
-        return {};
-    })
-
-EXPLORER(
     CommaExpressions,
     {  // GetActionCommands
         vector<ActionCommand> res;
@@ -294,7 +285,7 @@ EXPLORER(
     })
 
 EXPLORER(
-    Expression,
+    XorOperator,
     {  // GetActionCommands
         vector<ActionCommand> res;
         int n = node->operands.size();
@@ -445,8 +436,6 @@ static string to_string(ast::PrefixOperator::PrefixOperatorKind op) {
             return "Plus  +";
         case ast::PrefixOperator::PrefixOperatorKind::Minus:
             return "Minus -";
-        case ast::PrefixOperator::PrefixOperatorKind::Not:
-            return "Not";
     }
     return "<error>";
 }
@@ -478,6 +467,15 @@ EXPLORER(
             default:
                 return node->expr;
         }
+    })
+
+EXPLORER(
+    UnaryNot,
+    {  // GetActionCommands
+        return vector<ActionCommand>({{"x", "The negated expression"}});
+    },
+    {  // Action
+        return node->nested;
     })
 
 EXPLORER(
@@ -702,11 +700,27 @@ EXPLORER(
         return node->items[StrToInt(command)];
     })
 
+class CustomExplorer : public ASTExplorer {
+    shared_ptr<ast::ASTNode> node;
+
+public:
+    CustomExplorer(const shared_ptr<ast::ASTNode>& node) : node(node) {}
+    shared_ptr<ast::ASTNode> GetNode() const override { return node; }
+    vector<ActionCommand> GetActionCommands() const override { return {}; }
+    optional<shared_ptr<ast ::ASTNode>> Action([[maybe_unused]] string command,
+                                               [[maybe_unused]] ostream& output) const override {
+        return {};
+    }
+    string NodeName() const override { return "(custom: not implemented)"; }
+    virtual ~CustomExplorer() override = default;
+};
+
 shared_ptr<const ASTExplorer> ASTExplorerVisitor::MakeExplorer() { return this->explorer; }
 
-#define VISITOR_HELP(classname, literalExplorer)                                                     \
-    void ASTExplorerVisitor::Visit##classname(ast::classname& node) {                                \
-        this->explorer = make_shared<classname##literalExplorer>(make_shared<ast::classname>(node)); \
+#define VISITOR_HELP(classname, literalExplorer)                                                                    \
+    void ASTExplorerVisitor::Visit##classname(ast::classname& node) {                                               \
+        this->explorer =                                                                                            \
+            make_shared<classname##literalExplorer>(dynamic_pointer_cast<ast::classname>(node.shared_from_this())); \
     }
 
 #define VISITOR(classname) VISITOR_HELP(classname, Explorer)
@@ -723,7 +737,6 @@ VISITOR(AssignStatement)
 VISITOR(PrintStatement)
 VISITOR(ReturnStatement)
 VISITOR(ExpressionStatement)
-VISITOR(EmptyStatement)
 VISITOR(CommaExpressions)
 VISITOR(CommaIdents)
 VISITOR(IdentMemberAccessor)
@@ -731,13 +744,14 @@ VISITOR(IntLiteralMemberAccessor)
 VISITOR(ParenMemberAccessor)
 VISITOR(IndexAccessor)
 VISITOR(Reference)
-VISITOR(Expression)
+VISITOR(XorOperator)
 VISITOR(OrOperator)
 VISITOR(AndOperator)
 VISITOR(BinaryRelation)
 VISITOR(Sum)
 VISITOR(Term)
 VISITOR(Unary)
+VISITOR(UnaryNot)
 VISITOR(PrefixOperator)
 VISITOR(TypecheckOperator)
 VISITOR(Call)
@@ -751,6 +765,9 @@ VISITOR(LongFuncBody)
 VISITOR(FuncLiteral)
 VISITOR(TokenLiteral)
 VISITOR(ArrayLiteral)
+void ASTExplorerVisitor::VisitCustom(ast::ASTNode& node) {
+    this->explorer = make_shared<CustomExplorer>(node.shared_from_this());
+}
 
 static void ExplorerIO_PrintCommands(const vector<ASTExplorer::ActionCommand>& commands, ostream& output,
                                      bool goUpOption) {

@@ -6,7 +6,8 @@
 #include "lexer.h"
 using namespace std;
 
-static const char* CODE = R"%%(12345 19999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+static const char* CODE =
+    R"%%(12345 19999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
     193041934932402394293492034902903409230923953402934568938455.9)%%";
 
 TEST(goodtests, biginttest) {
@@ -35,11 +36,11 @@ TEST(goodtests, biginttest) {
     EXPECT_EQ(dynamic_pointer_cast<IntegerToken>(tokens[0])->value, 12345);
     BigInt pow10 = 10000;  // 100 = 0b1100100 = 4 + 32 + 64
     BigInt googol = 10000;
-    pow10 *= pow10; // 8
-    pow10 *= pow10; // 16
-    pow10 *= pow10; // 32
+    pow10 *= pow10;  // 8
+    pow10 *= pow10;  // 16
+    pow10 *= pow10;  // 32
     googol *= pow10;
-    pow10 *= pow10; // 64
+    pow10 *= pow10;  // 64
     googol *= pow10;
     EXPECT_EQ(dynamic_pointer_cast<IntegerToken>(tokens[1])->value, googol * BigInt(2) - BigInt(1));
     EXPECT_NEAR(dynamic_pointer_cast<RealToken>(tokens[3])->value,

@@ -1,8 +1,8 @@
 #pragma once
 #include "complog/CompilationLog.h"
-#include "syntax.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
+#include "syntax.h"
 #include "valueTimeline.h"
 
 // may modify the syntax tree
@@ -12,9 +12,7 @@ class StatementChecker : public ast::IASTVisitor {
     std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> returned;
     ValueTimeline values;
     bool inFunction, inCycle;
-    enum class TerminationKind {
-        ReachedEnd, Exited, Returned, Errored
-    };
+    enum class TerminationKind { ReachedEnd, Exited, Returned, Errored };
     TerminationKind terminationKind;
 
 public:

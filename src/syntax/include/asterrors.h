@@ -1,6 +1,8 @@
 #pragma once
 #include <complog/CompilationMessage.h>
+
 #include <iostream>
+
 #include "lexer.h"
 
 class EmptyVarStatement : public complog::CompilationMessage {

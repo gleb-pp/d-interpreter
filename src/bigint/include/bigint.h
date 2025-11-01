@@ -1,11 +1,11 @@
 #pragma once
 #include <compare>
 #include <cstdint>
+#include <iostream>
 #include <optional>
 #include <stdexcept>
-#include <vector>
 #include <string>
-#include <iostream>
+#include <vector>
 
 class ZeroDivisionException : public std::runtime_error {
 public:

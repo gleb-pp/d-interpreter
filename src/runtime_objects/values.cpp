@@ -6,9 +6,9 @@ namespace runtime {
  * If a function accepts an index, it is 1-based (the first element has index 1)
  */
 
-//Implement class RuntimeValue
+// Implement class RuntimeValue
 
-//Implement class IntegerValue
+// Implement class IntegerValue
 /*
  * Has fields:
  * + Round: int = this
@@ -17,7 +17,7 @@ namespace runtime {
  * + Frac: real = 0.0
  */
 
-//Implement class RealValue
+// Implement class RealValue
 /*
  * Has fields:
  * + Round: int
@@ -26,7 +26,7 @@ namespace runtime {
  * + Frac: real
  */
 
-//Implement class StringValue
+// Implement class StringValue
 /*
  * Has fields:
  * + Split: function (string) -> []
@@ -38,22 +38,22 @@ namespace runtime {
  * + Slice: function (int, int, int) -> string  // start, stop, step
  */
 
-//Implement class NoneValue
+// Implement class NoneValue
 
-//Implement class BoolValue
+// Implement class BoolValue
 
-//Implement class ArrayValue
+// Implement class ArrayValue
 
-//Implement class TupleValue
+// Implement class TupleValue
 
-//Implement class FuncValue
+// Implement class FuncValue
 
-//Implement class StringSplitFunction
+// Implement class StringSplitFunction
 
-//Implement class StringSplitWSFunction
+// Implement class StringSplitWSFunction
 
-//Implement class StringJoinFunction
+// Implement class StringJoinFunction
 
-//Implement class StringSliceFunction
+// Implement class StringSliceFunction
 
 }  // namespace runtime

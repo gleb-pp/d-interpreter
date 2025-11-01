@@ -14,4 +14,4 @@ public:
     virtual ~PrecomputedValue() override = default;
 };
 
-}
+}  // namespace ast

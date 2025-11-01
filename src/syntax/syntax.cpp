@@ -559,25 +559,22 @@ static void CollapseOperandStack(vector<shared_ptr<Expression>>& operands, vecto
         switch (precedence) {
             case BinaryPrecedence::Mul: {
                 vector<Term::TermOperator> op(count - 1);
-                std::ranges::transform(
-                    operators.end() - (count - 1), operators.end(), op.begin(),
-                    [](ParsedBinaryOperator p) { return get<Term::TermOperator>(*p.OpKind); });
+                std::ranges::transform(operators.end() - (count - 1), operators.end(), op.begin(),
+                                       [](ParsedBinaryOperator p) { return get<Term::TermOperator>(*p.OpKind); });
                 composite = make_shared<Term>(nds, op);
                 break;
             }
             case BinaryPrecedence::Sum: {
                 vector<Sum::SumOperator> op(count - 1);
-                std::ranges::transform(
-                    operators.end() - (count - 1), operators.end(), op.begin(),
-                    [](ParsedBinaryOperator p) { return get<Sum::SumOperator>(*p.OpKind); });
+                std::ranges::transform(operators.end() - (count - 1), operators.end(), op.begin(),
+                                       [](ParsedBinaryOperator p) { return get<Sum::SumOperator>(*p.OpKind); });
                 composite = make_shared<Sum>(nds, op);
                 break;
             }
             case BinaryPrecedence::Comparison: {
                 vector<BinaryRelationOperator> op(count - 1);
-                std::ranges::transform(
-                    operators.end() - (count - 1), operators.end(), op.begin(),
-                    [](ParsedBinaryOperator p) { return get<BinaryRelationOperator>(*p.OpKind); });
+                std::ranges::transform(operators.end() - (count - 1), operators.end(), op.begin(),
+                                       [](ParsedBinaryOperator p) { return get<BinaryRelationOperator>(*p.OpKind); });
                 composite = make_shared<BinaryRelation>(nds, op);
                 break;
             }
@@ -593,7 +590,8 @@ static void CollapseOperandStack(vector<shared_ptr<Expression>>& operands, vecto
                 composite = make_shared<XorOperator>(nds);
                 break;
             }
-            default: throw invalid_argument("NOT operator is not a binary operator");
+            default:
+                throw invalid_argument("NOT operator is not a binary operator");
         }
         operands.push_back(composite);
         operators.erase(operators.end() - (count - 1), operators.end());
@@ -690,8 +688,7 @@ optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& cont
 }
 
 // Sum -> Term { (tkPlus | tkMinus) Term }
-Sum::Sum(const vector<shared_ptr<Expression>>& terms,
-         const vector<SumOperator>& operators)
+Sum::Sum(const vector<shared_ptr<Expression>>& terms, const vector<SumOperator>& operators)
     : Expression(SpanLocatorFromExpressions(terms)), terms(terms), operators(operators) {
     size_t nds = terms.size(), ors = operators.size();
     if (nds != ors + 1) throw WrongNumberOfOperatorsSupplied("Sum", nds, ors);
@@ -699,8 +696,7 @@ Sum::Sum(const vector<shared_ptr<Expression>>& terms,
 VISITOR(Sum)
 
 // Term -> Unary { (tkTimes | tkDivide) Unary }
-Term::Term(const vector<shared_ptr<Expression>>& unaries,
-           const vector<TermOperator>& operators)
+Term::Term(const vector<shared_ptr<Expression>>& unaries, const vector<TermOperator>& operators)
     : Expression(SpanLocatorFromExpressions(unaries)), unaries(unaries), operators(operators) {
     size_t nds = unaries.size(), ors = operators.size();
     if (nds != ors + 1) throw WrongNumberOfOperatorsSupplied("Term", nds, ors);

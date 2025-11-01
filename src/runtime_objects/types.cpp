@@ -9,9 +9,9 @@ using namespace std;
 
 namespace runtime {
 
-//Implement class Type
+// Implement class Type
 
-//Implement class IntegerType
+// Implement class IntegerType
 /*
  * Has fields:
  * + Round: int = this
@@ -20,7 +20,7 @@ namespace runtime {
  * + Frac: real = 0.0
  */
 
-//Implement class RealType
+// Implement class RealType
 /*
  * Has fields:
  * + Round: int
@@ -29,7 +29,7 @@ namespace runtime {
  * + Frac: real
  */
 
-//Implement class StringType
+// Implement class StringType
 /*
  * Has fields:
  * + Split: function (string) -> []
@@ -41,16 +41,16 @@ namespace runtime {
  * + Length: int
  */
 
-//Implement class NoneType
+// Implement class NoneType
 
-//Implement class BoolType
+// Implement class BoolType
 
-//Implement class ArrayType
+// Implement class ArrayType
 
-//Implement class TupleType
+// Implement class TupleType
 
-//Implement class FuncType
+// Implement class FuncType
 
-//Implement class UnknownType
+// Implement class UnknownType
 
 }  // namespace runtime

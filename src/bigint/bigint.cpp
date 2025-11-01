@@ -8,9 +8,9 @@
 #include <compare>
 #include <cstdint>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
-#include <sstream>
 using namespace std;
 
 /*
@@ -111,8 +111,7 @@ BigInt::BigInt(const std::string& repr, size_t base) : BigInt() {
     vector<size_t> bigEndianRepr(n);
     if (repr.empty()) return;
     bool minus = false;
-    if (repr[0] == '-')
-        minus = true;
+    if (repr[0] == '-') minus = true;
     for (size_t i = minus; i < n; i++) {
         char cur = repr[i];
         if ('0' <= cur && cur <= '9')
@@ -268,7 +267,7 @@ static ostream& operator<<(ostream& out, ConstVectorView a) {
 
 static int UnsignedBigCompare(ConstVectorView a, ConstVectorView b) {
     size_t an = a.size(), bn = b.size();
-    ConstVectorView* pa = &a, * pb = &b;
+    ConstVectorView *pa = &a, *pb = &b;
     int sign = 1;
     if (an < bn) {
         swap(pa, pb);
@@ -772,6 +771,4 @@ std::string BigInt::RawRepr() const {
     return ss.str();
 }
 
-std::string to_string(const BigInt& a) {
-    return a.RawRepr();
-}
+std::string to_string(const BigInt& a) { return a.RawRepr(); }

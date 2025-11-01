@@ -3,7 +3,12 @@ using namespace std;
 
 TokenScanner::AutoBlock::AutoBlock(TokenScanner* owner) : tk(owner) {}
 void TokenScanner::AutoBlock::Success() { success = true; }
-TokenScanner::AutoBlock::~AutoBlock() { if (success) tk->EndSuccess(); else tk->EndFail(); }
+TokenScanner::AutoBlock::~AutoBlock() {
+    if (success)
+        tk->EndSuccess();
+    else
+        tk->EndFail();
+}
 
 TokenScanner::StackBlock::StackBlock(int index, bool ignoreEoln)
     : StartIndex(index), Index(index), IgnoreEoln(ignoreEoln) {}
@@ -21,15 +26,15 @@ size_t TokenScanner::EndOfToken(size_t index) const {
 }
 
 void TokenScanner::SkipEolns() {
-    while (Read(Token::Type::tkNewLine)) {}
+    while (Read(Token::Type::tkNewLine)) {
+    }
 }
 
-TokenScanner::TokenScanner(const std::vector<std::shared_ptr<Token>>& tokens, const std::shared_ptr<const locators::CodeFile>& file)
+TokenScanner::TokenScanner(const std::vector<std::shared_ptr<Token>>& tokens,
+                           const std::shared_ptr<const locators::CodeFile>& file)
     : codeFile(file), tokens(tokens), stack({{0, false}}), report(file) {}
 
-locators::Locator TokenScanner::PositionInFile() const {
-    return locators::Locator(codeFile, StartOfToken(Index()));
-}
+locators::Locator TokenScanner::PositionInFile() const { return locators::Locator(codeFile, StartOfToken(Index())); }
 
 locators::Locator TokenScanner::StartPositionInFile() const {
     return locators::Locator(codeFile, StartOfToken(stack.back().StartIndex));
@@ -64,13 +69,9 @@ void TokenScanner::StartIgnoreEoln() {
     SkipEolns();
 }
 
-void TokenScanner::StartUseEoln() {
-    stack.emplace_back(Index(), false);
-}
+void TokenScanner::StartUseEoln() { stack.emplace_back(Index(), false); }
 
-void TokenScanner::EndFail() {
-    stack.pop_back();
-}
+void TokenScanner::EndFail() { stack.pop_back(); }
 
 void TokenScanner::EndSuccess() {
     auto topframe = stack.back();
@@ -80,9 +81,7 @@ void TokenScanner::EndSuccess() {
     if (prevframe.IgnoreEoln) SkipEolns();
 }
 
-std::shared_ptr<Token> TokenScanner::Peek() {
-    return tokens[Index()];
-}
+std::shared_ptr<Token> TokenScanner::Peek() { return tokens[Index()]; }
 
 std::shared_ptr<Token> TokenScanner::Read() {
     auto& res = tokens[Index()];
@@ -106,13 +105,9 @@ std::optional<std::shared_ptr<Token>> TokenScanner::Read(Token::Type type) {
     return res;
 }
 
-SyntaxErrorReport& TokenScanner::Report() {
-    return report;
-}
+SyntaxErrorReport& TokenScanner::Report() { return report; }
 
-const SyntaxErrorReport& TokenScanner::Report() const {
-    return report;
-}
+const SyntaxErrorReport& TokenScanner::Report() const { return report; }
 
 TokenScanner::AutoBlock TokenScanner::AutoStart() {
     Start();

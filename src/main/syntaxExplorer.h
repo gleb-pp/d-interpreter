@@ -35,7 +35,6 @@ public:
     void VisitPrintStatement(ast::PrintStatement& node) override;
     void VisitReturnStatement(ast::ReturnStatement& node) override;
     void VisitExpressionStatement(ast::ExpressionStatement& node) override;
-    void VisitEmptyStatement(ast::EmptyStatement& node) override;
     void VisitCommaExpressions(ast::CommaExpressions& node) override;
     void VisitCommaIdents(ast::CommaIdents& node) override;
     void VisitIdentMemberAccessor(ast::IdentMemberAccessor& node) override;
@@ -43,13 +42,14 @@ public:
     void VisitParenMemberAccessor(ast::ParenMemberAccessor& node) override;
     void VisitIndexAccessor(ast::IndexAccessor& node) override;
     void VisitReference(ast::Reference& node) override;
-    void VisitExpression(ast::Expression& node) override;
+    void VisitXorOperator(ast::XorOperator& node) override;
     void VisitOrOperator(ast::OrOperator& node) override;
     void VisitAndOperator(ast::AndOperator& node) override;
     void VisitBinaryRelation(ast::BinaryRelation& node) override;
     void VisitSum(ast::Sum& node) override;
     void VisitTerm(ast::Term& node) override;
     void VisitUnary(ast::Unary& node) override;
+    void VisitUnaryNot(ast::UnaryNot& node) override;
     void VisitPrefixOperator(ast::PrefixOperator& node) override;
     void VisitTypecheckOperator(ast::TypecheckOperator& node) override;
     void VisitCall(ast::Call& node) override;
@@ -63,6 +63,7 @@ public:
     void VisitFuncLiteral(ast::FuncLiteral& node) override;
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
+    void VisitCustom(ast::ASTNode& node) override;
     virtual ~ASTExplorerVisitor() override = default;
 };
 

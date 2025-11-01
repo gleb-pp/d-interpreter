@@ -38,6 +38,7 @@ public:
         TokenScanner* tk;
         AutoBlock(TokenScanner* tk);
         bool success = false;
+
     public:
         void Success();
         ~AutoBlock();
@@ -59,7 +60,7 @@ private:
     size_t StartOfToken(size_t index) const;
     size_t EndOfToken(size_t index) const;
     void SkipEolns();
-    
+
 public:
     TokenScanner(const std::vector<std::shared_ptr<Token>>& tokens,
                  const std::shared_ptr<const locators::CodeFile>& file);
@@ -94,7 +95,7 @@ struct SyntaxContext {
 namespace ast {
 class IASTVisitor;
 
-class ASTNode {
+class ASTNode : public std::enable_shared_from_this<ASTNode> {
 public:
     locators::SpanLocator pos;
     ASTNode(const locators::SpanLocator& pos);
@@ -366,7 +367,7 @@ class Expression : public ASTNode {
 public:
     Expression(const locators::SpanLocator& pos);
     static std::optional<std::shared_ptr<Expression>> parse(SyntaxContext& context,
-                                                     int max_precedence = std::numeric_limits<int>::max());
+                                                            int max_precedence = std::numeric_limits<int>::max());
     virtual ~Expression() override = default;
 };
 
@@ -411,8 +412,7 @@ std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext&
 class Sum : public Expression {
 public:
     enum class SumOperator { Plus, Minus };
-    Sum(const std::vector<std::shared_ptr<Expression>>& terms,
-        const std::vector<SumOperator>& operators);
+    Sum(const std::vector<std::shared_ptr<Expression>>& terms, const std::vector<SumOperator>& operators);
     std::vector<std::shared_ptr<Expression>> terms;
     std::vector<SumOperator> operators;
     void AcceptVisitor(IASTVisitor& vis) override;
@@ -656,7 +656,6 @@ public:
     virtual void VisitParenMemberAccessor(ParenMemberAccessor& node) = 0;
     virtual void VisitIndexAccessor(IndexAccessor& node) = 0;
     virtual void VisitReference(Reference& node) = 0;
-    virtual void VisitExpression(Expression& node) = 0;
     virtual void VisitXorOperator(XorOperator& node) = 0;
     virtual void VisitOrOperator(OrOperator& node) = 0;
     virtual void VisitAndOperator(AndOperator& node) = 0;
@@ -678,7 +677,7 @@ public:
     virtual void VisitFuncLiteral(FuncLiteral& node) = 0;
     virtual void VisitTokenLiteral(TokenLiteral& node) = 0;
     virtual void VisitArrayLiteral(ArrayLiteral& node) = 0;
-    virtual void VisitCustom(ASTNode& node);
+    virtual void VisitCustom(ASTNode& node) = 0;
     virtual ~IASTVisitor() = default;
 };
 }  // namespace ast

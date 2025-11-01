@@ -1,8 +1,8 @@
 #pragma once
 #include "complog/CompilationLog.h"
-#include "syntax.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
+#include "syntax.h"
 #include "valueTimeline.h"
 
 // may modify the syntax tree
