@@ -434,7 +434,7 @@ class UnaryNot : public Expression {
 public:
     std::shared_ptr<Expression> nested;
     UnaryNot(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& nested);
-    std::optional<std::shared_ptr<UnaryNot>> parse(SyntaxContext& context);
+    static std::optional<std::shared_ptr<UnaryNot>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~UnaryNot() override = default;
 };
@@ -459,7 +459,6 @@ public:
 // 1. function(args)  obj.field  arr[index]  // call & accessors
 // 2. +num -num
 // 3. obj is type
-// 4. not value
 
 // PrefixOperator -> tkNot | tkMinus | tkPlus
 class PrefixOperator : public ASTNode {
@@ -467,8 +466,7 @@ public:
     enum class PrefixOperatorKind { Plus, Minus };
     PrefixOperator(const locators::SpanLocator& pos, PrefixOperatorKind kind);
     PrefixOperatorKind kind;
-    int precedence();  // the less, the more priority
-    static int precedence(PrefixOperatorKind op);
+    int precedence();  // the less, the more priority; always '2'
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<PrefixOperator>> parse(SyntaxContext& context);
     virtual ~PrefixOperator() override = default;

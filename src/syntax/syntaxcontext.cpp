@@ -49,3 +49,7 @@ vector<shared_ptr<complog::CompilationMessage>> SyntaxErrorReport::MakeReport() 
     }
     return res;
 }
+
+SyntaxContext::SyntaxContext(const std::vector<std::shared_ptr<Token>>& tokens,
+                             const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& complog)
+    : tokens(tokens, file), compilationLog(&complog) {}

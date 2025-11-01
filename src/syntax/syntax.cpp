@@ -80,7 +80,7 @@ optional<shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context) {
 Body::Body(const locators::SpanLocator& pos) : ASTNode(pos) {}
 Body::Body(const locators::SpanLocator& pos, const vector<shared_ptr<Statement>>& statements)
     : ASTNode(pos), statements(statements) {}
-static optional<shared_ptr<Body>> parseBody(SyntaxContext& context) {
+optional<shared_ptr<Body>> Body::parse(SyntaxContext& context) {
     USESCAN;
     auto block = tk.AutoStartUseEoln();
     vector<shared_ptr<Statement>> sts;
@@ -550,7 +550,7 @@ static void CollapseOperandStack(vector<shared_ptr<Expression>>& operands, vecto
                                  int minPrecedence) {
     while (operators.size() && static_cast<int>(operators.back().Precedence) < minPrecedence) {
         auto precedence = operators.back().Precedence;
-        int count = 2;
+        size_t count = 2;
         size_t n_operands = operands.size(), n_operators = operators.size();
         while (count < n_operands && operators[n_operators - count].Precedence == precedence) ++count;
         vector<shared_ptr<Expression>> nds(operands.end() - count, operands.end());
@@ -595,9 +595,12 @@ static void CollapseOperandStack(vector<shared_ptr<Expression>>& operands, vecto
             }
             default: throw invalid_argument("NOT operator is not a binary operator");
         }
+        operands.push_back(composite);
         operators.erase(operators.end() - (count - 1), operators.end());
     }
 }
+
+Expression::Expression(const locators::SpanLocator& pos) : ASTNode(pos) {}
 
 optional<shared_ptr<Expression>> Expression::parse(SyntaxContext& context, int max_precedence) {
     USESCAN;
@@ -614,8 +617,11 @@ optional<shared_ptr<Expression>> Expression::parse(SyntaxContext& context, int m
             if (static_cast<int>(opt_op->Precedence) > max_precedence) break;
             op = *opt_op;
         }
-        auto optunary = Unary::parse(context);
-        if (!optunary) break;
+        optional<shared_ptr<Expression>> optunary = UnaryNot::parse(context);
+        if (!optunary) {
+            optunary = Unary::parse(context);
+            if (!optunary) break;
+        }
         bl.Success();
 
         if (first) {
@@ -629,6 +635,7 @@ optional<shared_ptr<Expression>> Expression::parse(SyntaxContext& context, int m
     }
     if (first) return {};
     CollapseOperandStack(unaries, operators, numeric_limits<int>::max());
+    block.Success();
     return unaries.front();
 }
 
@@ -747,9 +754,8 @@ VISITOR(UnaryNot)
 // PrefixOperator -> tkMinus | tkPlus
 PrefixOperator::PrefixOperator(const locators::SpanLocator& pos, PrefixOperatorKind kind) : ASTNode(pos), kind(kind) {}
 int PrefixOperator::precedence() {  // the less, the more priority
-    return precedence(kind);
+    return 2;
 }
-int PrefixOperator::precedence(PrefixOperatorKind op) { return 2; }
 VISITOR(PrefixOperator)
 optional<shared_ptr<PrefixOperator>> PrefixOperator::parse(SyntaxContext& context) {
     USESCAN;
@@ -1029,6 +1035,7 @@ optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context) {
     if (!tk.Read(Token::Type::tkClosedParenthesis)) return {};
     auto body = FuncBody::parse(context);
     if (!body) return {};
+    block.Success();
     return make_shared<FuncLiteral>(tk.ReadSinceStart(), params, *body);
 }
 VISITOR(FuncLiteral)
@@ -1053,6 +1060,7 @@ optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context) {
     TRY(None, None)
     return {};
 #undef TRY
+    block.Success();
     return make_shared<TokenLiteral>(tk.ReadSinceStart(), kind, *token);
 }
 VISITOR(TokenLiteral)
@@ -1072,6 +1080,7 @@ optional<shared_ptr<ArrayLiteral>> ArrayLiteral::parse(SyntaxContext& context) {
         if (optexprs) exprs = optexprs.value()->expressions;
     }
     if (!tk.Read(Token::Type::tkClosedBracket)) return {};
+    block.Success();
     return make_shared<ArrayLiteral>(tk.ReadSinceStart(), exprs);
 }
 VISITOR(ArrayLiteral)
@@ -1081,7 +1090,6 @@ optional<shared_ptr<ast::Body>> SyntaxAnalyzer::analyze(const vector<shared_ptr<
                                                         const shared_ptr<const locators::CodeFile>& file,
                                                         complog::ICompilationLog& log) {
     SyntaxContext context(tokens, file, log);
-    size_t pos = 0;
     auto res = ast::parseProgram(context);
     if (!res)
         for (auto& err : context.tokens.Report().MakeReport()) log.Log(err);

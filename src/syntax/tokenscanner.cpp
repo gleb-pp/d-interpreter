@@ -38,7 +38,7 @@ locators::Locator TokenScanner::StartPositionInFile() const {
 locators::SpanLocator TokenScanner::ReadSinceStart() const {
     auto& topframe = stack.back();
     int startind = topframe.StartIndex;
-    if (startind == topframe.StartIndex) return locators::SpanLocator(codeFile, StartOfToken(startind), 0);
+    if (startind == topframe.Index) return locators::SpanLocator(codeFile, StartOfToken(startind), 0);
     int endind = topframe.Index - 1;
     if (topframe.IgnoreEoln) {
         while (endind >= startind && tokens[endind]->type == Token::Type::tkNewLine) --endind;
