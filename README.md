@@ -1,4 +1,4 @@
-The interpreter for the [dynamic language](https://github.com/gleb-pp/d-interpreter/blob/main/proj-describtion/Project%20D.pdf) implemented in С++.
+The interpreter for the [dynamic language](https://github.com/gleb-pp/d-interpreter/blob/main/proj-description/Project%20D.pdf) implemented in С++.
 
 # Lexical Analyzer
 

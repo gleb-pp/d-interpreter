@@ -25,7 +25,9 @@ endif()
 
 add_executable(dinterp)
 
+add_subdirectory(bigint)
 add_subdirectory(compilation_log)
 add_subdirectory(locators)
 add_subdirectory(lexer)
+add_subdirectory(syntax)
 add_subdirectory(main)

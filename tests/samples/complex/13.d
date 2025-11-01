@@ -8,6 +8,7 @@ var sqrt := func(n) is
         if m * m <= n
         then l := m
         else r := m
+        end
     end
     return l
 end
@@ -21,7 +22,7 @@ end
 var linetostr := func(list, size) is
     var spantostr := func(list, from, to) is
         if from = to then
-            if list[from] is none then return "  "
+            if list[from] is none then return "  "; end
             return list[from]
         end
         var m := (from + to) / 2
@@ -35,9 +36,9 @@ var width := sqrt(2 * HEIGHT * HEIGHT) + 3
 var center := width / 2 + 1
 var grid := []
 var i
-for i := 1 .. HEIGHT loop grid[i] := []; end
+for i in 1 .. HEIGHT loop grid[i] := []; end
 var arc
-for arc := 0 .. ARCS loop
+for arc in 0 .. ARCS loop
     var radius := (HEIGHT - 1) * arc / ARCS
     var radius2 := radius * radius
     var x

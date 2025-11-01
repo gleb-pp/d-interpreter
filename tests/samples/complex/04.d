@@ -20,7 +20,7 @@ printfunc("decorated")
 // decorated
 // ===-----===
 
-var leavecontact := decor(func is print "Call: 8 800 123 45 67"; end)
+var leavecontact := decor(func() is print "Call: 8 800 123 45 67"; end)
 leavecontact()
 // expected output:
 // ===-----===
