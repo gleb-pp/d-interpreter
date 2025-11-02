@@ -18,8 +18,8 @@ std::optional<std::shared_ptr<Type>> Type::BinaryDiv(const Type& other) const { 
 std::optional<std::shared_ptr<Type>> Type::BinaryLogical(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::BinaryEq(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::BinaryOrdering(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::UnaryMinus(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::UnaryPlus(const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::UnaryMinus() const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::UnaryPlus() const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::UnaryNot() const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Field(const std::string& name) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Field(const Type& other) const { return {}; }
@@ -77,11 +77,11 @@ std::optional<std::shared_ptr<Type>> IntegerType::BinaryOrdering(const Type& oth
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> IntegerType::UnaryMinus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> IntegerType::UnaryMinus() const {
     return make_shared<IntegerType>();
 }
 
-std::optional<std::shared_ptr<Type>> IntegerType::UnaryPlus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> IntegerType::UnaryPlus() const {
     return make_shared<IntegerType>();
 }
 
@@ -125,11 +125,11 @@ std::optional<std::shared_ptr<Type>> RealType::BinaryOrdering(const Type& other)
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> RealType::UnaryMinus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> RealType::UnaryMinus() const {
     return make_shared<RealType>();
 }
 
-std::optional<std::shared_ptr<Type>> RealType::UnaryPlus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> RealType::UnaryPlus() const {
     return make_shared<RealType>();
 }
 
@@ -317,10 +317,10 @@ std::optional<std::shared_ptr<Type>> UnknownType::BinaryEq(const Type& other) co
 std::optional<std::shared_ptr<Type>> UnknownType::BinaryOrdering(const Type& other) const {
     return make_shared<UnknownType>();
 }
-std::optional<std::shared_ptr<Type>> UnknownType::UnaryMinus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> UnknownType::UnaryMinus() const {
     return make_shared<UnknownType>();
 }
-std::optional<std::shared_ptr<Type>> UnknownType::UnaryPlus(const Type& other) const {
+std::optional<std::shared_ptr<Type>> UnknownType::UnaryPlus() const {
     return make_shared<UnknownType>();
 }
 std::optional<std::shared_ptr<Type>> UnknownType::UnaryNot() const { return make_shared<UnknownType>(); }
