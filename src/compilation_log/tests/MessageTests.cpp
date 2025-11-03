@@ -6,6 +6,7 @@
 #include "complog/CompilationMessage.h"
 #include "fixture.h"
 #include "locators/locator.h"
+#include "spanerror.h"
 
 TEST_F(PascalProgram, FullLine) {
     locators::Locator loc(file, file->Position(4, 24));
@@ -106,5 +107,39 @@ TEST_F(PascalProgram, TwoLocators) {
 <string>:
 5 |    for i := 100 downto 1 do
                            ^
+)%%%");
+}
+
+TEST_F(PascalProgram, SpanMultilineError) {
+    size_t start = file->Position(4, 4);
+    size_t end = file->Position(8, 11);
+    locators::SpanLocator body(file, start, end - start);
+    SpanError err(body);
+    EXPECT_EQ(err.ToString(complog::CompilationMessage::FormatOptions::All(100)),
+              R"%%%([Error] (SPANBAD) Span error
+<string>:
+5 |    for i := 100 downto 1 do
+  |    ^^^^^^^^^^^^^^^^^^^^^^^^^
+6 |    begin
+  |^^^^^^^^^^
+7 |        writeln(i, "...");
+  |^^^^^^^^^^^^^^^^^^^^^^^^^^^
+8 |    end;
+  |^^^^^^^^^
+9 |    readln;
+   ^^^^^^^^^^^
+)%%%");
+}
+
+TEST_F(PascalProgram, SpanSubLineError) {
+    size_t start = 8;
+    size_t end = 12;
+    locators::SpanLocator body(file, start, end - start);
+    SpanError err(body);
+    EXPECT_EQ(err.ToString(complog::CompilationMessage::FormatOptions::All(100)),
+              R"%%%([Error] (SPANBAD) Span error
+<string>:
+1 |program test;
+           ^^^^
 )%%%");
 }

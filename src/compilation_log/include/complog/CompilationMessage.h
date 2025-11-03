@@ -50,6 +50,7 @@ protected:
     // 16:   for i := 1 to High(s) do
     //                          ^
     static void WriteContextToStream(std::ostream& out, const locators::Locator& loc, const FormatOptions& options);
+    static void WriteContextToStream(std::ostream& out, const locators::SpanLocator& loc, const FormatOptions& options);
 
 public:
     CompilationMessage(Severity severity, const std::string& code);
@@ -57,6 +58,7 @@ public:
     const Severity MessageSeverity() const;
     virtual void WriteMessageToStream(std::ostream& out, const FormatOptions& options) const = 0;
     virtual std::vector<locators::Locator> Locators() const = 0;
+    virtual std::vector<locators::SpanLocator> SpanLocators() const;
     std::string ToString(const FormatOptions& options);
     // Writes:
     //
