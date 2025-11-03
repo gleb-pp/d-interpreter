@@ -125,4 +125,11 @@ public:
     virtual ~BadSubscriptIndexType() override = default;
 };
 
+class IntegerZeroDivisionWarning : public SpanLocatorMessage {
+public:
+    IntegerZeroDivisionWarning(locators::SpanLocator pos);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~IntegerZeroDivisionWarning() override = default;
+};
+
 }  // namespace semantic_errors

@@ -117,4 +117,10 @@ void BadSubscriptIndexType::WriteMessageToStream(std::ostream& out,
     out << "Cannot use \"" << type->Name() << "\" as index in this subscript.\n";
 }
 
+IntegerZeroDivisionWarning::IntegerZeroDivisionWarning(locators::SpanLocator pos)
+    : SpanLocatorMessage(complog::Severity::Warning(), "IntegerZeroDivisionWarning", pos) {}
+void IntegerZeroDivisionWarning::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Looks like integer division by zero; this will crash the program during execution.\n";
+}
+
 }  // namespace semantic_errors
