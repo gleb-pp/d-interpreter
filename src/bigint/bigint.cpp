@@ -653,7 +653,10 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
 long BigInt::ClampToLong() const {
     if (*this >= numeric_limits<long>::max()) return numeric_limits<long>::max();
     if (*this <= numeric_limits<long>::min()) return numeric_limits<long>::min();
-    unsigned long res = static_cast<unsigned long>(v[0]
+    unsigned long res = static_cast<unsigned long>(v[0]);
+    if (v.size() > 1) res |= static_cast<unsigned long>(v[1]) << 32;
+    if (sign) res *= -1;
+    return res;
 }
 
 long double BigInt::ToFloat() const {

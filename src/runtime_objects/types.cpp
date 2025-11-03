@@ -245,11 +245,6 @@ std::optional<std::shared_ptr<Type>> TupleType::BinaryPlus(const Type& other) co
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> TupleType::BinaryEq(const Type& other) const {
-    if (TypeEq(other)) return make_shared<BoolType>();
-    return {};
-}
-
 std::optional<std::shared_ptr<Type>> TupleType::Field(const std::string& name) const {
     return make_shared<UnknownType>();
 }
