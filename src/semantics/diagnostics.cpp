@@ -21,7 +21,7 @@ void VariableNotDefined::WriteMessageToStream(ostream& out,
 }
 
 OperatorNotApplicable::OperatorNotApplicable(
-    const string& operatorName, initializer_list<pair<locators::SpanLocator, shared_ptr<runtime::Type>>> operands)
+    const string& operatorName, const vector<pair<locators::SpanLocator, shared_ptr<runtime::Type>>>& operands)
     : complog::CompilationMessage(complog::Severity::Error(), "OperatorNotApplicable"),
       opName(operatorName),
       types(operands) {}
@@ -71,7 +71,7 @@ ExpressionStatementNoSideEffects::ExpressionStatementNoSideEffects(locators::Spa
     : SpanLocatorMessage(complog::Severity::Warning(), "ExpressionStatementNoSideEffects", pos) {}
 void ExpressionStatementNoSideEffects::WriteMessageToStream(
     ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
-    out << "The last step in evaluating the expression has no side effects; optimized.\n";
+    out << "The expression has no side effects; optimized.\n";
 }
 
 EvaluationException::EvaluationException(locators::SpanLocator pos, const string& message)

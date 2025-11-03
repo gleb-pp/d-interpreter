@@ -18,5 +18,6 @@ public:
     std::vector<std::string> EndScope();
     void Assign(const std::string& name, const std::shared_ptr<runtime::Type>& type);
     void Assign(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed);
+    bool Declare(const std::string& name);
     void MergeTimelines(const ValueTimeline& other);  // Use after an If statement
 };
