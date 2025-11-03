@@ -49,7 +49,7 @@ TEST_F(RealCodeFixture, LineTexts) {
     EXPECT_EQ(file->LineTextWithoutLineFeed(1), "using namespace std;");
     EXPECT_EQ(file->LineTextWithoutLineFeed(2), "");
     EXPECT_EQ(file->LineTextWithoutLineFeed(3), "int main() {");
-    EXPECT_EQ(file->LineTextWithoutLineFeed(4), "    cout << \"Hello, world!\n\";");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(4), "    cout << \"Hello, world!\\n\";");
     EXPECT_EQ(file->LineTextWithoutLineFeed(5), "}");
     EXPECT_EQ(file->LineTextWithoutLineFeed(6), "}");
 }

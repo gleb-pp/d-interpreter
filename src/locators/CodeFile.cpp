@@ -48,7 +48,6 @@ std::string CodeFile::LineTextWithoutLineFeed(size_t line) const {
     line = min(line, eolns.size());
     size_t start = LineStartPosition(line);
     size_t len = LineLength(line);
-    len -= (line < eolns.size());
     return content.substr(start, len);
 }
 }  // namespace locators
