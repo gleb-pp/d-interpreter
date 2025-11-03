@@ -1,8 +1,10 @@
 #include "runtime/values.h"
 
+#include <algorithm>
 #include <compare>
 #include <memory>
 #include <cmath>
+#include "runtime/types.h"
 using namespace std;
 
 namespace runtime {
@@ -97,31 +99,31 @@ RealValue::RealValue(long double val) : value(val) {}
 long double RealValue::Value() const {
     return value;
 }
-std::shared_ptr<runtime::Type> RealValue::TypeOfValue() {
+shared_ptr<runtime::Type> RealValue::TypeOfValue() {
     return make_shared<RealType>();
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::BinaryPlus(const RuntimeValue& other) const {
+optional<shared_ptr<RuntimeValue>> RealValue::BinaryPlus(const RuntimeValue& other) const {
     return NumericPlus(*this, other);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::BinaryMinus(const RuntimeValue& other) const {
+optional<shared_ptr<RuntimeValue>> RealValue::BinaryMinus(const RuntimeValue& other) const {
     return NumericMinus(*this, other);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::BinaryMul(const RuntimeValue& other) const {
+optional<shared_ptr<RuntimeValue>> RealValue::BinaryMul(const RuntimeValue& other) const {
     return NumericMul(*this, other);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::BinaryDiv(const RuntimeValue& other) const {
+optional<shared_ptr<RuntimeValue>> RealValue::BinaryDiv(const RuntimeValue& other) const {
     return NumericDiv(*this, other);
 }
-std::optional<std::partial_ordering> RealValue::BinaryComparison(const RuntimeValue& other) const {
+optional<partial_ordering> RealValue::BinaryComparison(const RuntimeValue& other) const {
     return NumericComparison(*this, other);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::UnaryMinus() const {
+optional<shared_ptr<RuntimeValue>> RealValue::UnaryMinus() const {
     return make_shared<RealValue>(-value);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::UnaryPlus() const {
+optional<shared_ptr<RuntimeValue>> RealValue::UnaryPlus() const {
     return make_shared<RealValue>(value);
 }
-std::optional<std::shared_ptr<RuntimeValue>> RealValue::Field(const std::string& name) const {
+optional<shared_ptr<RuntimeValue>> RealValue::Field(const string& name) const {
     if (name == "Round") return make_shared<IntegerValue>(BigInt(round(value)));
     if (name == "Floor") return make_shared<IntegerValue>(BigInt(floor(value)));
     if (name == "Ceil") return make_shared<IntegerValue>(BigInt(ceil(value)));
@@ -135,7 +137,113 @@ std::optional<std::shared_ptr<RuntimeValue>> RealValue::Field(const std::string&
     return {};
 }
 
-// Implement class StringValue
+StringValue::StringValue(const string& value) : value(value) {}
+shared_ptr<runtime::Type> StringValue::TypeOfValue() {
+    return make_shared<StringType>();
+}
+const string& StringValue::Value() const {
+    return value;
+}
+vector<string> StringValue::Split(const string& sep) const {
+    if (sep.empty()) {
+        vector<string> res;
+        std::ranges::transform(value, std::back_inserter(res), [](char ch) { return string(1, ch); });
+        return res;
+    }
+    long nsep = sep.size();
+    vector<long> zsep(nsep);
+    long l = 0, r = 0;
+    for (long i = 1; i < nsep; i++) {
+        long& res = zsep[i];
+        if (i < r) res = max(r - i, zsep[i - l]);
+        while (i + res < nsep && sep[i + res] == sep[res]) ++res;
+        if (i + res > r) {
+            l = i;
+            r = i + res;
+        }
+    }
+    l = 0; r = 0;
+    long n = value.size();
+    vector<long> z(n);
+    for (long i = 0; i < n; i++) {
+        long& res = z[i];
+        if (i > r) res = max(r - i, z[i - l]);
+        while (i + res < n && res < nsep && value[i + res] == sep[res]) ++res;
+        if (i + res > r) {
+            r = i + res;
+            l = i;
+        }
+    }
+    vector<string> res;
+    long pos = 0;
+    for (long i = 0; i < n; i++) if (z[i] == nsep) {
+        res.push_back(value.substr(pos, i - pos));
+        i += nsep - 1;
+        pos = i;
+    }
+    res.push_back(value.substr(pos));
+    return res;
+}
+vector<string> StringValue::SplitWS() const {
+    long n = value.size();
+    long pos = 0;
+    vector<string> res;
+    while (pos < n && isspace(value[pos])) ++pos;
+    while (pos < n) {
+        long i = pos + 1;
+        while (i < n && !isspace(value[i])) ++i;
+        res.push_back(value.substr(pos, i - pos));
+        while (i < n && isspace(value[i])) ++i;
+        pos = i;
+    }
+    return res;
+}
+string StringValue::Join(const vector<string>& v) const {
+    if (v.empty()) return "";
+    string res;
+    size_t anssize = (v.size() - 1) * value.size();
+    for (auto& i : v) anssize += i.size();
+    res.reserve(anssize);
+    bool first = true;
+    for (auto& i : v) {
+        if (!first) res += value;
+        first = false;
+        res += i;
+    }
+    return res;
+}
+string StringValue::Lower() const {
+    string res = value;
+    std::ranges::transform(res, res.begin(), [](char ch) { return tolower(ch); });
+    return res;
+}
+string StringValue::Upper() const {
+    string res = value;
+    std::ranges::transform(res, res.begin(), [](char ch) { return toupper(ch); });
+    return res;
+}
+string StringValue::Slice(const BigInt& start, const BigInt& stop, const BigInt& step) const {
+    if (!step) return "";
+    long n = value.size();
+    if (step.IsNegative()) {
+        auto absstep = -step;
+        auto fromend = (BigInt(n) - start) % step;  // 0-based
+        
+    }
+}
+optional<shared_ptr<RuntimeValue>> StringValue::BinaryPlus(const RuntimeValue& other) const {
+
+}
+optional<partial_ordering> StringValue::BinaryComparison(const RuntimeValue& other) const {
+
+}
+optional<shared_ptr<RuntimeValue>> StringValue::Field(const string& name) const {
+
+}
+optional<shared_ptr<RuntimeValue>> StringValue::Subscript(const RuntimeValue& other) const {
+
+}
+
 /*
  * Has fields:
  * + Split: function (string) -> []

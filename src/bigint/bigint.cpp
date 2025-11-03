@@ -650,6 +650,12 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
     return partial_ordering::less;
 }
 
+long BigInt::ClampToLong() const {
+    if (*this >= numeric_limits<long>::max()) return numeric_limits<long>::max();
+    if (*this <= numeric_limits<long>::min()) return numeric_limits<long>::min();
+    unsigned long res = static_cast<unsigned long>(v[0]
+}
+
 long double BigInt::ToFloat() const {
     if (!*this) return 0.0;
     size_t bits = SignificantBits();
