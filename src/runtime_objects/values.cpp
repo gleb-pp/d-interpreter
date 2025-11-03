@@ -1,11 +1,12 @@
+#include "runtime/values.h"
+
 #include <algorithm>
 #include <cmath>
 #include <compare>
 #include <iterator>
-#include <sstream>
 #include <memory>
+#include <sstream>
 
-#include "runtime/values.h"
 #include "runtime/types.h"
 using namespace std;
 
@@ -36,15 +37,15 @@ RuntimeValueResult RuntimeValue::Subscript(const RuntimeValue& other) const { re
     const RealValue* areal = dynamic_cast<const RealValue*>(&a);      \
     const RealValue* breal = dynamic_cast<const RealValue*>(&b);      \
     if (!aint && !areal || !bint && !breal) return {};
-#define NUMERIC_CUSTOM(operator, name, customint)                                                           \
-    static RuntimeValueResult Numeric##name(const RuntimeValue& a, const RuntimeValue& b) { \
-        NUMERIC_CLASSIFY                                                                                    \
-        if (aint && bint) {                                                                                 \
-            customint return make_shared<IntegerValue>(aint->Value() operator bint->Value());               \
-        }                                                                                                   \
-        long double lhs = aint ? aint->Value().ToFloat() : areal->Value();                                  \
-        long double rhs = bint ? bint->Value().ToFloat() : breal->Value();                                  \
-        return make_shared<RealValue>(lhs operator rhs);                                                    \
+#define NUMERIC_CUSTOM(operator, name, customint)                                             \
+    static RuntimeValueResult Numeric##name(const RuntimeValue& a, const RuntimeValue& b) {   \
+        NUMERIC_CLASSIFY                                                                      \
+        if (aint && bint) {                                                                   \
+            customint return make_shared<IntegerValue>(aint->Value() operator bint->Value()); \
+        }                                                                                     \
+        long double lhs = aint ? aint->Value().ToFloat() : areal->Value();                    \
+        long double rhs = bint ? bint->Value().ToFloat() : breal->Value();                    \
+        return make_shared<RealValue>(lhs operator rhs);                                      \
     }
 #define NUMERIC_ARITH(operator, name) NUMERIC_CUSTOM(operator, name, )
 
@@ -72,18 +73,10 @@ static optional<partial_ordering> NumericComparison(const RuntimeValue& a, const
 IntegerValue::IntegerValue(const BigInt& val) : value(val) {}
 const BigInt& IntegerValue::Value() const { return value; }
 shared_ptr<runtime::Type> IntegerValue::TypeOfValue() const { return make_shared<IntegerType>(); }
-RuntimeValueResult IntegerValue::BinaryPlus(const RuntimeValue& other) const {
-    return NumericPlus(*this, other);
-}
-RuntimeValueResult IntegerValue::BinaryMinus(const RuntimeValue& other) const {
-    return NumericMinus(*this, other);
-}
-RuntimeValueResult IntegerValue::BinaryMul(const RuntimeValue& other) const {
-    return NumericMul(*this, other);
-}
-RuntimeValueResult IntegerValue::BinaryDiv(const RuntimeValue& other) const {
-    return NumericDiv(*this, other);
-}
+RuntimeValueResult IntegerValue::BinaryPlus(const RuntimeValue& other) const { return NumericPlus(*this, other); }
+RuntimeValueResult IntegerValue::BinaryMinus(const RuntimeValue& other) const { return NumericMinus(*this, other); }
+RuntimeValueResult IntegerValue::BinaryMul(const RuntimeValue& other) const { return NumericMul(*this, other); }
+RuntimeValueResult IntegerValue::BinaryDiv(const RuntimeValue& other) const { return NumericDiv(*this, other); }
 optional<partial_ordering> IntegerValue::BinaryComparison(const RuntimeValue& other) const {
     return NumericComparison(*this, other);
 }
@@ -98,18 +91,10 @@ RuntimeValueResult IntegerValue::Field(const string& name) const {
 RealValue::RealValue(long double val) : value(val) {}
 long double RealValue::Value() const { return value; }
 shared_ptr<runtime::Type> RealValue::TypeOfValue() const { return make_shared<RealType>(); }
-RuntimeValueResult RealValue::BinaryPlus(const RuntimeValue& other) const {
-    return NumericPlus(*this, other);
-}
-RuntimeValueResult RealValue::BinaryMinus(const RuntimeValue& other) const {
-    return NumericMinus(*this, other);
-}
-RuntimeValueResult RealValue::BinaryMul(const RuntimeValue& other) const {
-    return NumericMul(*this, other);
-}
-RuntimeValueResult RealValue::BinaryDiv(const RuntimeValue& other) const {
-    return NumericDiv(*this, other);
-}
+RuntimeValueResult RealValue::BinaryPlus(const RuntimeValue& other) const { return NumericPlus(*this, other); }
+RuntimeValueResult RealValue::BinaryMinus(const RuntimeValue& other) const { return NumericMinus(*this, other); }
+RuntimeValueResult RealValue::BinaryMul(const RuntimeValue& other) const { return NumericMul(*this, other); }
+RuntimeValueResult RealValue::BinaryDiv(const RuntimeValue& other) const { return NumericDiv(*this, other); }
 optional<partial_ordering> RealValue::BinaryComparison(const RuntimeValue& other) const {
     return NumericComparison(*this, other);
 }
@@ -263,12 +248,9 @@ RuntimeValueResult StringValue::Field(const string& name) const {
         return make_shared<StringSplitWSFunction>(dynamic_pointer_cast<const StringValue>(shared_from_this()));
     if (name == "Join")
         return make_shared<StringJoinFunction>(dynamic_pointer_cast<const StringValue>(shared_from_this()));
-    if (name == "Lower")
-        return make_shared<StringValue>(Lower());
-    if (name == "Upper")
-        return make_shared<StringValue>(Upper());
-    if (name == "Length")
-        return make_shared<IntegerValue>(value.size());
+    if (name == "Lower") return make_shared<StringValue>(Lower());
+    if (name == "Upper") return make_shared<StringValue>(Upper());
+    if (name == "Length") return make_shared<IntegerValue>(value.size());
     if (name == "Slice")
         return make_shared<StringSliceFunction>(dynamic_pointer_cast<const StringValue>(shared_from_this()));
     return {};
@@ -285,9 +267,7 @@ RuntimeValueResult StringValue::Subscript(const RuntimeValue& other) const {
 shared_ptr<Type> NoneValue::TypeOfValue() const { return make_shared<NoneType>(); }
 
 BoolValue::BoolValue(bool value) : value(value) {}
-shared_ptr<runtime::Type> BoolValue::TypeOfValue() const {
-    return make_shared<BoolType>();
-}
+shared_ptr<runtime::Type> BoolValue::TypeOfValue() const { return make_shared<BoolType>(); }
 RuntimeValueResult BoolValue::BinaryAnd(const RuntimeValue& other) const {
     auto p = dynamic_cast<const BoolValue*>(&other);
     if (!p) return {};
@@ -303,18 +283,14 @@ RuntimeValueResult BoolValue::BinaryXor(const RuntimeValue& other) const {
     if (!p) return {};
     return make_shared<BoolValue>(value != p->value);
 }
-RuntimeValueResult BoolValue::UnaryNot() const {
-    return make_shared<BoolValue>(!value);
-}
+RuntimeValueResult BoolValue::UnaryNot() const { return make_shared<BoolValue>(!value); }
 
 ArrayValue::ArrayValue(const vector<shared_ptr<RuntimeValue>>& arr) {
     size_t i = 0;
     for (auto& pvalue : arr) Value[BigInt(++i)] = pvalue;
 }
 ArrayValue::ArrayValue(const map<BigInt, shared_ptr<RuntimeValue>>& mp) : Value(mp) {}
-shared_ptr<runtime::Type> ArrayValue::TypeOfValue() const {
-    return make_shared<ArrayType>();
-}
+shared_ptr<runtime::Type> ArrayValue::TypeOfValue() const { return make_shared<ArrayType>(); }
 RuntimeValueResult ArrayValue::BinaryPlus(const RuntimeValue& other) const {
     auto p = dynamic_cast<const ArrayValue*>(&other);
     if (!p) return {};
@@ -323,8 +299,7 @@ RuntimeValueResult ArrayValue::BinaryPlus(const RuntimeValue& other) const {
     BigInt d = Value.rbegin()->first - p->Value.begin()->first + BigInt(1);
     shared_ptr<ArrayValue> result = make_shared<ArrayValue>(Value);
     map<BigInt, shared_ptr<RuntimeValue>>& dest = result->Value;
-    for (auto& kv : p->Value)
-        dest[kv.first + d] = kv.second;
+    for (auto& kv : p->Value) dest[kv.first + d] = kv.second;
     return result;
 }
 optional<partial_ordering> ArrayValue::BinaryComparison(const RuntimeValue& other) const {
@@ -340,29 +315,26 @@ RuntimeValueResult ArrayValue::Subscript(const RuntimeValue& other) const {
     if (iter == Value.end()) return runtime_error("Array index not found");
     return iter->second;
 }
-void ArrayValue::AssignItem(const BigInt& index, const shared_ptr<RuntimeValue>& other) {
-    Value[index] = other;
-}
+void ArrayValue::AssignItem(const BigInt& index, const shared_ptr<RuntimeValue>& other) { Value[index] = other; }
 
-TupleValue::TupleValue(const vector<shared_ptr<RuntimeValue>>& values,
-                       const map<string, size_t>& nameIndex)
+TupleValue::TupleValue(const vector<shared_ptr<RuntimeValue>>& values, const map<string, size_t>& nameIndex)
     : values(values), nameIndex(nameIndex) {}
 TupleValue::TupleValue(const vector<pair<optional<string>, shared_ptr<RuntimeValue>>>& vals) {
     size_t n = vals.size();
     values.reserve(n);
-    ranges::transform(vals, back_inserter(values), [](const pair<optional<string>, shared_ptr<RuntimeValue>>& val) { return val.second; });
-    for (size_t i = 0; i < n; i++) if (vals[i].first) nameIndex[*vals[i].first] = i;
+    ranges::transform(vals, back_inserter(values),
+                      [](const pair<optional<string>, shared_ptr<RuntimeValue>>& val) { return val.second; });
+    for (size_t i = 0; i < n; i++)
+        if (vals[i].first) nameIndex[*vals[i].first] = i;
 }
-TupleValue::TupleValue(const TupleValue& left, const TupleValue& right) : values(left.values), nameIndex(left.nameIndex) {
+TupleValue::TupleValue(const TupleValue& left, const TupleValue& right)
+    : values(left.values), nameIndex(left.nameIndex) {
     auto& rightvalues = right.values;
     size_t base = left.values.size();
     values.insert(values.end(), rightvalues.begin(), rightvalues.end());
-    for (auto& kv : right.nameIndex)
-        nameIndex.try_emplace(kv.first, kv.second + base);
+    for (auto& kv : right.nameIndex) nameIndex.try_emplace(kv.first, kv.second + base);
 }
-vector<shared_ptr<RuntimeValue>> TupleValue::Values() const {
-    return values;
-}
+vector<shared_ptr<RuntimeValue>> TupleValue::Values() const { return values; }
 optional<size_t> TupleValue::IndexByName(const string& name) const {
     auto iter = nameIndex.find(name);
     if (iter == nameIndex.end()) return {};
@@ -377,17 +349,13 @@ RuntimeValueResult TupleValue::ValueByIndex(BigInt index) const {
     if (index <= 0 || index > values.size()) return {};
     return values[index.ClampToLong() - 1];
 }
-shared_ptr<runtime::Type> TupleValue::TypeOfValue() const {
-    return make_shared<TupleType>();
-}
+shared_ptr<runtime::Type> TupleValue::TypeOfValue() const { return make_shared<TupleType>(); }
 RuntimeValueResult TupleValue::BinaryPlus(const RuntimeValue& other) const {
     auto p = dynamic_cast<const TupleValue*>(&other);
     if (!p) return {};
     return make_shared<TupleValue>(*this, *p);
 }
-RuntimeValueResult TupleValue::Field(const string& name) const {
-    return ValueByName(name);
-}
+RuntimeValueResult TupleValue::Field(const string& name) const { return ValueByName(name); }
 RuntimeValueResult TupleValue::Field(const RuntimeValue& index) const {
     auto p = dynamic_cast<const IntegerValue*>(&index);
     if (!p) return {};
@@ -409,7 +377,8 @@ StringSliceFunction::StringSliceFunction(const shared_ptr<const StringValue>& _t
 RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
     if (args.size() != 3) return runtime_error("The string.Slice function requires 3 arguments that are integers");
     const IntegerValue* _args[3];
-    ranges::transform(args, _args, [](const shared_ptr<RuntimeValue>& val) { return dynamic_cast<const IntegerValue*>(val.get()); });
+    ranges::transform(args, _args,
+                      [](const shared_ptr<RuntimeValue>& val) { return dynamic_cast<const IntegerValue*>(val.get()); });
     bool types_ok = true;
     for (int i = 0; i < 3; i++) {
         if (!_args[i]) {
@@ -433,7 +402,8 @@ RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValu
     return make_shared<StringValue>(_this->Slice(_args[0]->Value(), _args[1]->Value(), _args[2]->Value()));
 }
 shared_ptr<runtime::Type> StringSliceFunction::TypeOfValue() const {
-    return make_shared<FuncType>(true, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()), make_shared<StringType>());
+    return make_shared<FuncType>(true, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()),
+                                 make_shared<StringType>());
 }
 
 StringSplitFunction::StringSplitFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
@@ -477,7 +447,8 @@ RuntimeValueResult StringJoinFunction::Call(const std::vector<std::shared_ptr<Ru
                            [](const std::pair<BigInt, std::shared_ptr<RuntimeValue>>& kv) {
                                return dynamic_cast<const StringValue*>(kv.second.get());
                            });
-    for (auto i : strvals) if (!i) return runtime_error("The string.Join function received an array with non-string values");
+    for (auto i : strvals)
+        if (!i) return runtime_error("The string.Join function received an array with non-string values");
     vector<string> strs(strvals.size());
     std::ranges::transform(strvals, strs.begin(), [](const StringValue* val) { return val->Value(); });
     return make_shared<StringValue>(_this->Join(strs));

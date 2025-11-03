@@ -1,4 +1,5 @@
 #include "runtime/types.h"
+
 #include <memory>
 #include <sstream>
 using namespace std;
@@ -25,28 +26,28 @@ std::optional<std::shared_ptr<Type>> Type::Field(const std::string& name) const 
 std::optional<std::shared_ptr<Type>> Type::Field(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Subscript(const Type& other) const { return {}; }
 
-bool IntegerType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const IntegerType*>(&other);
-}
+bool IntegerType::TypeEq(const Type& other) const { return !!dynamic_cast<const IntegerType*>(&other); }
 
-std::string IntegerType::Name() const {
-    return "int";
-}
+std::string IntegerType::Name() const { return "int"; }
 
-static bool IsRealOrInt(const Type& t) {
-    return t.TypeEq(IntegerType()) || t.TypeEq(RealType());
-}
+static bool IsRealOrInt(const Type& t) { return t.TypeEq(IntegerType()) || t.TypeEq(RealType()); }
 
 static optional<shared_ptr<Type>> NumericArith(const Type& a, const Type& b) {
     auto inttype = make_shared<IntegerType>();
     auto realtype = make_shared<RealType>();
     bool inta, intb;
-    if (a.TypeEq(*inttype)) inta = true;
-    else if (a.TypeEq(*realtype)) inta = false;
-    else return {};
-    if (b.TypeEq(*inttype)) intb = true;
-    else if (b.TypeEq(*realtype)) intb = false;
-    else return {};
+    if (a.TypeEq(*inttype))
+        inta = true;
+    else if (a.TypeEq(*realtype))
+        inta = false;
+    else
+        return {};
+    if (b.TypeEq(*inttype))
+        intb = true;
+    else if (b.TypeEq(*realtype))
+        intb = false;
+    else
+        return {};
     bool intres = inta && intb;
     return intres ? static_cast<shared_ptr<Type>>(inttype) : realtype;
 }
@@ -77,13 +78,9 @@ std::optional<std::shared_ptr<Type>> IntegerType::BinaryOrdering(const Type& oth
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> IntegerType::UnaryMinus() const {
-    return make_shared<IntegerType>();
-}
+std::optional<std::shared_ptr<Type>> IntegerType::UnaryMinus() const { return make_shared<IntegerType>(); }
 
-std::optional<std::shared_ptr<Type>> IntegerType::UnaryPlus() const {
-    return make_shared<IntegerType>();
-}
+std::optional<std::shared_ptr<Type>> IntegerType::UnaryPlus() const { return make_shared<IntegerType>(); }
 
 std::optional<std::shared_ptr<Type>> IntegerType::Field(const std::string& name) const {
     if (name == "Round" || name == "Floor" || name == "Ceil") return make_shared<IntegerType>();
@@ -91,13 +88,9 @@ std::optional<std::shared_ptr<Type>> IntegerType::Field(const std::string& name)
     return {};
 }
 
-bool RealType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const RealType*>(&other);
-}
+bool RealType::TypeEq(const Type& other) const { return !!dynamic_cast<const RealType*>(&other); }
 
-std::string RealType::Name() const {
-    return "real";
-}
+std::string RealType::Name() const { return "real"; }
 
 std::optional<std::shared_ptr<Type>> RealType::BinaryPlus(const Type& other) const {
     return NumericArith(*this, other);
@@ -107,13 +100,9 @@ std::optional<std::shared_ptr<Type>> RealType::BinaryMinus(const Type& other) co
     return NumericArith(*this, other);
 }
 
-std::optional<std::shared_ptr<Type>> RealType::BinaryMul(const Type& other) const {
-    return NumericArith(*this, other);
-}
+std::optional<std::shared_ptr<Type>> RealType::BinaryMul(const Type& other) const { return NumericArith(*this, other); }
 
-std::optional<std::shared_ptr<Type>> RealType::BinaryDiv(const Type& other) const {
-    return NumericArith(*this, other);
-}
+std::optional<std::shared_ptr<Type>> RealType::BinaryDiv(const Type& other) const { return NumericArith(*this, other); }
 
 std::optional<std::shared_ptr<Type>> RealType::BinaryEq(const Type& other) const {
     if (IsRealOrInt(other)) return make_shared<BoolType>();
@@ -125,13 +114,9 @@ std::optional<std::shared_ptr<Type>> RealType::BinaryOrdering(const Type& other)
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> RealType::UnaryMinus() const {
-    return make_shared<RealType>();
-}
+std::optional<std::shared_ptr<Type>> RealType::UnaryMinus() const { return make_shared<RealType>(); }
 
-std::optional<std::shared_ptr<Type>> RealType::UnaryPlus() const {
-    return make_shared<RealType>();
-}
+std::optional<std::shared_ptr<Type>> RealType::UnaryPlus() const { return make_shared<RealType>(); }
 
 std::optional<std::shared_ptr<Type>> RealType::Field(const std::string& name) const {
     if (name == "Round" || name == "Floor" || name == "Ceil") return make_shared<IntegerType>();
@@ -139,13 +124,9 @@ std::optional<std::shared_ptr<Type>> RealType::Field(const std::string& name) co
     return {};
 }
 
-bool StringType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const StringType*>(&other);
-}
+bool StringType::TypeEq(const Type& other) const { return !!dynamic_cast<const StringType*>(&other); }
 
-std::string StringType::Name() const {
-    return "string";
-}
+std::string StringType::Name() const { return "string"; }
 
 std::optional<std::shared_ptr<Type>> StringType::BinaryPlus(const Type& other) const {
     if (TypeEq(other)) return make_shared<StringType>();
@@ -179,43 +160,28 @@ std::optional<std::shared_ptr<Type>> StringType::Field(const std::string& name) 
 }
 
 std::optional<std::shared_ptr<Type>> StringType::Subscript(const Type& other) const {
-    if (other.TypeEq(IntegerType()))
-        return make_shared<StringType>();
+    if (other.TypeEq(IntegerType())) return make_shared<StringType>();
     return {};
 }
 
-bool NoneType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const NoneType*>(&other);
-}
+bool NoneType::TypeEq(const Type& other) const { return !!dynamic_cast<const NoneType*>(&other); }
 
-std::string NoneType::Name() const {
-    return "none";
-}
+std::string NoneType::Name() const { return "none"; }
 
-bool BoolType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const BoolType*>(&other);
-}
+bool BoolType::TypeEq(const Type& other) const { return !!dynamic_cast<const BoolType*>(&other); }
 
-std::string BoolType::Name() const {
-    return "bool";
-}
+std::string BoolType::Name() const { return "bool"; }
 
 std::optional<std::shared_ptr<Type>> BoolType::BinaryLogical(const Type& other) const {
     if (other.TypeEq(*this)) return make_shared<BoolType>();
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> BoolType::UnaryNot() const {
-    return make_shared<BoolType>();
-}
+std::optional<std::shared_ptr<Type>> BoolType::UnaryNot() const { return make_shared<BoolType>(); }
 
-bool ArrayType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const ArrayType*>(&other);
-}
+bool ArrayType::TypeEq(const Type& other) const { return !!dynamic_cast<const ArrayType*>(&other); }
 
-std::string ArrayType::Name() const {
-    return "[Array]";
-}
+std::string ArrayType::Name() const { return "[Array]"; }
 
 std::optional<std::shared_ptr<Type>> ArrayType::BinaryPlus(const Type& other) const {
     if (TypeEq(other)) return make_shared<ArrayType>();
@@ -232,13 +198,9 @@ std::optional<std::shared_ptr<Type>> ArrayType::Subscript(const Type& other) con
     return {};
 }
 
-bool TupleType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const TupleType*>(&other);
-}
+bool TupleType::TypeEq(const Type& other) const { return !!dynamic_cast<const TupleType*>(&other); }
 
-std::string TupleType::Name() const {
-    return "{Tuple}";
-}
+std::string TupleType::Name() const { return "{Tuple}"; }
 
 std::optional<std::shared_ptr<Type>> TupleType::BinaryPlus(const Type& other) const {
     if (TypeEq(other)) return make_shared<TupleType>();
@@ -263,9 +225,7 @@ FuncType::FuncType() : pure(false), argTypes({}), returnType(make_shared<Unknown
 bool FuncType::Pure() const { return pure; }
 std::optional<std::vector<std::shared_ptr<Type>>> FuncType::ArgTypes() const { return argTypes; }
 std::shared_ptr<Type> FuncType::ReturnType() const { return returnType; }
-bool FuncType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const FuncType*>(&other);
-}
+bool FuncType::TypeEq(const Type& other) const { return !!dynamic_cast<const FuncType*>(&other); }
 std::string FuncType::Name() const {
     stringstream res;
     if (pure) res << "(pure)";
@@ -277,19 +237,15 @@ std::string FuncType::Name() const {
             first = false;
             res << ptr->Name();
         }
-    }
-    else res << "...";
+    } else
+        res << "...";
     res << ") -> " << returnType->Name();
     return res.str();
 }
 
-bool UnknownType::TypeEq(const Type& other) const {
-    return !!dynamic_cast<const UnknownType*>(&other);
-}
+bool UnknownType::TypeEq(const Type& other) const { return !!dynamic_cast<const UnknownType*>(&other); }
 
-std::string UnknownType::Name() const {
-    return "object?";
-}
+std::string UnknownType::Name() const { return "object?"; }
 
 std::optional<std::shared_ptr<Type>> UnknownType::BinaryPlus(const Type& other) const {
     return make_shared<UnknownType>();
@@ -312,12 +268,8 @@ std::optional<std::shared_ptr<Type>> UnknownType::BinaryEq(const Type& other) co
 std::optional<std::shared_ptr<Type>> UnknownType::BinaryOrdering(const Type& other) const {
     return make_shared<UnknownType>();
 }
-std::optional<std::shared_ptr<Type>> UnknownType::UnaryMinus() const {
-    return make_shared<UnknownType>();
-}
-std::optional<std::shared_ptr<Type>> UnknownType::UnaryPlus() const {
-    return make_shared<UnknownType>();
-}
+std::optional<std::shared_ptr<Type>> UnknownType::UnaryMinus() const { return make_shared<UnknownType>(); }
+std::optional<std::shared_ptr<Type>> UnknownType::UnaryPlus() const { return make_shared<UnknownType>(); }
 std::optional<std::shared_ptr<Type>> UnknownType::UnaryNot() const { return make_shared<UnknownType>(); }
 std::optional<std::shared_ptr<Type>> UnknownType::Field(const std::string& name) const {
     return make_shared<UnknownType>();

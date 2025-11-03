@@ -8,89 +8,122 @@
 
 namespace semantic_errors {
 
-class SingleLocatorMessage : public complog::CompilationMessage {
+class SpanLocatorMessage : public complog::CompilationMessage {
 protected:
-    locators::Locator loc;
+    locators::SpanLocator loc;
 
 public:
-    SingleLocatorMessage(complog::Severity severity, const std::string& code, locators::Locator pos);
+    SpanLocatorMessage(complog::Severity severity, const std::string& code, locators::SpanLocator pos);
     std::vector<locators::Locator> Locators() const override;
-    virtual ~SingleLocatorMessage() override = default;
+    std::vector<locators::SpanLocator> SpanLocators() const override;
+    virtual ~SpanLocatorMessage() override = default;
 };
 
-class VariableNotDefined : public SingleLocatorMessage {
+class VariableNotDefined : public SpanLocatorMessage {
     std::string varName;
 
 public:
-    VariableNotDefined(const locators::Locator pos, const std::string& varName);
+    VariableNotDefined(const locators::SpanLocator pos, const std::string& varName);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~VariableNotDefined() override = default;
 };
 
 class OperatorNotApplicable : public complog::CompilationMessage {
     std::string opName;
-    std::vector<std::pair<locators::Locator, std::shared_ptr<runtime::Type>>> types;
+    std::vector<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>> types;
 
 public:
-    OperatorNotApplicable(const std::string& operatorName,
-                          std::initializer_list<std::pair<locators::Locator, std::shared_ptr<runtime::Type>>> operands);
+    OperatorNotApplicable(
+        const std::string& operatorName,
+        std::initializer_list<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>> operands);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     std::vector<locators::Locator> Locators() const override;
+    std::vector<locators::SpanLocator> SpanLocators() const override;
     virtual ~OperatorNotApplicable() override = default;
 };
 
-class ArgumentCountWrong : public SingleLocatorMessage {
-    std::shared_ptr<runtime::FuncType> func;
-    size_t providedCount;
-
-public:
-    ArgumentCountWrong(const std::shared_ptr<runtime::FuncType>& function, size_t providedCount, locators::Locator pos);
-    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
-    virtual ~ArgumentCountWrong() override = default;
-};
-
-class ArgumentTypeMismatch : public SingleLocatorMessage {
-    std::shared_ptr<runtime::Type> expected, provided;
-
-public:
-    ArgumentTypeMismatch(const std::shared_ptr<runtime::Type>& expected, const std::shared_ptr<runtime::Type>& provided,
-                         locators::Locator pos);
-    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
-    virtual ~ArgumentTypeMismatch() override = default;
-};
-
-class CodeUnreachable : public SingleLocatorMessage {
+class CodeUnreachable : public SpanLocatorMessage {
     bool removed;
 
 public:
-    CodeUnreachable(locators::Locator pos, bool removed);
+    CodeUnreachable(locators::SpanLocator pos, bool removed);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~CodeUnreachable() override = default;
 };
 
-class IfConditionAlwaysKnown : public SingleLocatorMessage {
+class IfConditionAlwaysKnown : public SpanLocatorMessage {
     bool conditionValue;
 
 public:
-    IfConditionAlwaysKnown(bool value, locators::Locator ifStatementPos);
+    IfConditionAlwaysKnown(bool value, locators::SpanLocator pos);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~IfConditionAlwaysKnown() override = default;
 };
 
-class WhileConditionKnownAtStart : public SingleLocatorMessage {
-    bool conditionValue;
-
+class WhileConditionFalseAtStart : public SpanLocatorMessage {
 public:
-    WhileConditionKnownAtStart(bool value, locators::Locator ifStatementPos);
+    WhileConditionFalseAtStart(locators::SpanLocator pos);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
-    virtual ~WhileConditionKnownAtStart() override = default;
+    virtual ~WhileConditionFalseAtStart() override = default;
 };
 
-class ExpressionStatementNoSideEffects : public SingleLocatorMessage {
+class ExpressionStatementNoSideEffects : public SpanLocatorMessage {
 public:
-    ExpressionStatementNoSideEffects(locators::Locator pos);
+    ExpressionStatementNoSideEffects(locators::SpanLocator pos);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~ExpressionStatementNoSideEffects() override = default;
+};
+
+class EvaluationException : public SpanLocatorMessage {
+    std::string msg;
+
+public:
+    EvaluationException(locators::SpanLocator pos, const std::string& message);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~EvaluationException() override = default;
+};
+
+class CannotAssignNamedFieldInTuple : public SpanLocatorMessage {
+    std::string fieldname;
+
+public:
+    CannotAssignNamedFieldInTuple(locators::SpanLocator pos, const std::string& fieldName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~CannotAssignNamedFieldInTuple() override = default;
+};
+
+class FieldsOnlyAssignableInTuples : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> type;
+
+public:
+    FieldsOnlyAssignableInTuples(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& triedToAssignIn);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~FieldsOnlyAssignableInTuples() override = default;
+};
+
+class CannotAssignIndexedFieldInTuple : public SpanLocatorMessage {
+public:
+    CannotAssignIndexedFieldInTuple(locators::SpanLocator pos);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~CannotAssignIndexedFieldInTuple() override = default;
+};
+
+class SubscriptAssignmentOnlyInArrays : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> type;
+
+public:
+    SubscriptAssignmentOnlyInArrays(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& triedType);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~SubscriptAssignmentOnlyInArrays() override = default;
+};
+
+class BadSubscriptIndexType : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> type;
+
+public:
+    BadSubscriptIndexType(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& triedType);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~BadSubscriptIndexType() override = default;
 };
 
 }  // namespace semantic_errors
