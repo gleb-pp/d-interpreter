@@ -22,8 +22,8 @@ public:
     virtual std::optional<std::shared_ptr<Type>> BinaryMul(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> BinaryDiv(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> BinaryLogical(const Type& other) const;
-    virtual std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const;        // = /=
-    virtual std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const;  // < <= > >=
+    virtual bool BinaryEq(const Type& other) const;        // = /=
+    virtual bool BinaryOrdering(const Type& other) const;  // < <= > >=
     virtual std::optional<std::shared_ptr<Type>> UnaryMinus() const;
     virtual std::optional<std::shared_ptr<Type>> UnaryPlus() const;
     virtual std::optional<std::shared_ptr<Type>> UnaryNot() const;
@@ -48,8 +48,8 @@ public:
     std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryMul(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryDiv(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
+    bool BinaryEq(const Type& other) const override;
+    bool BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryMinus() const override;
     std::optional<std::shared_ptr<Type>> UnaryPlus() const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
@@ -71,8 +71,8 @@ public:
     std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryMul(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryDiv(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
+    bool BinaryEq(const Type& other) const override;
+    bool BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryMinus() const override;
     std::optional<std::shared_ptr<Type>> UnaryPlus() const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
@@ -94,8 +94,8 @@ public:
     bool TypeEq(const Type& other) const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
+    bool BinaryEq(const Type& other) const override;
+    bool BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
     std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const override;
     virtual ~StringType() override = default;
@@ -122,7 +122,7 @@ public:
     bool TypeEq(const Type& other) const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
+    bool BinaryEq(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const override;
     virtual ~ArrayType() override = default;
 };
@@ -155,6 +155,7 @@ public:
 };
 
 class UnknownType : public Type {
+public:
     bool TypeEq(const Type& other) const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
@@ -162,8 +163,8 @@ class UnknownType : public Type {
     std::optional<std::shared_ptr<Type>> BinaryMul(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryDiv(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryLogical(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryEq(const Type& other) const override;
-    std::optional<std::shared_ptr<Type>> BinaryOrdering(const Type& other) const override;
+    bool BinaryEq(const Type& other) const override;
+    bool BinaryOrdering(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryMinus() const override;
     std::optional<std::shared_ptr<Type>> UnaryPlus() const override;
     std::optional<std::shared_ptr<Type>> UnaryNot() const override;

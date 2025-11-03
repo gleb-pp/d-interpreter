@@ -27,14 +27,14 @@ public:
     virtual ~VariableNotDefined() override = default;
 };
 
+using VectorOfSpanTypes = std::vector<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>>;
+
 class OperatorNotApplicable : public complog::CompilationMessage {
     std::string opName;
-    std::vector<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>> types;
+    VectorOfSpanTypes types;
 
 public:
-    OperatorNotApplicable(
-        const std::string& operatorName,
-        std::vector<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>>& operands);
+    OperatorNotApplicable(const std::string& peratorName, const VectorOfSpanTypes& operands);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     std::vector<locators::Locator> Locators() const override;
     std::vector<locators::SpanLocator> SpanLocators() const override;

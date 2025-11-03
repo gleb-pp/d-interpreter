@@ -20,8 +20,7 @@ void VariableNotDefined::WriteMessageToStream(ostream& out,
     out << "Variable \"" << varName << "\" was not declared.\n";
 }
 
-OperatorNotApplicable::OperatorNotApplicable(
-    const string& operatorName, const vector<pair<locators::SpanLocator, shared_ptr<runtime::Type>>>& operands)
+OperatorNotApplicable::OperatorNotApplicable(const string& operatorName, const VectorOfSpanTypes& operands)
     : complog::CompilationMessage(complog::Severity::Error(), "OperatorNotApplicable"),
       opName(operatorName),
       types(operands) {}
