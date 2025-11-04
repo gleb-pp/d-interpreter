@@ -3,27 +3,46 @@
 #include <variant>
 
 #include "locators/locator.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
+#include "runtime.h"
 
 struct ScopeStats {
     std::vector<std::pair<std::string, locators::SpanLocator>> uselessAssignments;
     std::vector<std::pair<std::string, locators::SpanLocator>> variablesNeverUsed;
-    std::vector<std::string> assignedExternals;
+    bool madeAllUnknown;
+    std::map<std::string, bool> referencedExternals;  // true if assigned
 };
 
 class ValueTimeline {
+    struct Var {
+        runtime::TypeOrValue val;
+        std::vector<locators::SpanLocator> lastUnusedAssignments;
+        locators::SpanLocator declaration;
+        bool used = false;
+        Var();
+    };
+
+    struct Scope {
+        std::map<std::string, Var> vars;
+        std::map<std::string, bool> externalReferences;  // true if assigned
+    };
+
+    std::vector<Scope> stack;
+    std::vector<size_t> blindScopeIndices;
+
+    std::optional<std::pair<size_t, const Var*>> Lookup(const std::string& name) const;
+    std::optional<std::pair<size_t, Var*>> Lookup(const std::string& name);
+
 public:
-    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> LookupVariable(
-        const std::string& name) const;
+    std::optional<runtime::TypeOrValue> LookupVariable(const std::string& name) const;
     void MakeAllUnknown();
     // Normal scope
     void StartScope();
-    // Blind Scope: from inside, all variables are of type UnknownType
+    // Blind Scope: from inside, all external variables are of type UnknownType
     void StartBlindScope();
     ScopeStats EndScope();
-    void Assign(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
-    void Assign(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
+    bool Assign(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
+    bool Assign(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
     bool Declare(const std::string& name, locators::SpanLocator pos);
+    locators::SpanLocator LookupDeclaration(const std::string& name);
     void MergeTimelines(const ValueTimeline& other);  // Use after an If statement
 };

@@ -11,7 +11,7 @@
 class ExpressionChecker : public ast::IASTVisitor {
     complog::ICompilationLog& log;
     bool pure;
-    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> res;
+    std::optional<runtime::TypeOrValue> res;
     std::optional<std::shared_ptr<ast::ASTNode>> replacement;
     ValueTimeline& values;
 
@@ -24,7 +24,7 @@ public:
     ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);
     bool HasResult() const;  // false in case of error
     bool Pure() const;
-    std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> Result() const;
+    runtime::TypeOrValue Result() const;
     std::optional<std::shared_ptr<ast::ASTNode>> Replacement() const;
     std::shared_ptr<ast::Expression> AssertReplacementAsExpression() const;
     ValueTimeline& ProgramState() const;

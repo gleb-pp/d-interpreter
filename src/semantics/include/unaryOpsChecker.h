@@ -1,7 +1,6 @@
 #pragma once
 #include "locators/locator.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
+#include "runtime.h"
 #include "complog/CompilationLog.h"
 #include "syntax.h"
 #include "valueTimeline.h"
@@ -10,18 +9,17 @@ class UnaryOpChecker : public ast::IASTVisitor {
 private:
     complog::ICompilationLog& log;
     ValueTimeline& values;
-    std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> curvalue;
+    runtime::TypeOrValue curvalue;
     locators::SpanLocator pos;
     bool pure = true;
-    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> res;
+    std::optional<runtime::TypeOrValue> res;
 
 public:
-    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values,
-                   const std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>& curvalue,
+    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values, const runtime::TypeOrValue& curvalue,
                    const locators::SpanLocator& pos);
     bool HasResult() const;
     bool Pure() const;
-    std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> Result() const;
+    runtime::TypeOrValue Result() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;

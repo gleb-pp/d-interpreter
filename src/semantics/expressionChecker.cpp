@@ -17,7 +17,7 @@ using namespace std;
 // may modify the syntax tree
 ExpressionChecker::ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values)
     : log(log), pure(true), values(values) {}
-std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> ExpressionChecker::Result() const {
+runtime::TypeOrValue ExpressionChecker::Result() const {
     return *res;
 }
 bool ExpressionChecker::HasResult() const {
@@ -664,18 +664,21 @@ void ExpressionChecker::VisitTupleLiteral(ast::TupleLiteral& node) {
 }
 
 void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
-    bool badnames = false;
+    vector<string> paramnames;
     {
+        bool badnames = false;
         map<string, vector<locators::SpanLocator>> locs;
         for (auto& param : node.parameters) {
             auto span = param->span;
             locs[param->identifier].emplace_back(node.pos.File(), span.position, span.length);
+            paramnames.push_back(param->identifier);
         }
         for (auto& kv : locs) {
             if (kv.second.size() <= 1) continue;
             badnames = true;
             log.Log(make_shared<semantic_errors::DuplicateParameterNames>(kv.first, kv.second));
         }
+        if (badnames) return;
     }
     ValueTimeline tl(values);
     tl.StartBlindScope();
@@ -685,17 +688,23 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
         tl.Declare(param->identifier, loc);
         tl.Assign(param->identifier, make_shared<runtime::UnknownType>(), loc);
     }
-    auto paraminfo = tl.EndScope();
-    for (auto& unused : paraminfo.uselessAssignments)
-        log.Log(make_shared<semantic_errors::AssignedValueUnused>(unused.second, unused.first));
+
     StatementChecker chk(log, values, true, false);
     node.funcBody->AcceptVisitor(chk);
     if (chk.Terminated() == StatementChecker::TerminationKind::Errored) return;
+    auto paraminfo = tl.EndScope();
+    for (auto& unused : paraminfo.uselessAssignments)
+        log.Log(make_shared<semantic_errors::AssignedValueUnused>(unused.second, unused.first));
+    vector<string> captured(paraminfo.referencedExternals.size());
+    std::ranges::transform(paraminfo.referencedExternals, captured.begin(),
+                           [](const pair<const string, bool>& kv) { return kv.first; });
     auto optreturnedtype = chk.Returned();
     auto returnedtype = optreturnedtype ? *optreturnedtype : make_shared<runtime::UnknownType>();
-    this->res = make_shared<runtime::FuncType>(
+    auto functype = make_shared<runtime::FuncType>(
         chk.Pure(), vector<shared_ptr<runtime::Type>>(node.parameters.size(), make_shared<runtime::UnknownType>()),
         returnedtype);
+    replacement = make_shared<ast::ClosureDefinition>(node.pos, functype, node.funcBody, paramnames, captured);
+    this->res = functype;
 }
 
 void ExpressionChecker::VisitTokenLiteral(ast::TokenLiteral& node) {
