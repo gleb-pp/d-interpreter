@@ -168,7 +168,7 @@ BigInt& BigInt::operator=(size_t val) {
     return *this;
 }
 
-std::vector<size_t> BigInt::Repr(size_t base) {
+std::vector<size_t> BigInt::Repr(size_t base) const {
     assert_base_ge2(base);
     vector<size_t> res;
     if (base & (base - 1)) {  // not a power of 2
@@ -205,7 +205,7 @@ std::vector<size_t> BigInt::Repr(size_t base) {
     return res;
 }
 
-std::string BigInt::ToString(size_t base) {
+std::string BigInt::ToString(size_t base) const {
     assert_base_ge2(base);
     if (base > 10 + 26) throw std::invalid_argument("base > 36 for string representation");
     auto repr = Repr(base);

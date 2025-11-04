@@ -1,33 +1,27 @@
 #pragma once
-#include "complog/CompilationLog.h"
 #include "locators/locator.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
+#include "complog/CompilationLog.h"
 #include "syntax.h"
 #include "valueTimeline.h"
-#include <vector>
 
-// may modify the syntax tree
-class ExpressionChecker : public ast::IASTVisitor {
+class UnaryOpChecker : public ast::IASTVisitor {
+private:
     complog::ICompilationLog& log;
-    bool pure;
-    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> res;
-    std::optional<std::shared_ptr<ast::ASTNode>> replacement;
     ValueTimeline& values;
-
-    enum class LogicalOperator { Xor, Or, And };
-
-    void VisitLogicalOperator(LogicalOperator kind, std::vector<std::shared_ptr<ast::Expression>>& operands,
-                              const locators::SpanLocator& position);
+    std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> curvalue;
+    locators::SpanLocator pos;
+    bool pure = true;
+    std::optional<std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>> res;
 
 public:
-    ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);
-    bool HasResult() const;  // false in case of error
+    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values,
+                   const std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>>& curvalue,
+                   const locators::SpanLocator& pos);
+    bool HasResult() const;
     bool Pure() const;
     std::variant<std::shared_ptr<runtime::Type>, std::shared_ptr<runtime::RuntimeValue>> Result() const;
-    std::optional<std::shared_ptr<ast::ASTNode>> Replacement() const;
-    std::shared_ptr<ast::Expression> AssertReplacementAsExpression() const;
-    ValueTimeline& ProgramState() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -69,5 +63,5 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~ExpressionChecker() = default;
+    virtual ~UnaryOpChecker() override = default;
 };

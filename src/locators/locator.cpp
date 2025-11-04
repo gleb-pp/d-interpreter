@@ -1,6 +1,7 @@
 #include "locators/locator.h"
 
 #include <sstream>
+#include <stdexcept>
 using namespace std;
 
 namespace locators {
@@ -21,6 +22,14 @@ const shared_ptr<const CodeFile>& Locator::File() const { return file; }
 
 SpanLocator::SpanLocator(const std::shared_ptr<const CodeFile>& file, size_t pos, size_t length)
     : pos(pos), length(length), file(file) {}
+SpanLocator::SpanLocator(const SpanLocator& a, const SpanLocator& b) : file(a.file) {
+    if (a.file != b.file)
+        throw std::runtime_error("Tried to merge two spans from different files: " + a.file->FileName() + " and " +
+                                 b.file->FileName());
+    pos = min(a.pos, b.pos);
+    size_t end = max(a.pos + a.length, b.pos + b.length);
+    length = end - pos;
+}
 SpanLocator::SpanLocator(const Locator& loc, size_t length) : SpanLocator(loc.File(), loc.Position(), length) {}
 Locator SpanLocator::Start() const { return {file, pos}; }
 Locator SpanLocator::End() const { return {file, pos + length}; }

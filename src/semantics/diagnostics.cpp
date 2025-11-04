@@ -38,9 +38,9 @@ void OperatorNotApplicable::WriteMessageToStream(ostream& out,
 vector<locators::Locator> OperatorNotApplicable::Locators() const { return {}; }
 vector<locators::SpanLocator> OperatorNotApplicable::SpanLocators() const {
     vector<locators::SpanLocator> res;
-    std::ranges::transform(
+    ranges::transform(
         types, back_inserter(res),
-        [](const std::pair<locators::SpanLocator, shared_ptr<runtime::Type>>& kv) { return kv.first; });
+        [](const pair<locators::SpanLocator, shared_ptr<runtime::Type>>& kv) { return kv.first; });
     return res;
 }
 
@@ -80,6 +80,12 @@ void EvaluationException::WriteMessageToStream(ostream& out,
     out << "There was an exception while evaluating the expression: " << msg << "\n";
 }
 
+NoSuchField::NoSuchField(locators::SpanLocator pos, const shared_ptr<runtime::Type>& type, const string& fieldName)
+    : SpanLocatorMessage(complog::Severity::Error(), "NoSuchField", pos), type(type), fieldname(fieldName) {}
+void NoSuchField::WriteMessageToStream(ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Object of type \"" << type->Name() << "\" had no field \"" << fieldname << "\".\n";
+}
+
 CannotAssignNamedFieldInTuple::CannotAssignNamedFieldInTuple(locators::SpanLocator pos, const string& fieldName)
     : SpanLocatorMessage(complog::Severity::Error(), "CannotAssignNamedFieldInTuple", pos), fieldname(fieldName) {}
 void CannotAssignNamedFieldInTuple::WriteMessageToStream(ostream& out,
@@ -110,17 +116,36 @@ void SubscriptAssignmentOnlyInArrays::WriteMessageToStream(
     out << "Can only assign elements of arrays, but provided \"" << type->Name() << "\".\n";
 }
 
-BadSubscriptIndexType::BadSubscriptIndexType(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& triedType)
+BadSubscriptIndexType::BadSubscriptIndexType(locators::SpanLocator pos, const shared_ptr<runtime::Type>& triedType)
     : SpanLocatorMessage(complog::Severity::Error(), "BadSubscriptIndexType", pos), type(triedType) {}
-void BadSubscriptIndexType::WriteMessageToStream(std::ostream& out,
+void BadSubscriptIndexType::WriteMessageToStream(ostream& out,
                                                  const complog::CompilationMessage::FormatOptions& opts) const {
     out << "Cannot use \"" << type->Name() << "\" as index in this subscript.\n";
 }
 
 IntegerZeroDivisionWarning::IntegerZeroDivisionWarning(locators::SpanLocator pos)
     : SpanLocatorMessage(complog::Severity::Warning(), "IntegerZeroDivisionWarning", pos) {}
-void IntegerZeroDivisionWarning::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+void IntegerZeroDivisionWarning::WriteMessageToStream(ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
     out << "Looks like integer division by zero; this will crash the program during execution.\n";
+}
+
+TriedToCallNonFunction::TriedToCallNonFunction(locators::SpanLocator pos, const shared_ptr<runtime::Type>& type)
+    : SpanLocatorMessage(complog::Severity::Error(), "TriedToCallNonFunction", pos), type(type) {}
+void TriedToCallNonFunction::WriteMessageToStream(ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Attempted to call a value of type \"" << type->Name() << "\" (only function calls are allowed).\n";
+}
+
+WrongArgumentCount::WrongArgumentCount(locators::SpanLocator pos, size_t expected, size_t given)
+    : SpanLocatorMessage(complog::Severity::Error(), "WrongArgumentCount", pos), expected(expected), given(given) {}
+void WrongArgumentCount::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "This function expects " << expected << " arguments, but " << given << " were provided.\n";
+}
+
+WrongArgumentType::WrongArgumentType(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& expected,
+                  const std::shared_ptr<runtime::Type>& given)
+    : SpanLocatorMessage(complog::Severity::Error(), "WrongArgumentCount", pos), expected(expected), given(given) {}
+void WrongArgumentType::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Expected an argument of type \"" << expected->Name() << "\", but received \"" << given->Name() << "\".\n";
 }
 
 }  // namespace semantic_errors

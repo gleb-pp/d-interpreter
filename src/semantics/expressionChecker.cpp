@@ -25,6 +25,11 @@ bool ExpressionChecker::Pure() const {
 std::optional<std::shared_ptr<ast::ASTNode>> ExpressionChecker::Replacement() const {
     return replacement;
 }
+std::shared_ptr<ast::Expression> ExpressionChecker::AssertReplacementAsExpression() const {
+    auto res = dynamic_pointer_cast<ast::Expression>(*replacement);
+    if (!res) throw runtime_error("Expected an expression replacement! ExpressionChecker is implemented incorrectly");
+    return res;
+}
 ValueTimeline& ExpressionChecker::ProgramState() const {
     return values;
 }
@@ -57,12 +62,6 @@ DISALLOWED_VISIT(AccessorOperator)
 DISALLOWED_VISIT(ShortFuncBody)
 DISALLOWED_VISIT(LongFuncBody)
 
-static shared_ptr<ast::Expression> AssertExpression(const shared_ptr<ast::ASTNode>& expr) {
-    auto res = dynamic_pointer_cast<ast::Expression>(expr);
-    if (!res) throw runtime_error("Expected an expression replacement! ExpressionChecker is implemented incorrectly");
-    return res;
-}
-
 void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator kind,
                                              vector<shared_ptr<ast::Expression>>& operands,
                                              const locators::SpanLocator& position) {
@@ -84,7 +83,7 @@ void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator 
         }
         chtypes.push_back(recchecker.Result());
         valuesknown += recchecker.Result().index();
-        if (recchecker.Replacement()) operands[i] = AssertExpression(*recchecker.Replacement());
+        if (recchecker.Replacement()) operands[i] = recchecker.AssertReplacementAsExpression();
         pure = pure && recchecker.Pure();
     }
     if (errored) return;
@@ -162,12 +161,6 @@ void ExpressionChecker::VisitAndOperator(ast::AndOperator& node) {
     VisitLogicalOperator(LogicalOperator::And, node.operands, node.pos);
 }
 
-static locators::SpanLocator MergeSpans(const locators::SpanLocator& a, const locators::SpanLocator& b) {
-    size_t start = min(a.Start().Position(), b.Start().Position());
-    size_t end = max(a.End().Position(), b.End().Position());
-    return {a.File(), start, end - start};
-}
-
 void ExpressionChecker::VisitBinaryRelation(ast::BinaryRelation& node) {
     const char* const OPERATOR_NAMES[] = {
         "<", "<=", ">", ">=", "=", "/="
@@ -192,8 +185,7 @@ void ExpressionChecker::VisitBinaryRelation(ast::BinaryRelation& node) {
         }
         operand_pure.push_back(recur.Pure());
         pure = pure && recur.Pure();
-        auto repl = recur.Replacement();
-        if (repl) ch = AssertExpression(*repl);
+        if (recur.Replacement()) ch = recur.AssertReplacementAsExpression();
         const auto& res = recur.Result();
         if (res.index())
             types.push_back(optValues.emplace_back(get<1>(res)).value()->TypeOfValue());
@@ -285,7 +277,7 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
         }
         operand_pure.push_back(rec.Pure());
         pure = pure && rec.Pure();
-        if (rec.Replacement()) ch = AssertExpression(*rec.Replacement());
+        if (rec.Replacement()) ch = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
         if (res.index()) {
             types.push_back(optValues.emplace_back(get<1>(res)).value()->TypeOfValue());
@@ -331,7 +323,7 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
                 log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAMES[static_cast<int>(op)], badtypes));
                 return;
             }
-            auto mergedloc = MergeSpans(*loc, loci);
+            auto mergedloc = locators::SpanLocator(*loc, loci);
             if (add->index()) {
                 log.Log(make_shared<semantic_errors::EvaluationException>(mergedloc, get<1>(*add).what()));
                 return;
@@ -376,7 +368,7 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
                 log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAMES[static_cast<int>(op)], bad));
                 return;
             }
-            auto mergedloc = MergeSpans(operands[i - 1]->pos, operands[i]->pos);
+            auto mergedloc = locators::SpanLocator(operands[i - 1]->pos, operands[i]->pos);
             if (val->index()) {
                 log.Log(make_shared<semantic_errors::EvaluationException>(mergedloc, get<1>(*val).what()));
                 return;
@@ -409,7 +401,7 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
                 log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAMES[static_cast<int>(op)], badtypes));
                 return;
             }
-            curloc = MergeSpans(curloc, loc);
+            curloc = locators::SpanLocator(curloc, loc);
             curtype = *restype;
         }
     }
@@ -439,7 +431,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
             continue;
         }
         pure = pure && rec.Pure();
-        if (rec.Replacement()) ch = AssertExpression(*rec.Replacement());
+        if (rec.Replacement()) ch = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
         if (res.index()) {
             types.push_back(optValues.emplace_back(get<1>(res)).value()->TypeOfValue());
@@ -468,7 +460,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
                 log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAMES[static_cast<int>(op)], bad));
                 return;
             }
-            auto mergedloc = MergeSpans(loc, newloc);
+            auto mergedloc = locators::SpanLocator(loc, newloc);
             if (res->index()) {
                 log.Log(make_shared<semantic_errors::EvaluationException>(mergedloc, get<1>(*res).what()));
                 return;
@@ -494,7 +486,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
             return;
         }
         curtype = *optnewtype;
-        loc = MergeSpans(loc, newloc);
+        loc = locators::SpanLocator(loc, newloc);
         if (op == ast::Term::TermOperator::Divide && (b->TypeEq(runtime::IntegerType()) || b->TypeEq(runtime::UnknownType()))) {
             if (!optValues[i]) {
                 pure = false;
@@ -511,9 +503,35 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
 // string.Slice(_, _, non-0) is pure
 // string.Slice(_, _, ?) is not pure
 
+static optional<variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>>> ProcessUnaryValue(
+    bool& unite, bool& pure, shared_ptr<runtime::RuntimeValue>& cur, locators::SpanLocator& loc, ast::ASTNode& unaryOp,
+    const locators::SpanLocator& opLoc) {
+    ast::IdentMemberAccessor* nameField = dynamic_cast<ast::IdentMemberAccessor*>(&unaryOp);
+    if (nameField) {
+        
+    }
+}
 
 void ExpressionChecker::VisitUnary(ast::Unary& node) {
-
+    ExpressionChecker rec(log, values);
+    node.expr->AcceptVisitor(rec);
+    if (!rec.HasResult()) return;
+    if (rec.Replacement()) node.expr = rec.AssertReplacementAsExpression();
+    pure = rec.Pure();
+    if (node.prefixOps.empty() && node.postfixOps.empty()) {
+        replacement = rec.replacement;
+        res = rec.res;
+        return;
+    }
+    locators::SpanLocator loc = node.expr->pos;
+    auto val = rec.Result();
+    if (pure)
+        while (val.index()) {
+            if (node.postfixOps.size()) {
+                auto post = node.postfixOps.front();
+                
+            }
+        }
 }
 void ExpressionChecker::VisitUnaryNot(ast::UnaryNot& node) {
 

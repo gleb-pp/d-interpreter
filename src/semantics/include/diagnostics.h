@@ -82,6 +82,16 @@ public:
     virtual ~EvaluationException() override = default;
 };
 
+class NoSuchField : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> type;
+    std::string fieldname;
+
+public:
+    NoSuchField(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& type, const std::string& fieldName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~NoSuchField() override = default;
+};
+
 class CannotAssignNamedFieldInTuple : public SpanLocatorMessage {
     std::string fieldname;
 
@@ -130,6 +140,34 @@ public:
     IntegerZeroDivisionWarning(locators::SpanLocator pos);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~IntegerZeroDivisionWarning() override = default;
+};
+
+class TriedToCallNonFunction : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> type;
+
+public:
+    TriedToCallNonFunction(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& type);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~TriedToCallNonFunction() override = default;
+};
+
+class WrongArgumentCount : public SpanLocatorMessage {
+    size_t expected, given;
+
+public:
+    WrongArgumentCount(locators::SpanLocator pos, size_t expected, size_t given);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~WrongArgumentCount() override = default;
+};
+
+class WrongArgumentType : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> expected, given;
+
+public:
+    WrongArgumentType(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& expected,
+                      const std::shared_ptr<runtime::Type>& given);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~WrongArgumentType() override = default;
 };
 
 }  // namespace semantic_errors

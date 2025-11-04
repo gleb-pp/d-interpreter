@@ -402,7 +402,7 @@ RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValu
     return make_shared<StringValue>(_this->Slice(_args[0]->Value(), _args[1]->Value(), _args[2]->Value()));
 }
 shared_ptr<runtime::Type> StringSliceFunction::TypeOfValue() const {
-    return make_shared<FuncType>(true, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()),
+    return make_shared<FuncType>(false, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()),
                                  make_shared<StringType>());
 }
 

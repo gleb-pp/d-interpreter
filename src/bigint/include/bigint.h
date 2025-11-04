@@ -35,8 +35,8 @@ public:
     BigInt& operator=(size_t val);
     BigInt& operator=(const BigInt& other) = default;
     BigInt& operator=(BigInt&& other) = default;
-    std::vector<size_t> Repr(size_t base);
-    std::string ToString(size_t base = 10);
+    std::vector<size_t> Repr(size_t base) const;
+    std::string ToString(size_t base = 10) const;
     BigInt& operator+=(const BigInt& other);
     BigInt operator+(const BigInt& other) const;
     BigInt& operator-=(const BigInt& other);
