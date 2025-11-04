@@ -155,7 +155,7 @@ public:
 class VarStatement : public Statement {
 public:
     VarStatement(const locators::SpanLocator& pos);
-    std::vector<std::pair<std::string, std::optional<std::shared_ptr<Expression>>>> definitions;
+    std::vector<std::pair<std::shared_ptr<IdentifierToken>, std::optional<std::shared_ptr<Expression>>>> definitions;
     static std::optional<std::shared_ptr<VarStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~VarStatement() override = default;

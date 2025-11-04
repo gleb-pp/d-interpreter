@@ -20,6 +20,13 @@ void VariableNotDefined::WriteMessageToStream(ostream& out,
     out << "Variable \"" << varName << "\" was not declared.\n";
 }
 
+VariableRedefined::VariableRedefined(const locators::SpanLocator pos, const string& varName)
+    : SpanLocatorMessage(complog::Severity::Error(), "VariableRedefined", pos), varName(varName) {}
+void VariableRedefined::WriteMessageToStream(ostream& out,
+                                              const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Variable \"" << varName << "\" has already been declared in this scope.\n";
+}
+
 OperatorNotApplicable::OperatorNotApplicable(const string& operatorName, const VectorOfSpanTypes& operands)
     : complog::CompilationMessage(complog::Severity::Error(), "OperatorNotApplicable"),
       opName(operatorName),

@@ -24,11 +24,13 @@ optional<pair<size_t, ValueTimeline::Var*>> ValueTimeline::Lookup(const std::str
     return {};
 }
 
-optional<runtime::TypeOrValue> ValueTimeline::LookupVariable(const string& name) const {
+optional<runtime::TypeOrValue> ValueTimeline::LookupVariable(const string& name) {
     auto v = Lookup(name);
     if (!v) return {};
     auto& p = *v;
     if (blindScopeIndices.size() && p.first < blindScopeIndices.back()) return make_shared<runtime::UnknownType>();
+    p.second->used = true;
+    p.second->lastUnusedAssignments.clear();
     return p.second->val;
 }
 
@@ -100,6 +102,12 @@ bool ValueTimeline::Assign(const string& name, const shared_ptr<runtime::Runtime
     var->lastUnusedAssignments = {pos};
     var->used = true;
     return true;
+}
+
+bool ValueTimeline::Assign(const string& name, const runtime::TypeOrValue& precomputed,
+                           locators::SpanLocator pos) {
+    if (precomputed.index()) return Assign(name, get<1>(precomputed), pos);
+    return Assign(name, get<0>(precomputed), pos);
 }
 
 bool ValueTimeline::Declare(const string& name, locators::SpanLocator pos) {

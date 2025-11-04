@@ -140,7 +140,7 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
     if (!tk.Read(Token::Type::tkVar)) return {};
     tk.Read(Token::Type::tkNewLine);
     bool first = true;
-    vector<pair<string, optional<shared_ptr<Expression>>>> defs;
+    vector<pair<shared_ptr<IdentifierToken>, optional<shared_ptr<Expression>>>> defs;
     while (true) {
         auto bl = tk.AutoStart();
         if (!first) {
@@ -152,7 +152,7 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
         if (!optIdent) break;
         auto tkIdent = dynamic_pointer_cast<IdentifierToken>(*optIdent);
         auto optAsg = parseAssignExpression(context);
-        defs.emplace_back(tkIdent->identifier, optAsg);
+        defs.emplace_back(tkIdent, optAsg);
         bl.Success();
     }
     if (defs.empty()) {

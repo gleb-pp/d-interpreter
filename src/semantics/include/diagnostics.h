@@ -27,6 +27,15 @@ public:
     virtual ~VariableNotDefined() override = default;
 };
 
+class VariableRedefined : public SpanLocatorMessage {
+    std::string varName;
+
+public:
+    VariableRedefined(const locators::SpanLocator pos, const std::string& varName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~VariableRedefined() override = default;
+};
+
 class AssignedValueUnused : public SpanLocatorMessage {
     std::string varName;
 

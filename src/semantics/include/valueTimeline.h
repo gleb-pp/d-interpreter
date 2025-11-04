@@ -8,7 +8,6 @@
 struct ScopeStats {
     std::vector<std::pair<std::string, locators::SpanLocator>> uselessAssignments;
     std::vector<std::pair<std::string, locators::SpanLocator>> variablesNeverUsed;
-    bool madeAllUnknown;
     std::map<std::string, bool> referencedExternals;  // true if assigned
 };
 
@@ -33,7 +32,7 @@ class ValueTimeline {
     std::optional<std::pair<size_t, Var*>> Lookup(const std::string& name);
 
 public:
-    std::optional<runtime::TypeOrValue> LookupVariable(const std::string& name) const;
+    std::optional<runtime::TypeOrValue> LookupVariable(const std::string& name);
     void MakeAllUnknown();
     // Normal scope
     void StartScope();
@@ -42,6 +41,7 @@ public:
     ScopeStats EndScope();
     bool Assign(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
     bool Assign(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
+    bool Assign(const std::string& name, const runtime::TypeOrValue& precomputed, locators::SpanLocator pos);
     bool Declare(const std::string& name, locators::SpanLocator pos);
     locators::SpanLocator LookupDeclaration(const std::string& name);
     void MergeTimelines(const ValueTimeline& other);  // Use after an If statement
