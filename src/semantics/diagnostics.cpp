@@ -148,4 +148,56 @@ void WrongArgumentType::WriteMessageToStream(std::ostream& out, const complog::C
     out << "Expected an argument of type \"" << expected->Name() << "\", but received \"" << given->Name() << "\".\n";
 }
 
+DuplicateFieldNames::DuplicateFieldNames(const std::string& name, const std::vector<locators::SpanLocator>& positions)
+    : complog::CompilationMessage(complog::Severity::Error(), "DuplicateFieldNames"), name(name), positions(positions) {}
+void DuplicateFieldNames::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Duplicate field name \"" << name << "\" at \n";
+    bool first = true;
+    for (auto& loc : positions) {
+        if (!first) out << ";\n";
+        first = false;
+        out << loc.Pretty();
+    }
+    out << ".\n";
+}
+std::vector<locators::Locator> DuplicateFieldNames::Locators() const { return {}; }
+std::vector<locators::SpanLocator> DuplicateFieldNames::SpanLocators() const {
+    return positions;
+}
+
+DuplicateParameterNames::DuplicateParameterNames(const std::string& name, const std::vector<locators::SpanLocator>& positions)
+    : complog::CompilationMessage(complog::Severity::Error(), "DuplicateParameterNames"), name(name), positions(positions) {}
+void DuplicateParameterNames::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Duplicate parameter name \"" << name << "\" at \n";
+    bool first = true;
+    for (auto& loc : positions) {
+        if (!first) out << ";\n";
+        first = false;
+        out << loc.Pretty();
+    }
+    out << ".\n";
+}
+std::vector<locators::Locator> DuplicateParameterNames::Locators() const { return {}; }
+std::vector<locators::SpanLocator> DuplicateParameterNames::SpanLocators() const {
+    return positions;
+}
+
+AssignedValueUnused::AssignedValueUnused(const locators::SpanLocator pos, const std::string& varName)
+    : SpanLocatorMessage(complog::Severity::Warning(), "AssignedValueUnused", pos), varName(varName) {}
+void AssignedValueUnused::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "The value assigned to \"" << varName << "\" at " << loc.Pretty() << " is never accessed.\n";
+}
+
+VariableNeverUsed::VariableNeverUsed(const locators::SpanLocator pos, const std::string& varName)
+    : SpanLocatorMessage(complog::Severity::Warning(), "VariableNeverUsed", pos), varName(varName) {}
+void VariableNeverUsed::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "Variable \"" << varName << "\" declared at " << loc.Pretty() << " but never used.\n";
+}
+
+NoneValueAccessed::NoneValueAccessed(const locators::SpanLocator pos, const std::string& varName)
+    : SpanLocatorMessage(complog::Severity::Warning(), "NoneValueAccessed", pos), varName(varName) {}
+void NoneValueAccessed::WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const {
+    out << "The variable \"" << varName << "\" probably contains no value at " << loc.Pretty() << ".\n";
+}
+
 }  // namespace semantic_errors

@@ -28,6 +28,7 @@ public:
     SpanLocator(const std::shared_ptr<const CodeFile>& file, size_t pos, size_t length);
     SpanLocator(const SpanLocator& a, const SpanLocator& b);
     SpanLocator(const Locator& loc, size_t length);
+    std::string Pretty() const;
     Locator Start() const;
     Locator End() const;
     size_t Length() const;

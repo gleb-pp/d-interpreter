@@ -31,6 +31,13 @@ SpanLocator::SpanLocator(const SpanLocator& a, const SpanLocator& b) : file(a.fi
     length = end - pos;
 }
 SpanLocator::SpanLocator(const Locator& loc, size_t length) : SpanLocator(loc.File(), loc.Position(), length) {}
+string SpanLocator::Pretty() const {
+    stringstream res;
+    auto [sline, scol] = file->LineCol(pos);
+    auto [eline, ecol] = file->LineCol(pos + length);
+    res << file->FileName() << ':' << sline + 1 << ':' << scol << "--" << eline + 1 << ':' << ecol;
+    return res.str();
+}
 Locator SpanLocator::Start() const { return {file, pos}; }
 Locator SpanLocator::End() const { return {file, pos + length}; }
 size_t SpanLocator::Length() const { return length; }

@@ -27,6 +27,33 @@ public:
     virtual ~VariableNotDefined() override = default;
 };
 
+class AssignedValueUnused : public SpanLocatorMessage {
+    std::string varName;
+
+public:
+    AssignedValueUnused(const locators::SpanLocator pos, const std::string& varName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~AssignedValueUnused() override = default;
+};
+
+class VariableNeverUsed : public SpanLocatorMessage {
+    std::string varName;
+
+public:
+    VariableNeverUsed(const locators::SpanLocator pos, const std::string& varName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~VariableNeverUsed() override = default;
+};
+
+class NoneValueAccessed : public SpanLocatorMessage {
+    std::string varName;
+
+public:
+    NoneValueAccessed(const locators::SpanLocator pos, const std::string& varName);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~NoneValueAccessed() override = default;
+};
+
 using VectorOfSpanTypes = std::vector<std::pair<locators::SpanLocator, std::shared_ptr<runtime::Type>>>;
 
 class OperatorNotApplicable : public complog::CompilationMessage {
@@ -168,6 +195,30 @@ public:
                       const std::shared_ptr<runtime::Type>& given);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~WrongArgumentType() override = default;
+};
+
+class DuplicateFieldNames : public complog::CompilationMessage {
+    std::string name;
+    std::vector<locators::SpanLocator> positions;
+
+public:
+    DuplicateFieldNames(const std::string& name, const std::vector<locators::SpanLocator>& positions);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    std::vector<locators::SpanLocator> SpanLocators() const override;
+    virtual ~DuplicateFieldNames() override = default;
+};
+
+class DuplicateParameterNames : public complog::CompilationMessage {
+    std::string name;
+    std::vector<locators::SpanLocator> positions;
+
+public:
+    DuplicateParameterNames(const std::string& name, const std::vector<locators::SpanLocator>& positions);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    std::vector<locators::SpanLocator> SpanLocators() const override;
+    virtual ~DuplicateParameterNames() override = default;
 };
 
 }  // namespace semantic_errors

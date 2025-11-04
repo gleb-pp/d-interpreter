@@ -1014,7 +1014,7 @@ VISITOR(LongFuncBody)
 
 // FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters,
-                         const optional<shared_ptr<FuncBody>>& funcBody)
+                         const shared_ptr<FuncBody>& funcBody)
     : Primary(pos), parameters(parameters), funcBody(funcBody) {}
 optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context) {
     USESCAN;

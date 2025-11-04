@@ -603,9 +603,9 @@ public:
 class FuncLiteral : public Primary {
 public:
     FuncLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<IdentifierToken>>& parameters,
-                const std::optional<std::shared_ptr<FuncBody>>& funcBody);
+                const std::shared_ptr<FuncBody>& funcBody);
     std::vector<std::shared_ptr<IdentifierToken>> parameters;
-    std::optional<std::shared_ptr<FuncBody>> funcBody;
+    std::shared_ptr<FuncBody> funcBody;
     static std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~FuncLiteral() override = default;

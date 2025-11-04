@@ -1,7 +1,9 @@
 #include "expressionChecker.h"
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
+#include "lexer.h"
 #include "locators/locator.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
@@ -9,6 +11,7 @@
 #include "precomputed.h"
 #include "syntax.h"
 #include "unaryOpsChecker.h"
+#include "statementChecker.h"
 using namespace std;
 
 // may modify the syntax tree
@@ -62,6 +65,7 @@ DISALLOWED_VISIT(Call)
 DISALLOWED_VISIT(AccessorOperator)
 DISALLOWED_VISIT(ShortFuncBody)
 DISALLOWED_VISIT(LongFuncBody)
+DISALLOWED_VISIT(TupleLiteralElement)
 
 void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator kind,
                                              vector<shared_ptr<ast::Expression>>& operands,
@@ -560,29 +564,196 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
 }
 
 void ExpressionChecker::VisitUnaryNot(ast::UnaryNot& node) {
-
+    ExpressionChecker rec(log, values);
+    node.nested->AcceptVisitor(rec);
+    if (!rec.HasResult()) return;
+    if (rec.replacement) node.nested = rec.AssertReplacementAsExpression();
+    pure = rec.Pure();
+    auto result = rec.Result();
+    if (result.index()) {
+        auto& rval = get<1>(result);
+        runtime::RuntimeValueResult negated = get<1>(result);
+        if (!negated) {
+            semantic_errors::VectorOfSpanTypes bad{{node.nested->pos, rval->TypeOfValue()}};
+            log.Log(make_shared<semantic_errors::OperatorNotApplicable>("not", bad));
+            return;
+        }
+        if (negated->index()) {
+            log.Log(make_shared<semantic_errors::EvaluationException>(node.pos, get<1>(*negated).what()));
+            return;
+        }
+        this->res = get<0>(*negated);
+        if (pure) this->replacement = make_shared<ast::PrecomputedValue>(node.pos, get<0>(*negated));
+        return;
+    }
+    auto type = get<0>(result);
+    auto restype = type->UnaryNot();
+    if (!restype) {
+        semantic_errors::VectorOfSpanTypes bad{{node.nested->pos, type}};
+        log.Log(make_shared<semantic_errors::OperatorNotApplicable>("not", bad));
+        return;
+    }
+    this->res = *restype;
 }
+
 void ExpressionChecker::VisitPrimaryIdent(ast::PrimaryIdent& node) {
-
+    auto val = values.LookupVariable(node.name->identifier);
+    if (!val) {
+        log.Log(make_shared<semantic_errors::VariableNotDefined>(node.pos, node.name->identifier));
+        return;
+    }
+    if (val->index())
+        replacement = make_shared<ast::PrecomputedValue>(node.pos, get<1>(*val));
+    this->res = *val;
 }
+
 void ExpressionChecker::VisitParenthesesExpression(ast::ParenthesesExpression& node) {
-
+    replacement = node.expr;
+    node.expr->AcceptVisitor(*this);
 }
-void ExpressionChecker::VisitTupleLiteralElement(ast::TupleLiteralElement& node) {
 
-}
 void ExpressionChecker::VisitTupleLiteral(ast::TupleLiteral& node) {
-
+    vector<shared_ptr<runtime::RuntimeValue>> optValues;
+    bool badnames = false;
+    size_t n = node.elements.size();
+    {
+        map<string, vector<locators::SpanLocator>> locs;
+        for (auto& elem : node.elements) if (elem->ident) {
+            auto span = elem->ident.value()->span;
+            locs[elem->ident.value()->identifier].push_back(
+                locators::SpanLocator(node.pos.File(), span.position, span.length));
+        }
+        for (auto& kv : locs) {
+            if (kv.second.size() > 2) {
+                log.Log(make_shared<semantic_errors::DuplicateFieldNames>(kv.first, kv.second));
+                badnames = true;
+            }
+        }
+    }
+    bool errored = false, allknown = true;
+    for (size_t i = 0; i < n; i++) {
+        auto& expr = node.elements[i]->expression;
+        ExpressionChecker rec(log, values);
+        expr->AcceptVisitor(rec);
+        if (!rec.HasResult()) {
+            errored = true;
+            continue;
+        }
+        pure = pure && rec.Pure();
+        if (rec.Replacement()) expr = rec.AssertReplacementAsExpression();
+        auto res = rec.Result();
+        if (res.index()) {
+            auto& val = get<1>(res);
+            optValues.push_back(val);
+        } else allknown = false;
+    }
+    if (errored || badnames) return;
+    if (allknown) {
+        vector<pair<optional<string>, shared_ptr<runtime::RuntimeValue>>> items;
+        std::ranges::transform(
+            node.elements, optValues, back_inserter(items),
+            [](const shared_ptr<ast::TupleLiteralElement>& elem, const shared_ptr<runtime::RuntimeValue>& val) {
+                return make_pair(elem->ident ? elem->ident.value()->identifier : optional<string>(), val);
+            });
+        auto val = make_shared<runtime::TupleValue>(items);
+        if (pure) replacement = make_shared<ast::PrecomputedValue>(node.pos, val);
+        this->res = val;
+        return;
+    }
+    this->res = make_shared<runtime::TupleType>();
 }
+
 void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
-
+    bool badnames = false;
+    {
+        map<string, vector<locators::SpanLocator>> locs;
+        for (auto& param : node.parameters) {
+            auto span = param->span;
+            locs[param->identifier].emplace_back(node.pos.File(), span.position, span.length);
+        }
+        for (auto& kv : locs) {
+            if (kv.second.size() <= 1) continue;
+            badnames = true;
+            log.Log(make_shared<semantic_errors::DuplicateParameterNames>(kv.first, kv.second));
+        }
+    }
+    ValueTimeline tl(values);
+    tl.StartBlindScope();
+    for (auto& param : node.parameters) {
+        auto span = param->span;
+        auto loc = locators::SpanLocator(node.pos.File(), span.position, span.length);
+        tl.Declare(param->identifier, loc);
+        tl.Assign(param->identifier, make_shared<runtime::UnknownType>(), loc);
+    }
+    auto paraminfo = tl.EndScope();
+    for (auto& unused : paraminfo.uselessAssignments)
+        log.Log(make_shared<semantic_errors::AssignedValueUnused>(unused.second, unused.first));
+    StatementChecker chk(log, values, true, false);
+    node.funcBody->AcceptVisitor(chk);
+    if (chk.Terminated() == StatementChecker::TerminationKind::Errored) return;
+    auto optreturnedtype = chk.Returned();
+    auto returnedtype = optreturnedtype ? *optreturnedtype : make_shared<runtime::UnknownType>();
+    this->res = make_shared<runtime::FuncType>(
+        chk.Pure(), vector<shared_ptr<runtime::Type>>(node.parameters.size(), make_shared<runtime::UnknownType>()),
+        returnedtype);
 }
+
 void ExpressionChecker::VisitTokenLiteral(ast::TokenLiteral& node) {
-
+    shared_ptr<runtime::RuntimeValue> val;
+    switch (node.kind) {
+        case ast::TokenLiteral::TokenLiteralKind::String:
+            val = make_shared<runtime::StringValue>(dynamic_cast<StringLiteral&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Int:
+            val = make_shared<runtime::IntegerValue>(dynamic_cast<IntegerToken&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Real:
+            val = make_shared<runtime::RealValue>(dynamic_cast<RealToken&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::True:
+            val = make_shared<runtime::BoolValue>(true);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::False:
+            val = make_shared<runtime::BoolValue>(false);
+            break;
+        default:  // case ast::TokenLiteral::TokenLiteralKind::None:
+            val = make_shared<runtime::NoneValue>();
+            break;
+    }
+    replacement = make_shared<ast::PrecomputedValue>(node.pos, val);
+    res = val;
 }
+
 void ExpressionChecker::VisitArrayLiteral(ast::ArrayLiteral& node) {
-
+    vector<shared_ptr<runtime::RuntimeValue>> optValues;
+    size_t n = node.items.size();
+    bool errored = false, allknown = true;
+    for (size_t i = 0; i < n; i++) {
+        auto& expr = node.items[i];
+        ExpressionChecker rec(log, values);
+        expr->AcceptVisitor(rec);
+        if (!rec.HasResult()) {
+            errored = true;
+            continue;
+        }
+        pure = pure && rec.Pure();
+        if (rec.Replacement()) expr = rec.AssertReplacementAsExpression();
+        auto res = rec.Result();
+        if (res.index()) {
+            auto& val = get<1>(res);
+            optValues.push_back(val);
+        } else allknown = false;
+    }
+    if (errored) return;
+    if (allknown) {
+        auto val = make_shared<runtime::ArrayValue>(optValues);
+        if (pure) replacement = make_shared<ast::PrecomputedValue>(node.pos, val);
+        this->res = val;
+        return;
+    }
+    this->res = make_shared<runtime::ArrayType>();
 }
-void ExpressionChecker::VisitCustom(ast::ASTNode& node) {
 
+void ExpressionChecker::VisitCustom(ast::ASTNode& node) {
+    throw std::runtime_error("Somehow visiting a Custom node in ExpressionChecker");
 }
