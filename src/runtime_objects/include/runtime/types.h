@@ -16,6 +16,9 @@ namespace runtime {
 class Type {
 public:
     virtual bool TypeEq(const Type& other) const = 0;
+    virtual bool StrictTypeEq(const Type& other) const;
+    virtual std::shared_ptr<Type> Clone() const = 0;
+    virtual std::shared_ptr<Type> Generalize(const Type& other) const;
     virtual std::string Name() const = 0;
     virtual std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const;
     virtual std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const;
@@ -43,6 +46,7 @@ public:
 class IntegerType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const override;
@@ -66,6 +70,7 @@ public:
 class RealType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const override;
@@ -92,6 +97,7 @@ public:
 class StringType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     bool BinaryEq(const Type& other) const override;
@@ -104,6 +110,7 @@ public:
 class NoneType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     virtual ~NoneType() override = default;
 };
@@ -111,6 +118,7 @@ public:
 class BoolType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryLogical(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> UnaryNot() const override;
@@ -120,6 +128,7 @@ public:
 class ArrayType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     bool BinaryEq(const Type& other) const override;
@@ -130,6 +139,7 @@ public:
 class TupleType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
@@ -145,11 +155,15 @@ class FuncType : public Type {
 public:
     FuncType(size_t argCount, const std::shared_ptr<Type>& returnType);  // pure = false
     FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes, const std::shared_ptr<Type>& returnType);
+    FuncType(bool pure, const std::shared_ptr<Type>& returnType);
     FuncType();  // pure = false, argTypes = ?, returnType = UnknownType
     bool Pure() const;
     std::optional<std::vector<std::shared_ptr<Type>>> ArgTypes() const;
     std::shared_ptr<Type> ReturnType() const;
     bool TypeEq(const Type& other) const override;
+    bool StrictTypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
+    std::shared_ptr<Type> Generalize(const Type& other) const override;
     virtual std::string Name() const override;
     virtual ~FuncType() override = default;
 };
@@ -157,6 +171,7 @@ public:
 class UnknownType : public Type {
 public:
     bool TypeEq(const Type& other) const override;
+    std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     std::optional<std::shared_ptr<Type>> BinaryMinus(const Type& other) const override;

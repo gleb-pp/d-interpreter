@@ -1,7 +1,9 @@
 #include "runtime/types.h"
 
+#include <algorithm>
 #include <memory>
 #include <sstream>
+#include <system_error>
 using namespace std;
 
 /*
@@ -12,6 +14,13 @@ using namespace std;
 
 namespace runtime {
 
+// Type
+
+bool Type::StrictTypeEq(const Type& other) const { return TypeEq(other); }
+shared_ptr<Type> Type::Generalize(const Type& other) const {
+    if (!StrictTypeEq(other)) return make_shared<UnknownType>();
+    return Clone();
+}
 std::optional<std::shared_ptr<Type>> Type::BinaryPlus(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::BinaryMinus(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::BinaryMul(const Type& other) const { return {}; }
@@ -25,6 +34,8 @@ std::optional<std::shared_ptr<Type>> Type::UnaryNot() const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Field(const std::string& name) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Field(const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::Subscript(const Type& other) const { return {}; }
+
+// IntegerType
 
 bool IntegerType::TypeEq(const Type& other) const { return !!dynamic_cast<const IntegerType*>(&other); }
 
@@ -74,6 +85,8 @@ std::optional<std::shared_ptr<Type>> IntegerType::BinaryDiv(const Type& other) c
     return NumericArith(*this, other);
 }
 
+shared_ptr<Type> IntegerType::Clone() const { return make_shared<IntegerType>(); }
+
 bool IntegerType::BinaryEq(const Type& other) const {
     return IsRealOrInt(other) || other.TypeEq(UnknownType());
 }
@@ -91,6 +104,10 @@ std::optional<std::shared_ptr<Type>> IntegerType::Field(const std::string& name)
     if (name == "Frac") return make_shared<RealType>();
     return {};
 }
+
+// RealType
+
+shared_ptr<Type> RealType::Clone() const { return make_shared<RealType>(); }
 
 bool RealType::TypeEq(const Type& other) const { return !!dynamic_cast<const RealType*>(&other); }
 
@@ -125,6 +142,10 @@ std::optional<std::shared_ptr<Type>> RealType::Field(const std::string& name) co
     if (name == "Frac") return make_shared<RealType>();
     return {};
 }
+
+// StringType
+
+shared_ptr<Type> StringType::Clone() const { return make_shared<StringType>(); }
 
 bool StringType::TypeEq(const Type& other) const { return !!dynamic_cast<const StringType*>(&other); }
 
@@ -165,9 +186,17 @@ std::optional<std::shared_ptr<Type>> StringType::Subscript(const Type& other) co
     return {};
 }
 
+// NoneType
+
+shared_ptr<Type> NoneType::Clone() const { return make_shared<NoneType>(); }
+
 bool NoneType::TypeEq(const Type& other) const { return !!dynamic_cast<const NoneType*>(&other); }
 
 std::string NoneType::Name() const { return "none"; }
+
+// BoolType
+
+shared_ptr<Type> BoolType::Clone() const { return make_shared<BoolType>(); }
 
 bool BoolType::TypeEq(const Type& other) const { return !!dynamic_cast<const BoolType*>(&other); }
 
@@ -179,6 +208,10 @@ std::optional<std::shared_ptr<Type>> BoolType::BinaryLogical(const Type& other) 
 }
 
 std::optional<std::shared_ptr<Type>> BoolType::UnaryNot() const { return make_shared<BoolType>(); }
+
+// ArrayType
+
+shared_ptr<Type> ArrayType::Clone() const { return make_shared<ArrayType>(); }
 
 bool ArrayType::TypeEq(const Type& other) const { return !!dynamic_cast<const ArrayType*>(&other); }
 
@@ -198,6 +231,10 @@ std::optional<std::shared_ptr<Type>> ArrayType::Subscript(const Type& other) con
     return {};
 }
 
+// TupleType
+
+shared_ptr<Type> TupleType::Clone() const { return make_shared<TupleType>(); }
+
 bool TupleType::TypeEq(const Type& other) const { return !!dynamic_cast<const TupleType*>(&other); }
 
 std::string TupleType::Name() const { return "{Tuple}"; }
@@ -216,16 +253,48 @@ std::optional<std::shared_ptr<Type>> TupleType::Field(const Type& other) const {
     return {};
 }
 
+// FuncType
+
 FuncType::FuncType(size_t argCount, const std::shared_ptr<Type>& returnType)
     : pure(false), argTypes({vector<shared_ptr<Type>>(argCount, make_shared<UnknownType>())}), returnType(returnType) {}
 FuncType::FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes,
                    const std::shared_ptr<Type>& returnType)
     : pure(pure), argTypes(argTypes), returnType(returnType) {}
+FuncType::FuncType(bool pure, const std::shared_ptr<Type>& returnType) : pure(pure), returnType(returnType) {}
 FuncType::FuncType() : pure(false), argTypes({}), returnType(make_shared<UnknownType>()) {}
 bool FuncType::Pure() const { return pure; }
 std::optional<std::vector<std::shared_ptr<Type>>> FuncType::ArgTypes() const { return argTypes; }
 std::shared_ptr<Type> FuncType::ReturnType() const { return returnType; }
 bool FuncType::TypeEq(const Type& other) const { return !!dynamic_cast<const FuncType*>(&other); }
+bool FuncType::StrictTypeEq(const Type& other) const {
+    const FuncType* p = dynamic_cast<const FuncType*>(&other);
+    if (!p) return false;
+    if (pure != p->pure) return false;
+    if (argTypes) {
+        if (!p->argTypes) return false;
+        size_t n = argTypes->size();
+        if (p->argTypes->size() != n) return false;
+        for (size_t i = 0; i < n; i++) if (argTypes->at(i)->StrictTypeEq(*p->argTypes->at(i))) return false;
+    } else if (p->argTypes) return false;
+    return returnType->StrictTypeEq(*p->returnType);
+}
+shared_ptr<Type> FuncType::Clone() const { return make_shared<FuncType>(*this); }
+shared_ptr<Type> FuncType::Generalize(const Type& other) const {
+    const FuncType* p = dynamic_cast<const FuncType*>(&other);
+    if (!p) return make_shared<UnknownType>();
+    bool respure = pure && p->pure;
+    optional<vector<shared_ptr<Type>>> resArgs;
+    if (argTypes && p->argTypes && argTypes->size() == p->argTypes->size()) {
+        resArgs.emplace();
+        resArgs->reserve(argTypes->size());
+        std::ranges::transform(*argTypes, *p->argTypes, back_inserter(*resArgs),
+                               [](const std::shared_ptr<Type>& a, const std::shared_ptr<Type>& b) { return a->Generalize(*b); });
+    }
+    auto resRet = returnType->Generalize(*p->returnType);
+    if (resArgs)
+        return make_shared<FuncType>(respure, *resArgs, resRet);
+    return make_shared<FuncType>(respure, resRet);
+}
 std::string FuncType::Name() const {
     stringstream res;
     if (pure) res << "(pure)";
@@ -242,6 +311,10 @@ std::string FuncType::Name() const {
     res << ") -> " << returnType->Name();
     return res.str();
 }
+
+// UnknownType
+
+shared_ptr<Type> UnknownType::Clone() const { return make_shared<UnknownType>(); }
 
 bool UnknownType::TypeEq(const Type& other) const { return !!dynamic_cast<const UnknownType*>(&other); }
 
