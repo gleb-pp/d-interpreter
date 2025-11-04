@@ -1,5 +1,7 @@
 #include "unaryOpsChecker.h"
 #include <algorithm>
+#include <concepts>
+#include <memory>
 #include <stdexcept>
 #include "expressionChecker.h"
 #include "runtime/types.h"
@@ -42,8 +44,6 @@ DISALLOWED_VISIT(Sum)
 DISALLOWED_VISIT(Term)
 DISALLOWED_VISIT(Unary)
 DISALLOWED_VISIT(UnaryNot)
-DISALLOWED_VISIT(PrefixOperator)
-DISALLOWED_VISIT(TypecheckOperator)
 DISALLOWED_VISIT(PrimaryIdent)
 DISALLOWED_VISIT(ParenthesesExpression)
 DISALLOWED_VISIT(TupleLiteralElement)
@@ -276,5 +276,44 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
 
 void UnaryOpChecker::VisitAccessorOperator(ast::AccessorOperator& node) {
     node.accessor->AcceptVisitor(*this);
+}
+
+void UnaryOpChecker::VisitPrefixOperator(ast::PrefixOperator& node) {
+    const char* const OPERATOR_NAMES[] = {"unary+", "unary-"};
+    const char* const OPERATOR_NAME = OPERATOR_NAMES[static_cast<int>(node.kind)];
+    if (curvalue.index()) {
+        auto& rval = get<1>(curvalue);
+        runtime::RuntimeValueResult res =
+            (node.kind == ast::PrefixOperator::PrefixOperatorKind::Plus) ? rval->UnaryPlus() : rval->UnaryMinus();
+        if (!res) {
+            semantic_errors::VectorOfSpanTypes bad{{pos, rval->TypeOfValue()}};
+            log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
+            return;
+        }
+        if (res->index()) {
+            log.Log(make_shared<semantic_errors::EvaluationException>(pos, get<1>(*res).what()));
+            return;
+        }
+        this->res = get<0>(*res);
+        return;
+    }
+    auto& type = get<0>(curvalue);
+    auto res = (node.kind == ast::PrefixOperator::PrefixOperatorKind::Plus) ? type->UnaryPlus() : type->UnaryMinus();
+    if (!res) {
+        semantic_errors::VectorOfSpanTypes bad{{pos, type}};
+        log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
+        return;
+    }
+    this->res = *res;
+}
+
+void UnaryOpChecker::VisitTypecheckOperator(ast::TypecheckOperator& node) {
+    auto type = curvalue.index() ? get<1>(curvalue)->TypeOfValue() : get<0>(curvalue);
+    if (type->TypeEq(runtime::UnknownType())) { this->res = make_shared<runtime::BoolType>(); return; }
+    unique_ptr<runtime::Type> types[] = {make_unique<runtime::IntegerType>(), make_unique<runtime::RealType>(),
+                                         make_unique<runtime::StringType>(),  make_unique<runtime::BoolType>(),
+                                         make_unique<runtime::NoneType>(),    make_unique<runtime::FuncType>(),
+                                         make_unique<runtime::TupleType>(),   make_unique<runtime::ArrayType>()};
+    this->res = make_shared<runtime::BoolValue>(type->TypeEq(*types[static_cast<int>(node.typeId)]));
 }
 
