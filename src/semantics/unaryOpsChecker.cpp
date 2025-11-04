@@ -186,6 +186,7 @@ void UnaryOpChecker::VisitIndexAccessor(ast::IndexAccessor& node) {
     res = *optmember;
 }
 
+// A call makes every variable 'unknown'
 void UnaryOpChecker::VisitCall(ast::Call& node) {
     size_t n = node.args.size();
     vector<optional<shared_ptr<runtime::RuntimeValue>>> optValues(n);
@@ -238,6 +239,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
                 return;
             }
             this->res = get<0>(*res);
+            values.MakeAllUnknown();
             return;
         }
     }
@@ -269,6 +271,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
         if (errored) return;
     }
     this->res = functype->ReturnType();
+    values.MakeAllUnknown();
 }
 
 void UnaryOpChecker::VisitAccessorOperator(ast::AccessorOperator& node) {

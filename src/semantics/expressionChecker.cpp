@@ -8,6 +8,7 @@
 #include "diagnostics.h"
 #include "precomputed.h"
 #include "syntax.h"
+#include "unaryOpsChecker.h"
 using namespace std;
 
 // may modify the syntax tree
@@ -503,15 +504,6 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
 // string.Slice(_, _, non-0) is pure
 // string.Slice(_, _, ?) is not pure
 
-static optional<variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>>> ProcessUnaryValue(
-    bool& unite, bool& pure, shared_ptr<runtime::RuntimeValue>& cur, locators::SpanLocator& loc, ast::ASTNode& unaryOp,
-    const locators::SpanLocator& opLoc) {
-    ast::IdentMemberAccessor* nameField = dynamic_cast<ast::IdentMemberAccessor*>(&unaryOp);
-    if (nameField) {
-        
-    }
-}
-
 void ExpressionChecker::VisitUnary(ast::Unary& node) {
     ExpressionChecker rec(log, values);
     node.expr->AcceptVisitor(rec);
@@ -525,14 +517,48 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
     }
     locators::SpanLocator loc = node.expr->pos;
     auto val = rec.Result();
-    if (pure)
-        while (val.index()) {
-            if (node.postfixOps.size()) {
-                auto post = node.postfixOps.front();
-                
-            }
+    
+    bool precomp = pure && val.index();
+    size_t npost = node.postfixOps.size(), npre = node.prefixOps.size();
+    size_t ipost = 0, ipre = 0;
+    while (ipost < npost || ipre < npre) {
+        bool doPostfix = ipre == npre || ipost < npost && node.prefixOps[npre - ipre - 1]->precedence() <
+                                                              node.postfixOps[ipost]->precedence();
+        if (doPostfix) {
+            UnaryOpChecker chk(log, values, val, loc);
+            node.postfixOps[ipost]->AcceptVisitor(chk);
+            if (!chk.HasResult()) return;
+            pure = pure && chk.Pure();
+            val = chk.Result();
+            auto iloc = node.postfixOps[ipost]->pos;
+            loc = locators::SpanLocator(loc, iloc);
+            precomp = precomp && pure && val.index();
+            if (precomp) {
+                node.postfixOps.erase(node.postfixOps.begin());
+                npost--;
+                node.expr = make_shared<ast::PrecomputedValue>(loc, get<1>(val));
+            } else ++ipost;
+        } else {
+            UnaryOpChecker chk(log, values, val, loc);
+            node.prefixOps[npre - ipre - 1]->AcceptVisitor(chk);
+            if (!chk.HasResult()) return;
+            pure = pure && chk.Pure();
+            val = chk.Result();
+            auto iloc = node.prefixOps[npre - ipre - 1]->pos;
+            loc = locators::SpanLocator(loc, iloc);
+            precomp = precomp && pure && val.index();
+            if (precomp) {
+                node.prefixOps.pop_back();
+                npre--;
+                node.expr = make_shared<ast::PrecomputedValue>(loc, get<1>(val));
+            } else ++ipre;
         }
+    }
+    this->res = val;
+    if (node.prefixOps.empty() && node.postfixOps.empty())
+        this->replacement = node.expr;
 }
+
 void ExpressionChecker::VisitUnaryNot(ast::UnaryNot& node) {
 
 }
