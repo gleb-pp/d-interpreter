@@ -1,8 +1,10 @@
-#include "valueTimeline.h"
+#include "semantic/valueTimeline.h"
 
 #include "runtime.h"
 #include "runtime/types.h"
 using namespace std;
+
+namespace semantic {
 
 optional<pair<size_t, const ValueTimeline::Var*>> ValueTimeline::Lookup(const std::string& name) const {
     for (long i = static_cast<long>(stack.size()) - 1; i >= 0l; --i) {
@@ -92,7 +94,7 @@ bool ValueTimeline::AssignType(const string& name, const shared_ptr<runtime::Typ
 }
 
 bool ValueTimeline::AssignValue(const string& name, const shared_ptr<runtime::RuntimeValue>& precomputed,
-                           locators::SpanLocator pos) {
+                                locators::SpanLocator pos) {
     auto search = Lookup(name);
     if (!search) return false;
     auto& [scopeindex, var] = *search;
@@ -104,8 +106,7 @@ bool ValueTimeline::AssignValue(const string& name, const shared_ptr<runtime::Ru
     return true;
 }
 
-bool ValueTimeline::Assign(const string& name, const runtime::TypeOrValue& precomputed,
-                           locators::SpanLocator pos) {
+bool ValueTimeline::Assign(const string& name, const runtime::TypeOrValue& precomputed, locators::SpanLocator pos) {
     if (precomputed.index()) return Assign(name, get<1>(precomputed), pos);
     return Assign(name, get<0>(precomputed), pos);
 }
@@ -180,3 +181,5 @@ void ValueTimeline::MergeTimelines(const ValueTimeline& other) {
         }
     }
 }
+
+}  // namespace semantic

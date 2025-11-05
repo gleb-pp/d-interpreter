@@ -1,15 +1,19 @@
-#include "statementChecker.h"
-#include "expressionChecker.h"
+#include "semantic/statementChecker.h"
+
+#include <stdexcept>
+
 #include "locators/CodeFile.h"
 #include "locators/locator.h"
 #include "runtime/types.h"
-#include "unaryOpsChecker.h"
-#include "diagnostics.h"
+#include "semantic/diagnostics.h"
+#include "semantic/expressionChecker.h"
+#include "semantic/unaryOpsChecker.h"
+#include "semantic/valueTimeline.h"
 #include "syntax.h"
-#include "valueTimeline.h"
-#include <stdexcept>
-#include "astDeepCopy.h"
+#include "syntaxext/astDeepCopy.h"
 using namespace std;
+
+namespace semantic {
 
 static locators::SpanLocator LocatorFromToken(const Token& tk, const shared_ptr<const locators::CodeFile>& file) {
     return locators::SpanLocator(file, tk.span.position, tk.span.length);
@@ -33,10 +37,8 @@ StatementChecker::TerminationKind StatementChecker::Terminated() const { return 
     }
 
 static void ReportVariableProblems(complog::ICompilationLog& log, const ScopeStats& stats) {
-    for (auto& asg : stats.uselessAssignments)
-        log.Log(make_shared<semantic_errors::AssignedValueUnused>(asg.second, asg.first));
-    for (auto& var : stats.variablesNeverUsed)
-        log.Log(make_shared<semantic_errors::VariableNeverUsed>(var.second, var.first));
+    for (auto& asg : stats.uselessAssignments) log.Log(make_shared<errors::AssignedValueUnused>(asg.second, asg.first));
+    for (auto& var : stats.variablesNeverUsed) log.Log(make_shared<errors::VariableNeverUsed>(var.second, var.first));
 }
 
 void StatementChecker::VisitBody(ast::Body& node) {
@@ -52,8 +54,7 @@ void StatementChecker::VisitBody(ast::Body& node) {
             if (repl.empty()) {
                 node.statements.erase(node.statements.begin() + i);
                 --i;
-            }
-            else {
+            } else {
                 node.statements[i] = repl[0];
                 node.statements.insert(node.statements.begin() + (i + 1), repl.begin() + 1, repl.end());
                 i += repl.size() - 1;
@@ -61,18 +62,21 @@ void StatementChecker::VisitBody(ast::Body& node) {
         }
         {
             auto ret = rec.Returned();
-            if (ret)
-            {
-                if (returned) returned = returned.value()->Generalize(**ret);
-                else returned = *ret;
+            if (ret) {
+                if (returned)
+                    returned = returned.value()->Generalize(**ret);
+                else
+                    returned = *ret;
             }
         }
         switch (rec.Terminated()) {
-            case TerminationKind::ReachedEnd: break;
-            case TerminationKind::Returned: case TerminationKind::Exited:
+            case TerminationKind::ReachedEnd:
+                break;
+            case TerminationKind::Returned:
+            case TerminationKind::Exited:
                 terminationKind = rec.Terminated();
                 if (i < n - 1) {
-                    log.Log(make_shared<semantic_errors::CodeUnreachable>(
+                    log.Log(make_shared<errors::CodeUnreachable>(
                         locators::SpanLocator(node.statements[i + 1]->pos, node.statements.back()->pos), true));
                     node.statements.resize(i + 1);
                 }
@@ -92,10 +96,6 @@ void StatementChecker::VisitVarStatement(ast::VarStatement& node) {
     for (auto& kv : node.definitions) {
         const string& name = kv.first->identifier;
         locators::SpanLocator declarationspan = LocatorFromToken(*kv.first, node.pos.File());
-        if (!values.Declare(name, declarationspan)) {
-            log.Log(make_shared<semantic_errors::VariableRedefined>(declarationspan, name));
-            errored = true;
-        }
         if (kv.second) {
             auto& expr = *kv.second;
             ExpressionChecker chk(log, values);
@@ -106,7 +106,17 @@ void StatementChecker::VisitVarStatement(ast::VarStatement& node) {
             }
             if (chk.Replacement()) expr = chk.AssertReplacementAsExpression();
             pure = pure && chk.Pure();
+            if (!values.Declare(name, declarationspan)) {
+                log.Log(make_shared<errors::VariableRedefined>(declarationspan, name));
+                errored = true;
+                continue;
+            }
             values.Assign(name, chk.Result(), kv.second.value()->pos);
+        } else {
+            if (!values.Declare(name, declarationspan)) {
+                log.Log(make_shared<errors::VariableRedefined>(declarationspan, name));
+                errored = true;
+            }
         }
     }
     if (errored) return;
@@ -124,14 +134,13 @@ void StatementChecker::VisitIfStatement(ast::IfStatement& node) {
         auto res = condchk.Result();
         shared_ptr<runtime::Type> type = res.index() ? get<1>(res)->TypeOfValue() : get<0>(res);
         if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::BoolType())) {
-            log.Log(make_shared<semantic_errors::ConditionMustBeBoolean>(node.condition->pos, type));
+            log.Log(make_shared<errors::ConditionMustBeBoolean>(node.condition->pos, type));
             return;
         }
         if (res.index()) knownCondition = dynamic_pointer_cast<runtime::BoolValue>(get<1>(res))->Value();
     }
-    if (knownCondition)
-        log.Log(make_shared<semantic_errors::IfConditionAlwaysKnown>(*knownCondition, node.condition->pos));
-    
+    if (knownCondition) log.Log(make_shared<errors::IfConditionAlwaysKnown>(*knownCondition, node.condition->pos));
+
     ValueTimeline elseTL = values;
     StatementChecker truechk(log, values, inFunction, inCycle);
     node.doIfTrue->AcceptVisitor(truechk);
@@ -213,7 +222,7 @@ void StatementChecker::VisitWhileStatement(ast::WhileStatement& node) {
     // first evaluation:
     pure = false;
     {
-        auto cond = dynamic_pointer_cast<ast::Expression>(AstDeepCopier::Clone(*node.condition));
+        auto cond = dynamic_pointer_cast<ast::Expression>(ast::AstDeepCopier::Clone(*node.condition));
         auto temptl = values;
         ExpressionChecker chk(log, temptl);
         cond->AcceptVisitor(chk);
@@ -222,12 +231,12 @@ void StatementChecker::VisitWhileStatement(ast::WhileStatement& node) {
         auto firsteval = chk.Result();
         auto type = firsteval.index() ? get<1>(firsteval)->TypeOfValue() : get<0>(firsteval);
         if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::BoolType())) {
-            log.Log(make_shared<semantic_errors::WhileConditionNotBoolAtStart>(firstCond->pos, type));
+            log.Log(make_shared<errors::WhileConditionNotBoolAtStart>(firstCond->pos, type));
             return;
         }
         if (firsteval.index()) {
             if (!dynamic_cast<const runtime::BoolValue&>(*get<1>(firsteval)).Value()) {
-                log.Log(make_shared<semantic_errors::WhileConditionFalseAtStart>(firstCond->pos));
+                log.Log(make_shared<errors::WhileConditionFalseAtStart>(firstCond->pos));
                 return;
             }
         }
@@ -250,16 +259,20 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
     }
     auto stats = values.EndScope();
     ReportVariableProblems(log, stats);
-    for (auto& kv : stats.referencedExternals) if (kv.second) values.AssignUnknownButUsed(kv.first);
+    for (auto& kv : stats.referencedExternals)
+        if (kv.second) values.AssignUnknownButUsed(kv.first);
     if (rec.replacement) {
         auto& repl = *rec.replacement;
         if (repl.size() == 1 && dynamic_cast<const ast::Body*>(repl[0].get()))
             body = dynamic_pointer_cast<ast::Body>(repl[0]);
-        else body = make_shared<ast::Body>(body->pos, repl);
+        else
+            body = make_shared<ast::Body>(body->pos, repl);
     }
     if (rec.Returned()) {
-        if (returned) *returned = returned.value()->Generalize(**rec.Returned());
-        else returned = *rec.Returned();
+        if (returned)
+            *returned = returned.value()->Generalize(**rec.Returned());
+        else
+            returned = *rec.Returned();
     }
     if (term == TerminationKind::Returned) {
         terminationKind = TerminationKind::Returned;
@@ -287,19 +300,19 @@ void StatementChecker::VisitForStatement(ast::ForStatement& node) {
         auto endtype = chkend_res.index() ? get<1>(chkend_res)->TypeOfValue() : get<0>(chkend_res);
         bool typesbad = false;
         if (!starttype->TypeEq(runtime::UnknownType()) && !starttype->TypeEq(runtime::IntegerType())) {
-            log.Log(make_shared<semantic_errors::IntegerBoundaryExpected>(node.startOrList->pos, starttype));
+            log.Log(make_shared<errors::IntegerBoundaryExpected>(node.startOrList->pos, starttype));
             typesbad = true;
         }
         if (!endtype->TypeEq(runtime::UnknownType()) && !endtype->TypeEq(runtime::IntegerType())) {
-            log.Log(make_shared<semantic_errors::IntegerBoundaryExpected>(rangeEnd->pos, endtype));
+            log.Log(make_shared<errors::IntegerBoundaryExpected>(rangeEnd->pos, endtype));
             typesbad = true;
         }
         if (typesbad) return;
         variabletype = make_shared<runtime::IntegerType>();
     } else {
-        if (!starttype->TypeEq(runtime::TupleType()) && !starttype->TypeEq(runtime::ArrayType())
-            && !starttype->TypeEq(runtime::UnknownType())) {
-            log.Log(make_shared<semantic_errors::IterableExpected>(node.startOrList->pos, starttype));
+        if (!starttype->TypeEq(runtime::TupleType()) && !starttype->TypeEq(runtime::ArrayType()) &&
+            !starttype->TypeEq(runtime::UnknownType())) {
+            log.Log(make_shared<errors::IterableExpected>(node.startOrList->pos, starttype));
             return;
         }
         variabletype = make_shared<runtime::UnknownType>();
@@ -321,7 +334,7 @@ void StatementChecker::VisitLoopStatement(ast::LoopStatement& node) {
 
 void StatementChecker::VisitExitStatement(ast::ExitStatement& node) {
     if (!inCycle) {
-        log.Log(make_shared<semantic_errors::ExitOutsideOfCycle>(node.pos));
+        log.Log(make_shared<errors::ExitOutsideOfCycle>(node.pos));
         return;
     }
     terminationKind = TerminationKind::Exited;
@@ -340,7 +353,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
     if (!n) {
         if (!values.Assign(ref->baseIdent->identifier, srcval, node.pos)) {
             auto span = ref->baseIdent->span;
-            log.Log(make_shared<semantic_errors::VariableNotDefined>(
+            log.Log(make_shared<errors::VariableNotDefined>(
                 locators::SpanLocator(node.pos.File(), span.position, span.length), ref->baseIdent->identifier));
             return;
         }
@@ -353,7 +366,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
     {
         auto optval = values.LookupVariable(ref->baseIdent->identifier);
         if (!optval) {
-            log.Log(make_shared<semantic_errors::VariableNotDefined>(curloc, ref->baseIdent->identifier));
+            log.Log(make_shared<errors::VariableNotDefined>(curloc, ref->baseIdent->identifier));
             return;
         }
         cur = *optval;
@@ -374,7 +387,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
         auto index = dynamic_cast<ast::IndexAccessor*>(acc.get());
         if (index) {
             if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::ArrayType())) {
-                log.Log(make_shared<semantic_errors::SubscriptAssignmentOnlyInArrays>(lastloc, type));
+                log.Log(make_shared<errors::SubscriptAssignmentOnlyInArrays>(lastloc, type));
                 return;
             }
             ExpressionChecker chk(log, values);
@@ -384,7 +397,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
             auto ind = chk.Result();
             auto indtype = ind.index() ? get<1>(ind)->TypeOfValue() : get<0>(ind);
             if (!indtype->TypeEq(runtime::IntegerType()) && !indtype->TypeEq(runtime::UnknownType())) {
-                log.Log(make_shared<semantic_errors::BadSubscriptIndexType>(lastloc, indtype));
+                log.Log(make_shared<errors::BadSubscriptIndexType>(lastloc, indtype));
                 return;
             }
             if (cur.index() && ind.index() && srcval.index()) {
@@ -398,7 +411,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
 
     // if not subscript, then field assignments
     if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::TupleType())) {
-        log.Log(make_shared<semantic_errors::FieldsOnlyAssignableInTuples>(lastloc, type));
+        log.Log(make_shared<errors::FieldsOnlyAssignableInTuples>(lastloc, type));
         return;
     }
     auto destAsTuple = cur.index() ? dynamic_cast<runtime::TupleValue*>(get<1>(cur).get()) : nullptr;
@@ -409,7 +422,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
             auto name = named->name->identifier;
             if (destAsTuple && srcval.index()) {
                 if (!destAsTuple->AssignNamedField(name, get<1>(srcval))) {
-                    log.Log(make_shared<semantic_errors::CannotAssignNamedFieldInTuple>(lastloc, name));
+                    log.Log(make_shared<errors::CannotAssignNamedFieldInTuple>(lastloc, name));
                     return;
                 }
             }
@@ -422,7 +435,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
         auto exprIndex = dynamic_cast<ast::ParenMemberAccessor*>(acc.get());
         if (exprIndex) {
             if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::ArrayType())) {
-                log.Log(make_shared<semantic_errors::SubscriptAssignmentOnlyInArrays>(lastloc, type));
+                log.Log(make_shared<errors::SubscriptAssignmentOnlyInArrays>(lastloc, type));
                 return;
             }
             ExpressionChecker chk(log, values);
@@ -432,7 +445,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
             auto ind = chk.Result();
             auto indtype = ind.index() ? get<1>(ind)->TypeOfValue() : get<0>(ind);
             if (!indtype->TypeEq(runtime::IntegerType()) && !indtype->TypeEq(runtime::UnknownType())) {
-                log.Log(make_shared<semantic_errors::BadSubscriptIndexType>(lastloc, indtype));
+                log.Log(make_shared<errors::BadSubscriptIndexType>(lastloc, indtype));
                 return;
             }
             if (ind.index()) indexvalue = dynamic_cast<runtime::IntegerValue&>(*get<1>(ind)).Value();
@@ -444,7 +457,7 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
 #endif
         if (indexvalue && cur.index() && srcval.index()) {
             if (!dynamic_cast<runtime::TupleValue&>(*get<1>(cur)).AssignIndexedField(*indexvalue, get<1>(srcval))) {
-                log.Log(make_shared<semantic_errors::CannotAssignIndexedFieldInTuple>(lastloc, indexvalue->ToString()));
+                log.Log(make_shared<errors::CannotAssignIndexedFieldInTuple>(lastloc, indexvalue->ToString()));
                 return;
             }
         }
@@ -467,12 +480,14 @@ void StatementChecker::VisitPrintStatement(ast::PrintStatement& node) {
 void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
     pure = false;
     if (!inFunction) {
-        log.Log(make_shared<semantic_errors::ReturnOutsideOfFunction>(node.pos));
+        log.Log(make_shared<errors::ReturnOutsideOfFunction>(node.pos));
         return;
     }
     if (!node.returnValue) {
-        if (returned) *returned = returned.value()->Generalize(runtime::NoneType());
-        else returned = make_shared<runtime::NoneType>();
+        if (returned)
+            *returned = returned.value()->Generalize(runtime::NoneType());
+        else
+            returned = make_shared<runtime::NoneType>();
         terminationKind = TerminationKind::Returned;
         return;
     }
@@ -484,8 +499,10 @@ void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
     terminationKind = TerminationKind::Returned;
     auto res = chk.Result();
     auto type = res.index() ? get<1>(res)->TypeOfValue() : get<0>(res);
-    if (returned) *returned = returned.value()->Generalize(*type);
-    else returned = type;
+    if (returned)
+        *returned = returned.value()->Generalize(*type);
+    else
+        returned = type;
 }
 
 void StatementChecker::VisitExpressionStatement(ast::ExpressionStatement& node) {
@@ -495,7 +512,7 @@ void StatementChecker::VisitExpressionStatement(ast::ExpressionStatement& node) 
     if (chk.Replacement()) node.expr = chk.AssertReplacementAsExpression();
     pure = chk.Pure();
     if (pure) {
-        log.Log(make_shared<semantic_errors::ExpressionStatementNoSideEffects>(node.pos));
+        log.Log(make_shared<errors::ExpressionStatementNoSideEffects>(node.pos));
         replacement.emplace();
     }
     terminationKind = TerminationKind::ReachedEnd;
@@ -533,3 +550,5 @@ DISALLOWED_VISIT(ArrayLiteral)
 void StatementChecker::VisitCustom(ast::ASTNode& node) {
     throw runtime_error("StatementChecker cannot visit a Custom node");
 }
+
+}  // namespace semantic

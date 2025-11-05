@@ -1,33 +1,33 @@
 #pragma once
+#include <vector>
+
 #include "complog/CompilationLog.h"
+#include "locators/locator.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
 #include "syntax.h"
 #include "valueTimeline.h"
 
+namespace semantic {
 // may modify the syntax tree
-class StatementChecker : public ast::IASTVisitor {
-public:
-    enum class TerminationKind { ReachedEnd, Exited, Returned, Errored };
-
-private:
+class ExpressionChecker : public ast::IASTVisitor {
     complog::ICompilationLog& log;
     bool pure;
-    std::optional<std::shared_ptr<runtime::Type>> returned;
-    std::optional<std::vector<std::shared_ptr<ast::Statement>>> replacement;
+    std::optional<runtime::TypeOrValue> res;
+    std::optional<std::shared_ptr<ast::ASTNode>> replacement;
     ValueTimeline& values;
-    bool inFunction, inCycle;
-    TerminationKind terminationKind;
 
-    void VisitLoopBodyAndEndScope(std::shared_ptr<ast::Body>& body);
+    void VisitAndOrOperator(bool isOr, std::vector<std::shared_ptr<ast::Expression>>& operands,
+                            const locators::SpanLocator& position);
 
 public:
-    StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle);
+    ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);
+    bool HasResult() const;  // false in case of error
     bool Pure() const;
-    std::optional<std::shared_ptr<runtime::Type>> Returned() const;
+    runtime::TypeOrValue Result() const;
+    std::optional<std::shared_ptr<ast::ASTNode>> Replacement() const;
+    std::shared_ptr<ast::Expression> AssertReplacementAsExpression() const;
     ValueTimeline& ProgramState() const;
-    TerminationKind Terminated() const;
-    const std::optional<std::vector<std::shared_ptr<ast::Statement>>>& Replacement() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -69,5 +69,6 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~StatementChecker() = default;
+    virtual ~ExpressionChecker() = default;
 };
+}  // namespace semantic

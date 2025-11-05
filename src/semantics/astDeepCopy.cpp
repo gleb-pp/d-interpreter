@@ -1,8 +1,12 @@
-#include "astDeepCopy.h"
+#include "syntaxext/astDeepCopy.h"
+
 #include <algorithm>
 #include <memory>
+
 #include "syntax.h"
 using namespace std;
+
+namespace ast {
 
 shared_ptr<ast::ASTNode> AstDeepCopier::Clone(ast::ASTNode& node) {
     AstDeepCopier cp;
@@ -339,7 +343,6 @@ void AstDeepCopier::VisitArrayLiteral(ast::ArrayLiteral& node) {
     Result = res;
 }
 
-void AstDeepCopier::VisitCustom(ast::ASTNode& node) {
-    throw std::runtime_error("Cannot duplicate a Custom ast node");
-}
+void AstDeepCopier::VisitCustom(ast::ASTNode& node) { throw std::runtime_error("Cannot duplicate a Custom ast node"); }
 
+}  // namespace ast

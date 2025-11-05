@@ -1,10 +1,27 @@
 #pragma once
+#include "complog/CompilationLog.h"
+#include "locators/locator.h"
+#include "runtime.h"
 #include "syntax.h"
+#include "valueTimeline.h"
 
-class AstDeepCopier : public ast::IASTVisitor {
+namespace semantic {
+
+class UnaryOpChecker : public ast::IASTVisitor {
+private:
+    complog::ICompilationLog& log;
+    ValueTimeline& values;
+    runtime::TypeOrValue curvalue;
+    locators::SpanLocator pos;
+    bool pure = true;
+    std::optional<runtime::TypeOrValue> res;
+
 public:
-    static std::shared_ptr<ast::ASTNode> Clone(ast::ASTNode& node);
-    std::shared_ptr<ast::ASTNode> Result;
+    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values, const runtime::TypeOrValue& curvalue,
+                   const locators::SpanLocator& pos);
+    bool HasResult() const;
+    bool Pure() const;
+    runtime::TypeOrValue Result() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -46,6 +63,7 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~AstDeepCopier() override = default;
+    virtual ~UnaryOpChecker() override = default;
 };
 
+}  // namespace semantic

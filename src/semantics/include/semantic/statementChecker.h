@@ -1,25 +1,35 @@
 #pragma once
-#include "locators/locator.h"
-#include "runtime.h"
 #include "complog/CompilationLog.h"
+#include "runtime/types.h"
+#include "runtime/values.h"
 #include "syntax.h"
 #include "valueTimeline.h"
 
-class UnaryOpChecker : public ast::IASTVisitor {
+namespace semantic {
+
+// may modify the syntax tree
+class StatementChecker : public ast::IASTVisitor {
+public:
+    enum class TerminationKind { ReachedEnd, Exited, Returned, Errored };
+
 private:
     complog::ICompilationLog& log;
+    bool pure;
+    std::optional<std::shared_ptr<runtime::Type>> returned;
+    std::optional<std::vector<std::shared_ptr<ast::Statement>>> replacement;
     ValueTimeline& values;
-    runtime::TypeOrValue curvalue;
-    locators::SpanLocator pos;
-    bool pure = true;
-    std::optional<runtime::TypeOrValue> res;
+    bool inFunction, inCycle;
+    TerminationKind terminationKind;
+
+    void VisitLoopBodyAndEndScope(std::shared_ptr<ast::Body>& body);
 
 public:
-    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values, const runtime::TypeOrValue& curvalue,
-                   const locators::SpanLocator& pos);
-    bool HasResult() const;
+    StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle);
     bool Pure() const;
-    runtime::TypeOrValue Result() const;
+    std::optional<std::shared_ptr<runtime::Type>> Returned() const;
+    ValueTimeline& ProgramState() const;
+    TerminationKind Terminated() const;
+    const std::optional<std::vector<std::shared_ptr<ast::Statement>>>& Replacement() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -61,5 +71,7 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~UnaryOpChecker() override = default;
+    virtual ~StatementChecker() = default;
 };
+
+}  // namespace semantic

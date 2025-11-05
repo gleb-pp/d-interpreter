@@ -5,7 +5,8 @@
 #include "locators/locator.h"
 #include "runtime/types.h"
 
-namespace semantic_errors {
+namespace semantic {
+namespace errors {
 
 class SpanLocatorMessage : public complog::CompilationMessage {
 protected:
@@ -282,4 +283,5 @@ public:
     virtual ~ReturnOutsideOfFunction() override = default;
 };
 
-}  // namespace semantic_errors
+}  // namespace errors
+}  // namespace semantic

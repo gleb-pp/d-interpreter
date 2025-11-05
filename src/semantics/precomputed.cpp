@@ -1,4 +1,4 @@
-#include "precomputed.h"
+#include "syntaxext/precomputed.h"
 using namespace std;
 
 namespace ast {
