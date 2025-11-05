@@ -8,6 +8,7 @@
 #include "syntax.h"
 #include "valueTimeline.h"
 #include <stdexcept>
+#include "astDeepCopy.h"
 using namespace std;
 
 static locators::SpanLocator LocatorFromToken(const Token& tk, const shared_ptr<const locators::CodeFile>& file) {
@@ -210,12 +211,68 @@ void StatementChecker::VisitShortIfStatement(ast::ShortIfStatement& node) {
 
 void StatementChecker::VisitWhileStatement(ast::WhileStatement& node) {
     // first evaluation:
-    auto tl = values;
+    pure = false;
+    {
+        auto cond = dynamic_pointer_cast<ast::Expression>(AstDeepCopier::Clone(*node.condition));
+        auto temptl = values;
+        ExpressionChecker chk(log, temptl);
+        cond->AcceptVisitor(chk);
+        if (!chk.HasResult()) return;
+        auto firstCond = chk.Replacement() ? chk.AssertReplacementAsExpression() : cond;
+        auto firsteval = chk.Result();
+        auto type = firsteval.index() ? get<1>(firsteval)->TypeOfValue() : get<0>(firsteval);
+        if (!type->TypeEq(runtime::UnknownType()) && !type->TypeEq(runtime::BoolType())) {
+            log.Log(make_shared<semantic_errors::WhileConditionNotBoolAtStart>(firstCond->pos, type));
+            return;
+        }
+        if (firsteval.index()) {
+            if (!dynamic_cast<const runtime::BoolValue&>(*get<1>(firsteval)).Value()) {
+                log.Log(make_shared<semantic_errors::WhileConditionFalseAtStart>(firstCond->pos));
+                return;
+            }
+        }
+    }
+    values.StartBlindScope();
+    ExpressionChecker chk(log, values);
+    node.condition->AcceptVisitor(chk);
+    if (!chk.HasResult()) return;
+    if (chk.Replacement()) node.condition = chk.AssertReplacementAsExpression();
+    VisitLoopBodyAndEndScope(node.action);
+}
+
+void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
+    StatementChecker rec(log, values, inFunction, true);
+    body->AcceptVisitor(rec);
+    auto term = rec.Terminated();
+    if (term == TerminationKind::Errored) {
+        values.EndScope();
+        return;
+    }
+    auto stats = values.EndScope();
+    ReportVariableProblems(log, stats);
+    for (auto& kv : stats.referencedExternals) if (kv.second) values.AssignUnknownButUsed(kv.first);
+    if (rec.replacement) {
+        auto& repl = *rec.replacement;
+        if (repl.size() == 1 && dynamic_cast<const ast::Body*>(repl[0].get()))
+            body = dynamic_pointer_cast<ast::Body>(repl[0]);
+        else body = make_shared<ast::Body>(body->pos, repl);
+    }
+    if (rec.Returned()) {
+        if (returned) *returned = returned.value()->Generalize(**rec.Returned());
+        else returned = *rec.Returned();
+    }
+    if (term == TerminationKind::Returned) {
+        terminationKind = TerminationKind::Returned;
+        return;
+    }
+    terminationKind = TerminationKind::ReachedEnd;
+}
+
+void StatementChecker::VisitForStatement(ast::ForStatement& node) {
 
 }
 
 /*
-void StatementChecker::VisitForStatement(ast::ForStatement& node) 
 void StatementChecker::VisitLoopStatement(ast::LoopStatement& node) 
 void StatementChecker::VisitExitStatement(ast::ExitStatement& node) 
 */

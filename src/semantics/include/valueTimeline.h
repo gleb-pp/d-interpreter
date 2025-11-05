@@ -42,6 +42,7 @@ public:
     bool AssignType(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
     bool AssignValue(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
     bool Assign(const std::string& name, const runtime::TypeOrValue& precomputed, locators::SpanLocator pos);
+    bool AssignUnknownButUsed(const std::string& name);
     bool Declare(const std::string& name, locators::SpanLocator pos);
     locators::SpanLocator LookupDeclaration(const std::string& name);
     void MergeTimelines(const ValueTimeline& other);  // Use after an If statement

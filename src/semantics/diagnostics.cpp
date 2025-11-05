@@ -84,6 +84,13 @@ void WhileConditionFalseAtStart::WriteMessageToStream(ostream& out,
     out << loc.Pretty() << ": While cycle's condition is known to be false at start.\n";
 }
 
+WhileConditionNotBoolAtStart::WhileConditionNotBoolAtStart(locators::SpanLocator pos, const shared_ptr<runtime::Type>& received)
+    : SpanLocatorMessage(complog::Severity::Warning(), "WhileConditionNotBoolAtStart", pos), received(received) {}
+void WhileConditionNotBoolAtStart::WriteMessageToStream(ostream& out,
+                                                      const complog::CompilationMessage::FormatOptions& opts) const {
+    out << loc.Pretty() << ": While cycle's condition is known to not be a boolean at start (is a \"" << received->Name() << "\").\n";
+}
+
 ExpressionStatementNoSideEffects::ExpressionStatementNoSideEffects(locators::SpanLocator pos)
     : SpanLocatorMessage(complog::Severity::Warning(), "ExpressionStatementNoSideEffects", pos) {}
 void ExpressionStatementNoSideEffects::WriteMessageToStream(

@@ -110,6 +110,18 @@ bool ValueTimeline::Assign(const string& name, const runtime::TypeOrValue& preco
     return Assign(name, get<0>(precomputed), pos);
 }
 
+bool ValueTimeline::AssignUnknownButUsed(const string& name) {
+    auto search = Lookup(name);
+    if (!search) return false;
+    auto& [scopeindex, var] = *search;
+    auto& topscope = stack.back();
+    if (scopeindex != stack.size() - 1) topscope.externalReferences[name] = true;
+    var->val = make_shared<runtime::UnknownType>();
+    var->lastUnusedAssignments.clear();
+    var->used = true;
+    return true;
+}
+
 bool ValueTimeline::Declare(const string& name, locators::SpanLocator pos) {
     auto& topscope = stack.back();
     auto insertres = topscope.vars.emplace(name, Var());

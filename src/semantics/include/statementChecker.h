@@ -19,7 +19,7 @@ private:
     bool inFunction, inCycle;
     TerminationKind terminationKind;
 
-    void VisitLoopBody(
+    void VisitLoopBodyAndEndScope(std::shared_ptr<ast::Body>& body);
 
 public:
     StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle);

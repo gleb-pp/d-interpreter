@@ -104,6 +104,15 @@ public:
     virtual ~IfConditionAlwaysKnown() override = default;
 };
 
+class WhileConditionNotBoolAtStart : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> received;
+
+public:
+    WhileConditionNotBoolAtStart(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& received);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~WhileConditionNotBoolAtStart() override = default;
+};
+
 class WhileConditionFalseAtStart : public SpanLocatorMessage {
 public:
     WhileConditionFalseAtStart(locators::SpanLocator pos);
