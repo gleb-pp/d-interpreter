@@ -489,7 +489,16 @@ void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
 }
 
 void StatementChecker::VisitExpressionStatement(ast::ExpressionStatement& node) {
-
+    ExpressionChecker chk(log, values);
+    node.expr->AcceptVisitor(chk);
+    if (!chk.HasResult()) return;
+    if (chk.Replacement()) node.expr = chk.AssertReplacementAsExpression();
+    pure = chk.Pure();
+    if (pure) {
+        log.Log(make_shared<semantic_errors::ExpressionStatementNoSideEffects>(node.pos));
+        replacement.emplace();
+    }
+    terminationKind = TerminationKind::ReachedEnd;
 }
 
 DISALLOWED_VISIT(CommaExpressions)
