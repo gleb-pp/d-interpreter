@@ -39,8 +39,8 @@ public:
     // Blind Scope: from inside, all external variables are of type UnknownType
     void StartBlindScope();
     ScopeStats EndScope();
-    bool Assign(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
-    bool Assign(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
+    bool AssignType(const std::string& name, const std::shared_ptr<runtime::Type>& type, locators::SpanLocator pos);
+    bool AssignValue(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& precomputed, locators::SpanLocator pos);
     bool Assign(const std::string& name, const runtime::TypeOrValue& precomputed, locators::SpanLocator pos);
     bool Declare(const std::string& name, locators::SpanLocator pos);
     locators::SpanLocator LookupDeclaration(const std::string& name);

@@ -67,19 +67,92 @@ DISALLOWED_VISIT(ShortFuncBody)
 DISALLOWED_VISIT(LongFuncBody)
 DISALLOWED_VISIT(TupleLiteralElement)
 
-void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator kind,
-                                             vector<shared_ptr<ast::Expression>>& operands,
-                                             const locators::SpanLocator& position) {
-    const char* const OPERATOR_NAMES[] = {"xor", "or", "and"};
-    const char* OPERATOR_NAME = OPERATOR_NAMES[static_cast<int>(kind)];
+void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Expression>>& operands,
+                                           const locators::SpanLocator& position) {
+    const char* const OPERATOR_NAME = isOr ? "or" : "and";
+    const bool IDEMPOTENT_VAL = !isOr;
+    size_t n = operands.size();
+    vector<ExpressionChecker> recs;
+    recs.reserve(n);
+    vector<ValueTimeline> tls;
+    tls.reserve(n);
+    bool errored = false;
+    for (size_t i = 0; i < n; i++) {
+        auto& op = operands[i];
+        auto& tl = tls.emplace_back(recs.empty() ? values : tls.back());
+        auto& rec = recs.emplace_back(log, tl);
+        op->AcceptVisitor(rec);
+        if (!rec.HasResult()) errored = true;
+        if (rec.Replacement()) op = rec.AssertReplacementAsExpression();
+    }
+    if (errored) return;
+
+    auto cur = recs[0].Result();
+    pure = recs[0].Pure();
+    locators::SpanLocator loc(operands[0]->pos);
+    size_t cut_first = 0;
+    for (size_t i = 1; i < n; i++) {
+        auto& rec = recs[i];
+        auto ch = rec.Result();
+        auto newloc = operands[i]->pos;
+        pure = pure && rec.Pure();
+        if (cur.index() && ch.index()) {
+            auto optres = get<1>(cur)->BinaryAnd(*get<1>(ch));
+            if (!optres) {
+                semantic_errors::VectorOfSpanTypes bad{{loc, get<1>(cur)->TypeOfValue()}, {newloc, get<1>(ch)->TypeOfValue()}};
+                log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
+                return;
+            }
+            auto mergedloc = locators::SpanLocator(loc, newloc);
+            if (optres->index()) {
+                log.Log(make_shared<semantic_errors::EvaluationException>(mergedloc, get<1>(*optres).what()));
+                return;
+            }
+            auto val = get<0>(*optres);
+            cur = val;
+            loc = mergedloc;
+            if (dynamic_cast<runtime::BoolValue&>(*val).Value() == IDEMPOTENT_VAL) {
+                if (pure) cut_first = i;
+            } else {
+                values = tls[i];
+                this->res = val;
+                if (pure) replacement = make_shared<ast::PrecomputedValue>(position, val);
+                else operands.resize(i + 1);
+                if (i + 1 < n) {
+                    log.Log(make_shared<semantic_errors::CodeUnreachable>(
+                        locators::SpanLocator(operands[i + 1]->pos, operands.back()->pos), true));
+                }
+                return;
+            }
+        }
+        auto curtype = cur.index() ? get<1>(cur)->TypeOfValue() : get<0>(cur);
+        auto newtype = ch.index() ? get<1>(ch)->TypeOfValue() : get<0>(ch);
+        auto optres = curtype->BinaryLogical(*newtype);
+        if (!optres) {
+            semantic_errors::VectorOfSpanTypes bad{{loc, get<1>(cur)->TypeOfValue()}, {newloc, get<1>(ch)->TypeOfValue()}};
+            log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
+            return;
+        }
+        auto& restype = *optres;
+        cur = restype;
+        loc = locators::SpanLocator(loc, newloc);
+    }
+    values = tls.back();  // THIS IS ONLY CORRECT BECAUSE VARIABLES CANNOT CHANGE (can only become unknown)
+    operands.erase(operands.begin(), operands.begin() + cut_first);
+    res = cur;
+    if (res->index() && pure) replacement = make_shared<ast::PrecomputedValue>(position, get<1>(cur));
+}
+
+void ExpressionChecker::VisitXorOperator(ast::XorOperator& node) {
+    const char* OPERATOR_NAME = "xor";
     vector<ExpressionChecker> rec;
     size_t valuesknown = 0;
     vector<variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>>> chtypes;
-    size_t n = operands.size();
+    size_t n = node.operands.size();
     rec.reserve(n);
     bool errored = false;
     for (size_t i = 0; i < n; i++) {
-        auto& ch = operands[i];
+        auto& ch = node.operands[i];
         auto& recchecker = rec.emplace_back(log, values);
         ch->AcceptVisitor(recchecker);
         if (!recchecker.HasResult()) {
@@ -88,7 +161,7 @@ void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator 
         }
         chtypes.push_back(recchecker.Result());
         valuesknown += recchecker.Result().index();
-        if (recchecker.Replacement()) operands[i] = recchecker.AssertReplacementAsExpression();
+        if (recchecker.Replacement()) node.operands[i] = recchecker.AssertReplacementAsExpression();
         pure = pure && recchecker.Pure();
     }
     if (errored) return;
@@ -100,28 +173,18 @@ void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator 
         for (size_t i = 0; i < n; i++) {
             if (!chtypes[i].index()) continue;
             values.push_back(get<1>(chtypes[i]));
-            types_positions.emplace_back(operands[i]->pos, values.back()->TypeOfValue());
+            types_positions.emplace_back(node.operands[i]->pos, values.back()->TypeOfValue());
         }
         shared_ptr<runtime::RuntimeValue> res = values.front();
         for (size_t i = 1; i < values.size(); i++) {
             runtime::RuntimeValueResult opresult;
-            switch (kind) {
-                case LogicalOperator::Xor:
-                    opresult = res->BinaryXor(*values[i]);
-                    break;
-                case LogicalOperator::Or:
-                    opresult = res->BinaryOr(*values[i]);
-                    break;
-                case LogicalOperator::And:
-                    opresult = res->BinaryAnd(*values[i]);
-                    break;
-            }
+            opresult = res->BinaryXor(*values[i]);
             if (!opresult) {
                 log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, types_positions));
                 return;
             }
             if (opresult->index()) {
-                log.Log(make_shared<semantic_errors::EvaluationException>(position, get<1>(*opresult).what()));
+                log.Log(make_shared<semantic_errors::EvaluationException>(node.pos, get<1>(*opresult).what()));
                 return;
             }
             res = get<0>(*opresult);
@@ -130,40 +193,38 @@ void ExpressionChecker::VisitLogicalOperator(ExpressionChecker::LogicalOperator 
             size_t j = 0;
             for (size_t i = 0; i < n; i++) {
                 if (chtypes[i].index()) continue;
-                if (i > j) { chtypes[j] = chtypes[i]; operands[j] = operands[i]; }
+                if (i > j) { chtypes[j] = chtypes[i]; node.operands[j] = node.operands[i]; }
                 ++j;
             }
             chtypes.resize(j);
-            operands.resize(j);
+            node.operands.resize(j);
         }
         chtypes.insert(chtypes.begin(), res);
-        operands.insert(operands.begin(), make_shared<ast::PrecomputedValue>(types_positions.back().first, res));
-        n = operands.size();
+        node.operands.insert(node.operands.begin(), make_shared<ast::PrecomputedValue>(types_positions.back().first, res));
+        n = node.operands.size();
     }
     vector<pair<locators::SpanLocator, shared_ptr<runtime::Type>>> badTypes;
     for (size_t i = 0; i < n; i++) {
         auto type = chtypes[i].index() ? get<1>(chtypes[i])->TypeOfValue() : get<0>(chtypes[i]);
         if (!type->TypeEq(runtime::BoolType()) && !type->TypeEq(runtime::UnknownType()))
-            badTypes.emplace_back(operands[i]->pos, type);
+            badTypes.emplace_back(node.operands[i]->pos, type);
     }
     if (badTypes.size()) {
         log.Log(make_shared<semantic_errors::OperatorNotApplicable>(OPERATOR_NAME, badTypes));
         return;
     }
     if (n == 1) {
-        replacement = operands[0];
+        replacement = node.operands[0];
         this->res = chtypes[0];
     } else this->res = make_shared<runtime::BoolType>();
 }
 
-void ExpressionChecker::VisitXorOperator(ast::XorOperator& node) {
-    VisitLogicalOperator(LogicalOperator::Xor, node.operands, node.pos);
-}
 void ExpressionChecker::VisitOrOperator(ast::OrOperator& node) {
-    VisitLogicalOperator(LogicalOperator::Or, node.operands, node.pos);
+    VisitAndOrOperator(true, node.operands, node.pos);
 }
+
 void ExpressionChecker::VisitAndOperator(ast::AndOperator& node) {
-    VisitLogicalOperator(LogicalOperator::And, node.operands, node.pos);
+    VisitAndOrOperator(false, node.operands, node.pos);
 }
 
 void ExpressionChecker::VisitBinaryRelation(ast::BinaryRelation& node) {
@@ -686,7 +747,7 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
         auto span = param->span;
         auto loc = locators::SpanLocator(node.pos.File(), span.position, span.length);
         tl.Declare(param->identifier, loc);
-        tl.Assign(param->identifier, make_shared<runtime::UnknownType>(), loc);
+        tl.AssignType(param->identifier, make_shared<runtime::UnknownType>(), loc);
     }
 
     StatementChecker chk(log, values, true, false);
@@ -699,7 +760,7 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
     std::ranges::transform(paraminfo.referencedExternals, captured.begin(),
                            [](const pair<const string, bool>& kv) { return kv.first; });
     auto optreturnedtype = chk.Returned();
-    auto returnedtype = optreturnedtype ? *optreturnedtype : make_shared<runtime::UnknownType>();
+    auto returnedtype = optreturnedtype ? *optreturnedtype : make_shared<runtime::NoneType>();
     auto functype = make_shared<runtime::FuncType>(
         chk.Pure(), vector<shared_ptr<runtime::Type>>(node.parameters.size(), make_shared<runtime::UnknownType>()),
         returnedtype);

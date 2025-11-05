@@ -14,9 +14,12 @@ private:
     complog::ICompilationLog& log;
     bool pure;
     std::optional<std::shared_ptr<runtime::Type>> returned;
+    std::optional<std::vector<std::shared_ptr<ast::Statement>>> replacement;
     ValueTimeline& values;
     bool inFunction, inCycle;
     TerminationKind terminationKind;
+
+    void VisitLoopBody(
 
 public:
     StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle);
@@ -24,6 +27,7 @@ public:
     std::optional<std::shared_ptr<runtime::Type>> Returned() const;
     ValueTimeline& ProgramState() const;
     TerminationKind Terminated() const;
+    const std::optional<std::vector<std::shared_ptr<ast::Statement>>>& Replacement() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;

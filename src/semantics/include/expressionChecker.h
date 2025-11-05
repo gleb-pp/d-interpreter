@@ -15,10 +15,8 @@ class ExpressionChecker : public ast::IASTVisitor {
     std::optional<std::shared_ptr<ast::ASTNode>> replacement;
     ValueTimeline& values;
 
-    enum class LogicalOperator { Xor, Or, And };
-
-    void VisitLogicalOperator(LogicalOperator kind, std::vector<std::shared_ptr<ast::Expression>>& operands,
-                              const locators::SpanLocator& position);
+    void VisitAndOrOperator(bool isOr, std::vector<std::shared_ptr<ast::Expression>>& operands,
+                            const locators::SpanLocator& position);
 
 public:
     ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);

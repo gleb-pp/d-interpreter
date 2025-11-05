@@ -79,7 +79,7 @@ ScopeStats ValueTimeline::EndScope() {
     return res;
 }
 
-bool ValueTimeline::Assign(const string& name, const shared_ptr<runtime::Type>& type, locators::SpanLocator pos) {
+bool ValueTimeline::AssignType(const string& name, const shared_ptr<runtime::Type>& type, locators::SpanLocator pos) {
     auto search = Lookup(name);
     if (!search) return false;
     auto& [scopeindex, var] = *search;
@@ -91,7 +91,7 @@ bool ValueTimeline::Assign(const string& name, const shared_ptr<runtime::Type>& 
     return true;
 }
 
-bool ValueTimeline::Assign(const string& name, const shared_ptr<runtime::RuntimeValue>& precomputed,
+bool ValueTimeline::AssignValue(const string& name, const shared_ptr<runtime::RuntimeValue>& precomputed,
                            locators::SpanLocator pos) {
     auto search = Lookup(name);
     if (!search) return false;

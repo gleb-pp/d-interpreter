@@ -18,6 +18,15 @@ public:
     virtual ~SpanLocatorMessage() override = default;
 };
 
+class ConditionMustBeBoolean : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> received;
+
+public:
+    ConditionMustBeBoolean(const locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& gotType);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~ConditionMustBeBoolean() override = default;
+};
+
 class VariableNotDefined : public SpanLocatorMessage {
     std::string varName;
 
@@ -147,8 +156,10 @@ public:
 };
 
 class CannotAssignIndexedFieldInTuple : public SpanLocatorMessage {
+    std::string intRepr;
+
 public:
-    CannotAssignIndexedFieldInTuple(locators::SpanLocator pos);
+    CannotAssignIndexedFieldInTuple(locators::SpanLocator pos, const std::string& intRepr);
     void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
     virtual ~CannotAssignIndexedFieldInTuple() override = default;
 };
