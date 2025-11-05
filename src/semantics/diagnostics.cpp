@@ -91,6 +91,22 @@ void WhileConditionNotBoolAtStart::WriteMessageToStream(ostream& out,
     out << loc.Pretty() << ": While cycle's condition is known to not be a boolean at start (is a \"" << received->Name() << "\").\n";
 }
 
+IterableExpected::IterableExpected(locators::SpanLocator pos, const shared_ptr<runtime::Type>& received)
+    : SpanLocatorMessage(complog::Severity::Warning(), "IterableExpected", pos), received(received) {}
+void IterableExpected::WriteMessageToStream(ostream& out,
+                                                      const complog::CompilationMessage::FormatOptions& opts) const {
+    out << loc.Pretty() << ": the foreach-style 'for' loop can only iterate over arrays or tuples, but a \""
+        << received->Name() << "\" was provided.\n";
+}
+
+IntegerBoundaryExpected::IntegerBoundaryExpected(locators::SpanLocator pos, const shared_ptr<runtime::Type>& received)
+    : SpanLocatorMessage(complog::Severity::Warning(), "IntegerBoundaryExpected", pos), received(received) {}
+void IntegerBoundaryExpected::WriteMessageToStream(ostream& out,
+                                                      const complog::CompilationMessage::FormatOptions& opts) const {
+    out << loc.Pretty() << ": the ranged 'for' loop expects integers as boundaries, but a " << received->Name()
+        << "\" was provided.\n";
+}
+
 ExpressionStatementNoSideEffects::ExpressionStatementNoSideEffects(locators::SpanLocator pos)
     : SpanLocatorMessage(complog::Severity::Warning(), "ExpressionStatementNoSideEffects", pos) {}
 void ExpressionStatementNoSideEffects::WriteMessageToStream(

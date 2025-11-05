@@ -120,6 +120,24 @@ public:
     virtual ~WhileConditionFalseAtStart() override = default;
 };
 
+class IterableExpected : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> received;
+
+public:
+    IterableExpected(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& received);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~IterableExpected() override = default;
+};
+
+class IntegerBoundaryExpected : public SpanLocatorMessage {
+    std::shared_ptr<runtime::Type> received;
+
+public:
+    IntegerBoundaryExpected(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& received);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~IntegerBoundaryExpected() override = default;
+};
+
 class ExpressionStatementNoSideEffects : public SpanLocatorMessage {
 public:
     ExpressionStatementNoSideEffects(locators::SpanLocator pos);

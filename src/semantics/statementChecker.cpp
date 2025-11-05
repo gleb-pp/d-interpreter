@@ -269,7 +269,9 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
 }
 
 void StatementChecker::VisitForStatement(ast::ForStatement& node) {
-
+    ExpressionChecker chkStart(log, values);
+    node.startOrList->AcceptVisitor(chkStart);
+    // WIP
 }
 
 /*
