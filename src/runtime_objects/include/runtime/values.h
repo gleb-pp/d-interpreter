@@ -133,6 +133,7 @@ class BoolValue : public RuntimeValue {
 
 public:
     BoolValue(bool value);
+    bool Value() const;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
     RuntimeValueResult BinaryAnd(const RuntimeValue& other) const override;
     RuntimeValueResult BinaryOr(const RuntimeValue& other) const override;

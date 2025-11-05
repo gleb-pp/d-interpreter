@@ -267,6 +267,7 @@ RuntimeValueResult StringValue::Subscript(const RuntimeValue& other) const {
 shared_ptr<Type> NoneValue::TypeOfValue() const { return make_shared<NoneType>(); }
 
 BoolValue::BoolValue(bool value) : value(value) {}
+bool BoolValue::Value() const { return value; }
 shared_ptr<runtime::Type> BoolValue::TypeOfValue() const { return make_shared<BoolType>(); }
 RuntimeValueResult BoolValue::BinaryAnd(const RuntimeValue& other) const {
     auto p = dynamic_cast<const BoolValue*>(&other);
