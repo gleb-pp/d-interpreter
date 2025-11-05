@@ -269,9 +269,49 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
 }
 
 void StatementChecker::VisitForStatement(ast::ForStatement& node) {
+    pure = false;
     ExpressionChecker chkStart(log, values);
     node.startOrList->AcceptVisitor(chkStart);
-    // WIP
+    if (!chkStart.HasResult()) return;
+    if (chkStart.Replacement()) node.startOrList = chkStart.AssertReplacementAsExpression();
+    auto chkstart_res = chkStart.Result();
+    auto starttype = chkstart_res.index() ? get<1>(chkstart_res)->TypeOfValue() : get<0>(chkstart_res);
+    shared_ptr<runtime::Type> variabletype;
+    if (node.end) {
+        auto& rangeEnd = *node.end;
+        ExpressionChecker chkEnd(log, values);
+        rangeEnd->AcceptVisitor(chkEnd);
+        if (!chkEnd.HasResult()) return;
+        if (chkEnd.Replacement()) rangeEnd = chkEnd.AssertReplacementAsExpression();
+        auto chkend_res = chkEnd.Result();
+        auto endtype = chkend_res.index() ? get<1>(chkend_res)->TypeOfValue() : get<0>(chkend_res);
+        bool typesbad = false;
+        if (!starttype->TypeEq(runtime::UnknownType()) && !starttype->TypeEq(runtime::IntegerType())) {
+            log.Log(make_shared<semantic_errors::IntegerBoundaryExpected>(node.startOrList->pos, starttype));
+            typesbad = true;
+        }
+        if (!endtype->TypeEq(runtime::UnknownType()) && !endtype->TypeEq(runtime::IntegerType())) {
+            log.Log(make_shared<semantic_errors::IntegerBoundaryExpected>(rangeEnd->pos, endtype));
+            typesbad = true;
+        }
+        if (typesbad) return;
+        variabletype = make_shared<runtime::IntegerType>();
+    } else {
+        if (!starttype->TypeEq(runtime::TupleType()) && !starttype->TypeEq(runtime::ArrayType())
+            && !starttype->TypeEq(runtime::UnknownType())) {
+            log.Log(make_shared<semantic_errors::IterableExpected>(node.startOrList->pos, starttype));
+            return;
+        }
+        variabletype = make_shared<runtime::UnknownType>();
+    }
+    values.StartBlindScope();
+    if (node.optVariableName) {
+        string name = node.optVariableName.value()->identifier;
+        auto span = LocatorFromToken(**node.optVariableName, node.pos.File());
+        values.Declare(name, span);
+        values.AssignType(name, variabletype, span);
+    }
+    VisitLoopBodyAndEndScope(node.action);
 }
 
 /*
