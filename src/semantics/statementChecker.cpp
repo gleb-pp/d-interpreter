@@ -31,9 +31,9 @@ std::optional<std::shared_ptr<runtime::Type>> StatementChecker::Returned() const
 ValueTimeline& StatementChecker::ProgramState() const { return values; }
 StatementChecker::TerminationKind StatementChecker::Terminated() const { return terminationKind; }
 
-#define DISALLOWED_VISIT(name)                                            \
-    void StatementChecker::Visit##name(ast::name& node) {                 \
-        throw runtime_error("StatementChecker cannot visit ast::" #name); \
+#define DISALLOWED_VISIT(name)                                             \
+    void StatementChecker::Visit##name([[maybe_unused]] ast::name& node) { \
+        throw runtime_error("StatementChecker cannot visit ast::" #name);  \
     }
 
 static void ReportVariableProblems(complog::ICompilationLog& log, const ScopeStats& stats) {
@@ -547,7 +547,7 @@ DISALLOWED_VISIT(FuncLiteral)
 DISALLOWED_VISIT(TokenLiteral)
 DISALLOWED_VISIT(ArrayLiteral)
 
-void StatementChecker::VisitCustom(ast::ASTNode& node) {
+void StatementChecker::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
     throw runtime_error("StatementChecker cannot visit a Custom node");
 }
 

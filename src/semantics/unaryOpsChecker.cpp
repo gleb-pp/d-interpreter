@@ -21,9 +21,9 @@ bool UnaryOpChecker::HasResult() const { return static_cast<bool>(res); }
 bool UnaryOpChecker::Pure() const { return pure; }
 variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>> UnaryOpChecker::Result() const { return *res; }
 
-#define DISALLOWED_VISIT(name)                                          \
-    void UnaryOpChecker::Visit##name(ast::name& node) {                 \
-        throw runtime_error("UnaryOpChecker cannot visit ast::" #name); \
+#define DISALLOWED_VISIT(name)                                           \
+    void UnaryOpChecker::Visit##name([[maybe_unused]] ast::name& node) { \
+        throw runtime_error("UnaryOpChecker cannot visit ast::" #name);  \
     }
 DISALLOWED_VISIT(VarStatement)
 DISALLOWED_VISIT(IfStatement)
@@ -56,7 +56,9 @@ DISALLOWED_VISIT(LongFuncBody)
 DISALLOWED_VISIT(FuncLiteral)
 DISALLOWED_VISIT(TokenLiteral)
 DISALLOWED_VISIT(ArrayLiteral)
-void UnaryOpChecker::VisitCustom(ast::ASTNode& node) { throw runtime_error("UnaryOpChecker cannot visit ast::Custom"); }
+void UnaryOpChecker::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
+    throw runtime_error("UnaryOpChecker cannot visit ast::Custom");
+}
 
 void UnaryOpChecker::VisitIdentMemberAccessor(ast::IdentMemberAccessor& node) {
     if (curvalue.index()) {
@@ -264,7 +266,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
             log.Log(make_shared<errors::WrongArgumentCount>(node.pos, needcount, n));
             return;
         }
-        for (int i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
             auto& neededtype = needtypes->at(i);
             auto& giventype = types[i];
             if (neededtype->TypeEq(*giventype)) continue;

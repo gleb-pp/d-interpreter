@@ -343,6 +343,8 @@ void AstDeepCopier::VisitArrayLiteral(ast::ArrayLiteral& node) {
     Result = res;
 }
 
-void AstDeepCopier::VisitCustom(ast::ASTNode& node) { throw std::runtime_error("Cannot duplicate a Custom ast node"); }
+void AstDeepCopier::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
+    throw std::runtime_error("Cannot duplicate a Custom ast node");
+}
 
 }  // namespace ast

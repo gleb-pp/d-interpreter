@@ -45,7 +45,6 @@ void ValueTimeline::MakeAllUnknown() {
             var.used = true;
             var.lastUnusedAssignments.clear();
         }
-    auto& top = stack.back();
 }
 
 void ValueTimeline::StartScope() { stack.emplace_back(); }
@@ -107,8 +106,8 @@ bool ValueTimeline::AssignValue(const string& name, const shared_ptr<runtime::Ru
 }
 
 bool ValueTimeline::Assign(const string& name, const runtime::TypeOrValue& precomputed, locators::SpanLocator pos) {
-    if (precomputed.index()) return Assign(name, get<1>(precomputed), pos);
-    return Assign(name, get<0>(precomputed), pos);
+    if (precomputed.index()) return AssignValue(name, get<1>(precomputed), pos);
+    return AssignType(name, get<0>(precomputed), pos);
 }
 
 bool ValueTimeline::AssignUnknownButUsed(const string& name) {

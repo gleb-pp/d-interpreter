@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <memory>
 #include <sstream>
-#include <system_error>
 using namespace std;
 
 /*
@@ -21,19 +20,19 @@ shared_ptr<Type> Type::Generalize(const Type& other) const {
     if (!StrictTypeEq(other)) return make_shared<UnknownType>();
     return Clone();
 }
-std::optional<std::shared_ptr<Type>> Type::BinaryPlus(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::BinaryMinus(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::BinaryMul(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::BinaryDiv(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::BinaryLogical(const Type& other) const { return {}; }
-bool Type::BinaryEq(const Type& other) const { return {}; }
-bool Type::BinaryOrdering(const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::BinaryPlus([[maybe_unused]] const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::BinaryMinus([[maybe_unused]] const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::BinaryMul([[maybe_unused]] const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::BinaryDiv([[maybe_unused]] const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::BinaryLogical([[maybe_unused]] const Type& other) const { return {}; }
+bool Type::BinaryEq([[maybe_unused]] const Type& other) const { return {}; }
+bool Type::BinaryOrdering([[maybe_unused]] const Type& other) const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::UnaryMinus() const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::UnaryPlus() const { return {}; }
 std::optional<std::shared_ptr<Type>> Type::UnaryNot() const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::Field(const std::string& name) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::Field(const Type& other) const { return {}; }
-std::optional<std::shared_ptr<Type>> Type::Subscript(const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::Field([[maybe_unused]] const std::string& name) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::Field([[maybe_unused]] const Type& other) const { return {}; }
+std::optional<std::shared_ptr<Type>> Type::Subscript([[maybe_unused]] const Type& other) const { return {}; }
 
 // IntegerType
 
@@ -230,7 +229,7 @@ std::optional<std::shared_ptr<Type>> TupleType::BinaryPlus(const Type& other) co
     return {};
 }
 
-std::optional<std::shared_ptr<Type>> TupleType::Field(const std::string& name) const {
+std::optional<std::shared_ptr<Type>> TupleType::Field([[maybe_unused]] const std::string& name) const {
     return make_shared<UnknownType>();
 }
 
@@ -349,7 +348,7 @@ bool UnknownType::BinaryOrdering(const Type& other) const {
 std::optional<std::shared_ptr<Type>> UnknownType::UnaryMinus() const { return make_shared<UnknownType>(); }
 std::optional<std::shared_ptr<Type>> UnknownType::UnaryPlus() const { return make_shared<UnknownType>(); }
 std::optional<std::shared_ptr<Type>> UnknownType::UnaryNot() const { return make_shared<BoolType>(); }
-std::optional<std::shared_ptr<Type>> UnknownType::Field(const std::string& name) const {
+std::optional<std::shared_ptr<Type>> UnknownType::Field([[maybe_unused]] const std::string& name) const {
     return make_shared<UnknownType>();
 }
 std::optional<std::shared_ptr<Type>> UnknownType::Field(const Type& other) const {

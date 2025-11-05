@@ -33,7 +33,7 @@ std::shared_ptr<ast::Expression> ExpressionChecker::AssertReplacementAsExpressio
 ValueTimeline& ExpressionChecker::ProgramState() const { return values; }
 
 #define DISALLOWED_VISIT(name)                                                  \
-    void ExpressionChecker::Visit##name(ast::name& node) {                      \
+    void ExpressionChecker::Visit##name([[maybe_unused]] ast::name& node) {     \
         throw std::runtime_error("ExpressionChecker cannot visit ast::" #name); \
     }
 DISALLOWED_VISIT(Body)
@@ -551,7 +551,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
 
     auto curtype = types[0];
     auto loc = operands[0]->pos;
-    for (int i = 1; i < n; i++) {
+    for (size_t i = 1; i < n; i++) {
         auto op = operators[i - 1];
         auto newloc = operands[i]->pos;
         auto b = types[i];
@@ -598,8 +598,8 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
     size_t npost = node.postfixOps.size(), npre = node.prefixOps.size();
     size_t ipost = 0, ipre = 0;
     while (ipost < npost || ipre < npre) {
-        bool doPostfix = ipre == npre || ipost < npost && node.prefixOps[npre - ipre - 1]->precedence() <
-                                                              node.postfixOps[ipost]->precedence();
+        bool doPostfix = ipre == npre || (ipost < npost && node.prefixOps[npre - ipre - 1]->precedence() <
+                                                               node.postfixOps[ipost]->precedence());
         if (doPostfix) {
             UnaryOpChecker chk(log, values, val, loc);
             node.postfixOps[ipost]->AcceptVisitor(chk);
@@ -841,7 +841,7 @@ void ExpressionChecker::VisitArrayLiteral(ast::ArrayLiteral& node) {
     this->res = make_shared<runtime::ArrayType>();
 }
 
-void ExpressionChecker::VisitCustom(ast::ASTNode& node) {
+void ExpressionChecker::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
     throw std::runtime_error("Somehow visiting a Custom node in ExpressionChecker");
 }
 

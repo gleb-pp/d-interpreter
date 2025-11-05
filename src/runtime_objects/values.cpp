@@ -16,27 +16,27 @@ namespace runtime {
  * If a function accepts an index, it is 1-based (the first element has index 1)
  */
 
-RuntimeValueResult RuntimeValue::BinaryPlus(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryMinus(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryMul(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryDiv(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryAnd(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryOr(const RuntimeValue& other) const { return {}; }
-RuntimeValueResult RuntimeValue::BinaryXor(const RuntimeValue& other) const { return {}; }
-optional<partial_ordering> RuntimeValue::BinaryComparison(const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryPlus([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryMinus([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryMul([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryDiv([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryAnd([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryOr([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::BinaryXor([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+optional<partial_ordering> RuntimeValue::BinaryComparison([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryMinus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryPlus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryNot() const { return {}; }
-RuntimeValueResult RuntimeValue::Field(const string& name) const { return {}; }
-RuntimeValueResult RuntimeValue::Field(const RuntimeValue& index) const { return {}; }
-RuntimeValueResult RuntimeValue::Subscript(const RuntimeValue& other) const { return {}; }
+RuntimeValueResult RuntimeValue::Field([[maybe_unused]] const string& name) const { return {}; }
+RuntimeValueResult RuntimeValue::Field([[maybe_unused]] const RuntimeValue& index) const { return {}; }
+RuntimeValueResult RuntimeValue::Subscript([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 
 #define NUMERIC_CLASSIFY                                              \
     const IntegerValue* aint = dynamic_cast<const IntegerValue*>(&a); \
     const IntegerValue* bint = dynamic_cast<const IntegerValue*>(&b); \
     const RealValue* areal = dynamic_cast<const RealValue*>(&a);      \
     const RealValue* breal = dynamic_cast<const RealValue*>(&b);      \
-    if (!aint && !areal || !bint && !breal) return {};
+    if ((!aint && !areal) || (!bint && !breal)) return {};
 #define NUMERIC_CUSTOM(operator, name, customint)                                             \
     static RuntimeValueResult Numeric##name(const RuntimeValue& a, const RuntimeValue& b) {   \
         NUMERIC_CLASSIFY                                                                      \
@@ -112,7 +112,7 @@ RuntimeValueResult RealValue::Field(const string& name) const {
             res = value - ceil(value);
         else
             res = value - floor(value);
-        return make_shared<RealValue>(value);
+        return make_shared<RealValue>(res);
     }
     return {};
 }
