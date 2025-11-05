@@ -117,17 +117,6 @@ bool parseSep(SyntaxContext& context);
 // AssignExpression -> tkAssign Expression
 std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context);
 
-// Body -> <* { Statement Sep } *>
-class Body : public ASTNode {
-public:
-    Body(const locators::SpanLocator& pos);
-    Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
-    std::vector<std::shared_ptr<Statement>> statements;
-    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context);
-    void AcceptVisitor(IASTVisitor& vis) override;
-    virtual ~Body() override = default;
-};
-
 // LoopBody -> tkLoop [tkNewLine] Body tkEnd
 std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context);
 
@@ -148,6 +137,17 @@ public:
     Statement(const locators::SpanLocator& pos);
     static std::optional<std::shared_ptr<Statement>> parse(SyntaxContext& context);
     virtual ~Statement() override = default;
+};
+
+// Body -> <* { Statement Sep } *>
+class Body : public Statement {
+public:
+    Body(const locators::SpanLocator& pos);
+    Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
+    std::vector<std::shared_ptr<Statement>> statements;
+    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context);
+    void AcceptVisitor(IASTVisitor& vis) override;
+    virtual ~Body() override = default;
 };
 
 // VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
@@ -345,9 +345,9 @@ public:
 // Reference -> tkIdent { Accessor }
 class Reference : public ASTNode {
 public:
-    Reference(const locators::SpanLocator& pos, const std::string& baseIdent,
+    Reference(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& baseIdent,
               const std::vector<std::shared_ptr<Accessor>>& accessorChain);
-    std::string baseIdent;
+    std::shared_ptr<IdentifierToken> baseIdent;
     std::vector<std::shared_ptr<Accessor>> accessorChain;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<Reference>> parse(SyntaxContext& context);

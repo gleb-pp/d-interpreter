@@ -77,9 +77,9 @@ optional<shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context) {
     return res;
 }
 
-Body::Body(const locators::SpanLocator& pos) : ASTNode(pos) {}
+Body::Body(const locators::SpanLocator& pos) : Statement(pos) {}
 Body::Body(const locators::SpanLocator& pos, const vector<shared_ptr<Statement>>& statements)
-    : ASTNode(pos), statements(statements) {}
+    : Statement(pos), statements(statements) {}
 optional<shared_ptr<Body>> Body::parse(SyntaxContext& context) {
     USESCAN;
     auto block = tk.AutoStartUseEoln();
@@ -501,7 +501,7 @@ optional<shared_ptr<IndexAccessor>> IndexAccessor::parse(SyntaxContext& context)
 VISITOR(IndexAccessor)
 
 // Reference -> tkIdent { Accessor }
-Reference::Reference(const locators::SpanLocator& pos, const string& baseIdent,
+Reference::Reference(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& baseIdent,
                      const vector<shared_ptr<Accessor>>& accessorChain)
     : ASTNode(pos), baseIdent(baseIdent), accessorChain(accessorChain) {}
 optional<shared_ptr<Reference>> Reference::parse(SyntaxContext& context) {
@@ -517,7 +517,7 @@ optional<shared_ptr<Reference>> Reference::parse(SyntaxContext& context) {
         chain.push_back(*acc);
     }
     block.Success();
-    return make_shared<Reference>(tk.ReadSinceStart(), ident->identifier, chain);
+    return make_shared<Reference>(tk.ReadSinceStart(), ident, chain);
 }
 VISITOR(Reference)
 
