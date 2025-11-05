@@ -268,4 +268,18 @@ public:
     virtual ~DuplicateParameterNames() override = default;
 };
 
+class ExitOutsideOfCycle : public SpanLocatorMessage {
+public:
+    ExitOutsideOfCycle(const locators::SpanLocator pos);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~ExitOutsideOfCycle() override = default;
+};
+
+class ReturnOutsideOfFunction : public SpanLocatorMessage {
+public:
+    ReturnOutsideOfFunction(const locators::SpanLocator pos);
+    void WriteMessageToStream(std::ostream& out, const complog::CompilationMessage::FormatOptions& opts) const override;
+    virtual ~ReturnOutsideOfFunction() override = default;
+};
+
 }  // namespace semantic_errors

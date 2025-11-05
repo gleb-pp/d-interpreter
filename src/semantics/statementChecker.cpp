@@ -314,10 +314,19 @@ void StatementChecker::VisitForStatement(ast::ForStatement& node) {
     VisitLoopBodyAndEndScope(node.action);
 }
 
-/*
-void StatementChecker::VisitLoopStatement(ast::LoopStatement& node) 
-void StatementChecker::VisitExitStatement(ast::ExitStatement& node) 
-*/
+void StatementChecker::VisitLoopStatement(ast::LoopStatement& node) {
+    values.StartBlindScope();
+    VisitLoopBodyAndEndScope(node.body);
+}
+
+void StatementChecker::VisitExitStatement(ast::ExitStatement& node) {
+    if (!inCycle) {
+        log.Log(make_shared<semantic_errors::ExitOutsideOfCycle>(node.pos));
+        return;
+    }
+    terminationKind = TerminationKind::Exited;
+    pure = false;
+}
 
 void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
     pure = false;
@@ -443,11 +452,45 @@ void StatementChecker::VisitAssignStatement(ast::AssignStatement& node) {
         return;
     }
 }
-        /*
-void StatementChecker::VisitPrintStatement(ast::PrintStatement& node) 
-void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) 
-void StatementChecker::VisitExpressionStatement(ast::ExpressionStatement& node) 
-        */
+
+void StatementChecker::VisitPrintStatement(ast::PrintStatement& node) {
+    pure = false;
+    for (auto& expr : node.expressions) {
+        ExpressionChecker chk(log, values);
+        expr->AcceptVisitor(chk);
+        if (!chk.HasResult()) return;
+        if (chk.Replacement()) expr = chk.AssertReplacementAsExpression();
+    }
+    terminationKind = TerminationKind::ReachedEnd;
+}
+
+void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
+    pure = false;
+    if (!inFunction) {
+        log.Log(make_shared<semantic_errors::ReturnOutsideOfFunction>(node.pos));
+        return;
+    }
+    if (!node.returnValue) {
+        if (returned) *returned = returned.value()->Generalize(runtime::NoneType());
+        else returned = make_shared<runtime::NoneType>();
+        terminationKind = TerminationKind::Returned;
+        return;
+    }
+    auto& expr = *node.returnValue;
+    ExpressionChecker chk(log, values);
+    expr->AcceptVisitor(chk);
+    if (!chk.HasResult()) return;
+    if (chk.Replacement()) expr = chk.AssertReplacementAsExpression();
+    terminationKind = TerminationKind::Returned;
+    auto res = chk.Result();
+    auto type = res.index() ? get<1>(res)->TypeOfValue() : get<0>(res);
+    if (returned) *returned = returned.value()->Generalize(*type);
+    else returned = type;
+}
+
+void StatementChecker::VisitExpressionStatement(ast::ExpressionStatement& node) {
+
+}
 
 DISALLOWED_VISIT(CommaExpressions)
 DISALLOWED_VISIT(CommaIdents)

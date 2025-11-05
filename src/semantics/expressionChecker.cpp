@@ -665,6 +665,9 @@ void ExpressionChecker::VisitPrimaryIdent(ast::PrimaryIdent& node) {
     }
     if (val->index())
         replacement = make_shared<ast::PrecomputedValue>(node.pos, get<1>(*val));
+    auto valtype = val->index() ? get<1>(*val)->TypeOfValue() : get<0>(*val);
+    if (valtype->TypeEq(runtime::NoneType()))
+        log.Log(make_shared<semantic_errors::NoneValueAccessed>(node.pos, node.name->identifier));
     this->res = *val;
 }
 

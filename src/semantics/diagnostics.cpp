@@ -241,4 +241,18 @@ void NoneValueAccessed::WriteMessageToStream(std::ostream& out, const complog::C
     out << "The variable \"" << varName << "\" probably contains no value at " << loc.Pretty() << ".\n";
 }
 
+ExitOutsideOfCycle::ExitOutsideOfCycle(const locators::SpanLocator pos)
+    : SpanLocatorMessage(complog::Severity::Error(), "ExitOutsideOfCycle", pos) {}
+void ExitOutsideOfCycle::WriteMessageToStream(ostream& out,
+                                              const complog::CompilationMessage::FormatOptions& opts) const {
+    out << loc.Pretty() << ": an 'exit' must be inside a cycle.\n";
+}
+
+ReturnOutsideOfFunction::ReturnOutsideOfFunction(const locators::SpanLocator pos)
+    : SpanLocatorMessage(complog::Severity::Error(), "ReturnOutsideOfFunction", pos) {}
+void ReturnOutsideOfFunction::WriteMessageToStream(ostream& out,
+                                              const complog::CompilationMessage::FormatOptions& opts) const {
+    out << loc.Pretty() << ": a 'return' must be inside a function.\n";
+}
+
 }  // namespace semantic_errors
