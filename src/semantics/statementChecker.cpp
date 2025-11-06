@@ -274,7 +274,7 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
     ReportVariableProblems(log, stats);
     for (auto& kv : stats.referencedExternals)
         if (kv.second) values.AssignUnknownButUsed(kv.first);
-        else values.LookupVariable(kv.first);
+        //else values.LookupVariable(kv.first);
     if (rec.replacement) {
         auto& repl = *rec.replacement;
         if (repl.size() == 1 && dynamic_cast<const ast::Body*>(repl[0].get()))

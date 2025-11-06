@@ -628,7 +628,7 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
     if (rec.Replacement()) node.expr = rec.AssertReplacementAsExpression();
     pure = rec.Pure() && !isUnknown(rec.Result());
     if (node.prefixOps.empty() && node.postfixOps.empty()) {
-        replacement = rec.replacement;
+        replacement = rec.replacement ? rec.replacement : node.expr;
         res = rec.res;
         return;
     }

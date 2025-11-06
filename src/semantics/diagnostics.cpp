@@ -106,7 +106,7 @@ IntegerBoundaryExpected::IntegerBoundaryExpected(locators::SpanLocator pos, cons
     : SpanLocatorMessage(complog::Severity::Warning(), "IntegerBoundaryExpected", pos), received(received) {}
 void IntegerBoundaryExpected::WriteMessageToStream(
     ostream& out, [[maybe_unused]] const complog::CompilationMessage::FormatOptions& opts) const {
-    out << loc.Pretty() << ": the ranged 'for' loop expects integers as boundaries, but a " << received->Name()
+    out << loc.Pretty() << ": the ranged 'for' loop expects integers as boundaries, but a \"" << received->Name()
         << "\" was provided.\n";
 }
 

@@ -85,6 +85,7 @@ ScopeStats ValueTimeline::EndScope() {
                 wasAssigned = wasAssigned || kv.second;
             }
     }
+    if (blindScopeIndices.size() && blindScopeIndices.back() == stack.size()) blindScopeIndices.pop_back();
     return res;
 }
 
