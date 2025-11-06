@@ -5,6 +5,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <iostream>
 
 #include "bigint.h"
 #include "syntax.h"
@@ -22,6 +23,8 @@ using RuntimeValueResult = std::optional<std::variant<std::shared_ptr<RuntimeVal
 
 class RuntimeValue : public std::enable_shared_from_this<RuntimeValue> {
 public:
+    virtual void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const = 0;
+    void PrintSelf(std::ostream& out);
     virtual std::shared_ptr<runtime::Type> TypeOfValue() const = 0;
     virtual RuntimeValueResult BinaryPlus(const RuntimeValue& other) const;
     virtual RuntimeValueResult BinaryMinus(const RuntimeValue& other) const;
@@ -51,6 +54,7 @@ class IntegerValue : public RuntimeValue {
     BigInt value;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     const BigInt& Value() const;
     IntegerValue(const BigInt& val);
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -76,6 +80,7 @@ class RealValue : public RuntimeValue {
     long double value;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     long double Value() const;
     RealValue(long double val);
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -104,6 +109,7 @@ class StringValue : public RuntimeValue {
     std::string value;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     StringValue(const std::string& value);
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
     const std::string& Value() const;
@@ -124,6 +130,7 @@ public:
 
 class NoneValue : public RuntimeValue {
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
     virtual ~NoneValue() override = default;
 };
@@ -132,6 +139,7 @@ class BoolValue : public RuntimeValue {
     bool value;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     BoolValue(bool value);
     bool Value() const;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -144,6 +152,7 @@ public:
 
 class ArrayValue : public RuntimeValue {
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     std::map<BigInt, std::shared_ptr<RuntimeValue>> Value;
     ArrayValue(const std::vector<std::shared_ptr<RuntimeValue>>& arr);
     ArrayValue(const std::map<BigInt, std::shared_ptr<RuntimeValue>>& mp);
@@ -160,6 +169,7 @@ class TupleValue : public RuntimeValue {
     std::map<std::string, size_t> nameIndex;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     TupleValue(const std::vector<std::shared_ptr<RuntimeValue>>& values,
                const std::map<std::string, size_t>& nameIndex);
     TupleValue(const std::vector<std::pair<std::optional<std::string>, std::shared_ptr<RuntimeValue>>>& vals);
@@ -187,6 +197,7 @@ class StringSplitFunction : public FuncValue {
     std::shared_ptr<const StringValue> _this;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     StringSplitFunction(const std::shared_ptr<const StringValue>& _this);
     RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -197,6 +208,7 @@ class StringSplitWSFunction : public FuncValue {
     std::shared_ptr<const StringValue> _this;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     StringSplitWSFunction(const std::shared_ptr<const StringValue>& _this);
     RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -207,6 +219,7 @@ class StringJoinFunction : public FuncValue {
     std::shared_ptr<const StringValue> _this;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     StringJoinFunction(const std::shared_ptr<const StringValue>& _this);
     RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
@@ -217,6 +230,7 @@ class StringSliceFunction : public FuncValue {
     std::shared_ptr<const StringValue> _this;
 
 public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     StringSliceFunction(const std::shared_ptr<const StringValue>& _this);
     RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;

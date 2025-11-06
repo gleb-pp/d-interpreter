@@ -25,6 +25,7 @@ variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>> UnaryOpChe
     void UnaryOpChecker::Visit##name([[maybe_unused]] ast::name& node) { \
         throw runtime_error("UnaryOpChecker cannot visit ast::" #name);  \
     }
+DISALLOWED_VISIT(Body)
 DISALLOWED_VISIT(VarStatement)
 DISALLOWED_VISIT(IfStatement)
 DISALLOWED_VISIT(ShortIfStatement)
@@ -56,6 +57,7 @@ DISALLOWED_VISIT(LongFuncBody)
 DISALLOWED_VISIT(FuncLiteral)
 DISALLOWED_VISIT(TokenLiteral)
 DISALLOWED_VISIT(ArrayLiteral)
+
 void UnaryOpChecker::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
     throw runtime_error("UnaryOpChecker cannot visit ast::Custom");
 }
@@ -322,5 +324,7 @@ void UnaryOpChecker::VisitTypecheckOperator(ast::TypecheckOperator& node) {
                                          make_unique<runtime::TupleType>(),   make_unique<runtime::ArrayType>()};
     this->res = make_shared<runtime::BoolValue>(type->TypeEq(*types[static_cast<int>(node.typeId)]));
 }
+
+UnaryOpChecker::~UnaryOpChecker() {}
 
 }  // namespace semantic

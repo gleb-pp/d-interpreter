@@ -678,7 +678,7 @@ public:
     virtual void VisitTokenLiteral(TokenLiteral& node) = 0;
     virtual void VisitArrayLiteral(ArrayLiteral& node) = 0;
     virtual void VisitCustom(ASTNode& node) = 0;
-    virtual ~IASTVisitor() = default;
+    virtual ~IASTVisitor();
 };
 }  // namespace ast
 

@@ -30,6 +30,7 @@ bool StatementChecker::Pure() const { return pure; }
 std::optional<std::shared_ptr<runtime::Type>> StatementChecker::Returned() const { return returned; }
 ValueTimeline& StatementChecker::ProgramState() const { return values; }
 StatementChecker::TerminationKind StatementChecker::Terminated() const { return terminationKind; }
+const optional<vector<shared_ptr<ast::Statement>>>& StatementChecker::Replacement() const { return replacement; }
 
 #define DISALLOWED_VISIT(name)                                             \
     void StatementChecker::Visit##name([[maybe_unused]] ast::name& node) { \
@@ -54,10 +55,12 @@ void StatementChecker::VisitBody(ast::Body& node) {
             if (repl.empty()) {
                 node.statements.erase(node.statements.begin() + i);
                 --i;
+                --n;
             } else {
                 node.statements[i] = repl[0];
                 node.statements.insert(node.statements.begin() + (i + 1), repl.begin() + 1, repl.end());
                 i += repl.size() - 1;
+                n += repl.size() - 1;
             }
         }
         {
@@ -126,6 +129,7 @@ void StatementChecker::VisitVarStatement(ast::VarStatement& node) {
 void StatementChecker::VisitIfStatement(ast::IfStatement& node) {
     auto& cond = node.condition;
     ExpressionChecker condchk(log, values);
+    cond->AcceptVisitor(condchk);
     if (!condchk.HasResult()) return;
     if (condchk.Replacement()) cond = condchk.AssertReplacementAsExpression();
     pure = condchk.Pure();
@@ -237,6 +241,14 @@ void StatementChecker::VisitWhileStatement(ast::WhileStatement& node) {
         if (firsteval.index()) {
             if (!dynamic_cast<const runtime::BoolValue&>(*get<1>(firsteval)).Value()) {
                 log.Log(make_shared<errors::WhileConditionFalseAtStart>(firstCond->pos));
+                replacement.emplace();
+                if (!chk.Pure())
+                    replacement->push_back(make_shared<ast::ExpressionStatement>(node.condition->pos, firstCond));
+                StatementChecker schk(log, temptl, inFunction, true);
+                temptl.StartBlindScope();
+                node.action->AcceptVisitor(schk);
+                if (schk.Terminated() == TerminationKind::Errored) return;
+                terminationKind = TerminationKind::ReachedEnd;
                 return;
             }
         }

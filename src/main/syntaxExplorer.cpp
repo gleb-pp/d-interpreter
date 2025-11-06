@@ -1,4 +1,5 @@
 #include "syntaxExplorer.h"
+#include "syntaxext/precomputed.h"
 
 #include <algorithm>
 #include <cmath>
@@ -700,6 +701,47 @@ EXPLORER(
         return node->items[StrToInt(command)];
     })
 
+EXPLORER(
+    PrecomputedValue,
+    {  // GetActionCommands
+        return vector<ActionCommand>({{"t", "Type = " + node->Value->TypeOfValue()->Name()}, {"s", "See the value"}});
+    },
+    {  // Action
+        if (command == "t") output << node->Value->TypeOfValue()->Name();
+        else node->Value->PrintSelf(output);
+        return {};
+    })
+
+EXPLORER(
+    ClosureDefinition,
+    {  // GetActionCommands
+        return vector<ActionCommand>({{"s", "See the properties"}, {"d", "Go to definition"}});
+    },
+    {  // Action
+        if (command == "d") return node->Definition;
+        output << "Type = " << node->Type->Name() << "\n";
+        output << "Params: ";
+        if (node->Params.empty()) output << "(none)"; else {
+            bool first = true;
+            for (const string& s : node->Params) {
+                if (!first) output << ", ";
+                first = false;
+                output << s;
+            }
+        }
+        output << "\nCaptured externals: ";
+        if (node->CapturedExternals.empty()) output << "(none)";
+        else {
+            bool first = true;
+            for (const string& s : node->CapturedExternals) {
+                if (!first) output << ", ";
+                first = false;
+                output << s;
+            }
+        }
+        return {};
+    })
+
 class CustomExplorer : public ASTExplorer {
     shared_ptr<ast::ASTNode> node;
 
@@ -765,8 +807,24 @@ VISITOR(LongFuncBody)
 VISITOR(FuncLiteral)
 VISITOR(TokenLiteral)
 VISITOR(ArrayLiteral)
+
 void ASTExplorerVisitor::VisitCustom(ast::ASTNode& node) {
-    this->explorer = make_shared<CustomExplorer>(node.shared_from_this());
+    auto sh = node.shared_from_this();
+    {
+        auto precomp = dynamic_pointer_cast<ast::PrecomputedValue>(sh);
+        if (precomp) {
+            this->explorer = make_shared<PrecomputedValueExplorer>(precomp);
+            return;
+        }
+    }
+    {
+        auto closure = dynamic_pointer_cast<ast::ClosureDefinition>(sh);
+        if (closure) {
+            this->explorer = make_shared<ClosureDefinitionExplorer>(closure);
+            return;
+        }
+    }
+    this->explorer = make_shared<CustomExplorer>(sh);
 }
 
 static void ExplorerIO_PrintCommands(const vector<ASTExplorer::ActionCommand>& commands, ostream& output,
@@ -826,6 +884,7 @@ void ExplorerIO::Explore(ostream& output, istream& input) {
             output << "> ";
             output.flush();
             getline(input, command);
+            if (!input) return;
             size_t n = command.size();
             size_t spacesleft = 0;
             while (spacesleft < n && isspace(command[spacesleft])) ++spacesleft;

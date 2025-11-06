@@ -63,7 +63,7 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~UnaryOpChecker() override = default;
+    virtual ~UnaryOpChecker() override;
 };
 
 }  // namespace semantic

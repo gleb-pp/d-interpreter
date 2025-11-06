@@ -19,7 +19,7 @@ class ValueTimeline {
         std::vector<locators::SpanLocator> lastUnusedAssignments;
         locators::SpanLocator declaration;
         bool used = false;
-        Var();
+        Var(const locators::SpanLocator& declarationloc);
     };
 
     struct Scope {

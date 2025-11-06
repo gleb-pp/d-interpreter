@@ -87,13 +87,36 @@ void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Exp
     pure = recs[0].Pure();
     locators::SpanLocator loc(operands[0]->pos);
     size_t cut_first = 0;
+    if (cur.index()) {
+        auto val = get<1>(cur);
+        if (!val->TypeOfValue()->TypeEq(runtime::BoolType())) {
+            errors::VectorOfSpanTypes bad{{loc, val->TypeOfValue()}};
+            log.Log(make_shared<errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
+            return;
+        }
+        if (dynamic_cast<runtime::BoolValue&>(*val).Value() == IDEMPOTENT_VAL) {
+            if (pure) cut_first = 1;
+        } else {
+            values = tls[0];
+            this->res = val;
+            if (pure)
+                replacement = make_shared<ast::PrecomputedValue>(position, val);
+            else
+                operands.resize(1);
+            if (1 < n) {
+                log.Log(make_shared<errors::CodeUnreachable>(
+                    locators::SpanLocator(operands[1]->pos, operands.back()->pos), true));
+            }
+            return;
+        }
+    }
     for (size_t i = 1; i < n; i++) {
         auto& rec = recs[i];
         auto ch = rec.Result();
         auto newloc = operands[i]->pos;
         pure = pure && rec.Pure();
         if (cur.index() && ch.index()) {
-            auto optres = get<1>(cur)->BinaryAnd(*get<1>(ch));
+            auto optres = isOr ? get<1>(cur)->BinaryOr(*get<1>(ch)) : get<1>(cur)->BinaryAnd(*get<1>(ch));
             if (!optres) {
                 errors::VectorOfSpanTypes bad{{loc, get<1>(cur)->TypeOfValue()}, {newloc, get<1>(ch)->TypeOfValue()}};
                 log.Log(make_shared<errors::OperatorNotApplicable>(OPERATOR_NAME, bad));
@@ -407,11 +430,12 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
             loc = mergedloc;
         }
         size_t j = 0;
+        operators.insert(operators.begin(), ast::Sum::SumOperator::Plus);
         for (size_t i = 0; i < n; i++) {
             if (deletion[i]) continue;
             if (i > j) {
                 operands[j] = operands[i];
-                operators[j - 1] = operators[i - 1];
+                operators[j] = operators[i];
                 types[j] = types[i];
                 optValues[j] = optValues[i];
                 operand_pure[j] = operand_pure[i];
@@ -419,12 +443,11 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
             ++j;
         }
         operands.resize(j);
-        operators.resize(j - 1);
+        operators.resize(j);
         types.resize(j);
         optValues.resize(j);
         operand_pure.resize(j);
         n = j + 1;
-        operators.insert(operators.begin(), ast::Sum::SumOperator::Plus);
         operands.insert(operands.begin(), make_shared<ast::PrecomputedValue>(*loc, curvalue));
         types.insert(types.begin(), curvalue->TypeOfValue());
         optValues.insert(optValues.begin(), curvalue);
@@ -460,6 +483,12 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
             --n;
             --i;
         }
+    }
+
+    if (n == 1 && pure && optValues.front()) {
+        replacement = make_shared<ast::PrecomputedValue>(node.pos, *optValues.front());
+        this->res = *optValues.front();
+        return;
     }
 
     shared_ptr<runtime::Type> curtype = types.front();

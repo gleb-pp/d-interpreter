@@ -16,6 +16,10 @@ namespace runtime {
  * If a function accepts an index, it is 1-based (the first element has index 1)
  */
 
+void RuntimeValue::PrintSelf(ostream& out) {
+    set<shared_ptr<const RuntimeValue>> guard;
+    DoPrintSelf(out, guard);
+}
 RuntimeValueResult RuntimeValue::BinaryPlus([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 RuntimeValueResult RuntimeValue::BinaryMinus([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 RuntimeValueResult RuntimeValue::BinaryMul([[maybe_unused]] const RuntimeValue& other) const { return {}; }
@@ -23,7 +27,9 @@ RuntimeValueResult RuntimeValue::BinaryDiv([[maybe_unused]] const RuntimeValue& 
 RuntimeValueResult RuntimeValue::BinaryAnd([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 RuntimeValueResult RuntimeValue::BinaryOr([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 RuntimeValueResult RuntimeValue::BinaryXor([[maybe_unused]] const RuntimeValue& other) const { return {}; }
-optional<partial_ordering> RuntimeValue::BinaryComparison([[maybe_unused]] const RuntimeValue& other) const { return {}; }
+optional<partial_ordering> RuntimeValue::BinaryComparison([[maybe_unused]] const RuntimeValue& other) const {
+    return {};
+}
 RuntimeValueResult RuntimeValue::UnaryMinus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryPlus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryNot() const { return {}; }
@@ -87,6 +93,7 @@ RuntimeValueResult IntegerValue::Field(const string& name) const {
     if (name == "Frac") return make_shared<RealValue>(0);
     return {};
 }
+void IntegerValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>&) const { out << value.ToString(); }
 
 RealValue::RealValue(long double val) : value(val) {}
 long double RealValue::Value() const { return value; }
@@ -116,6 +123,7 @@ RuntimeValueResult RealValue::Field(const string& name) const {
     }
     return {};
 }
+void RealValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>&) const { out << value; }
 
 StringValue::StringValue(const string& value) : value(value) {}
 shared_ptr<runtime::Type> StringValue::TypeOfValue() const { return make_shared<StringType>(); }
@@ -263,8 +271,10 @@ RuntimeValueResult StringValue::Subscript(const RuntimeValue& other) const {
     long ind = bigint.ClampToLong() - 1;
     return make_shared<StringValue>(string(1, value[ind]));
 }
+void StringValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>&) const { out << value; }
 
 shared_ptr<Type> NoneValue::TypeOfValue() const { return make_shared<NoneType>(); }
+void NoneValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>&) const { out << "<none>"; }
 
 BoolValue::BoolValue(bool value) : value(value) {}
 bool BoolValue::Value() const { return value; }
@@ -285,6 +295,9 @@ RuntimeValueResult BoolValue::BinaryXor(const RuntimeValue& other) const {
     return make_shared<BoolValue>(value != p->value);
 }
 RuntimeValueResult BoolValue::UnaryNot() const { return make_shared<BoolValue>(!value); }
+void BoolValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>&) const {
+    out << (value ? "true" : "false");
+}
 
 ArrayValue::ArrayValue(const vector<shared_ptr<RuntimeValue>>& arr) {
     size_t i = 0;
@@ -317,6 +330,23 @@ RuntimeValueResult ArrayValue::Subscript(const RuntimeValue& other) const {
     return iter->second;
 }
 void ArrayValue::AssignItem(const BigInt& index, const shared_ptr<RuntimeValue>& other) { Value[index] = other; }
+void ArrayValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& recGuard) const {
+    auto ins = recGuard.insert(shared_from_this());
+    if (!ins.second) {
+        out << "[...]";
+        return;
+    }
+    bool first = true;
+    out << "[ ";
+    for (auto& kv : this->Value) {
+        if (!first) out << ", ";
+        first = false;
+        out << "[" << kv.first.ToString() << "] ";
+        kv.second->DoPrintSelf(out, recGuard);
+    }
+    out << " ]";
+    recGuard.erase(ins.first);
+}
 
 TupleValue::TupleValue(const vector<shared_ptr<RuntimeValue>>& values, const map<string, size_t>& nameIndex)
     : values(values), nameIndex(nameIndex) {}
@@ -373,6 +403,35 @@ bool TupleValue::AssignIndexedField(const BigInt& index, const shared_ptr<Runtim
     values[index.ClampToLong() - 1] = val;
     return true;
 }
+void TupleValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& recGuard) const {
+    auto ins = recGuard.insert(shared_from_this());
+    if (!ins.second) {
+        out << "{...}";
+        return;
+    }
+    out << "{\n";
+    size_t n = values.size();
+    vector<optional<string>> names(n);
+    for (auto& kv : nameIndex) names[kv.second] = kv.first;
+    stringstream indented;
+    for (size_t i = 0; i < n; i++) {
+        auto& optname = names[i];
+        if (optname)
+            indented << *optname;
+        else
+            indented << i + 1;
+        indented << " := ";
+        values[i]->DoPrintSelf(indented, recGuard);
+        indented << '\n';
+    }
+    while (true) {
+        string ln;
+        getline(indented, ln);
+        out << "    " << ln << '\n';
+    }
+    out << '}';
+    recGuard.erase(ins.first);
+}
 
 StringSliceFunction::StringSliceFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
@@ -406,6 +465,9 @@ shared_ptr<runtime::Type> StringSliceFunction::TypeOfValue() const {
     return make_shared<FuncType>(false, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()),
                                  make_shared<StringType>());
 }
+void StringSliceFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
+    out << "<built-in function string.Slice(start: int, stop: int, step: int) -> string>";
+}
 
 StringSplitFunction::StringSplitFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSplitFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
@@ -422,6 +484,9 @@ RuntimeValueResult StringSplitFunction::Call(const vector<shared_ptr<RuntimeValu
 shared_ptr<runtime::Type> StringSplitFunction::TypeOfValue() const {
     return make_shared<FuncType>(true, vector<shared_ptr<Type>>{make_shared<StringType>()}, make_shared<ArrayType>());
 }
+void StringSplitFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
+    out << "<built-in function string.Split(sep: string) -> []>";
+}
 
 StringSplitWSFunction::StringSplitWSFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSplitWSFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
@@ -433,6 +498,9 @@ RuntimeValueResult StringSplitWSFunction::Call(const vector<shared_ptr<RuntimeVa
 }
 shared_ptr<runtime::Type> StringSplitWSFunction::TypeOfValue() const {
     return make_shared<FuncType>(true, vector<shared_ptr<Type>>(), make_shared<ArrayType>());
+}
+void StringSplitWSFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
+    out << "<built-in function string.SplitWS() -> []>";
 }
 
 StringJoinFunction::StringJoinFunction(const std::shared_ptr<const StringValue>& _this) : _this(_this) {}
@@ -456,6 +524,9 @@ RuntimeValueResult StringJoinFunction::Call(const std::vector<std::shared_ptr<Ru
 }
 std::shared_ptr<runtime::Type> StringJoinFunction::TypeOfValue() const {
     return make_shared<FuncType>(true, vector<shared_ptr<Type>>{make_shared<ArrayType>()}, make_shared<StringType>());
+}
+void StringJoinFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
+    out << "<built-in function string.Join(strings: []) -> string>";
 }
 
 }  // namespace runtime

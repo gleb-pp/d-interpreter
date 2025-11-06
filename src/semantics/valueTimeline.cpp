@@ -1,10 +1,15 @@
 #include "semantic/valueTimeline.h"
 
+#include "locators/locator.h"
 #include "runtime.h"
 #include "runtime/types.h"
+#include "runtime/values.h"
 using namespace std;
 
 namespace semantic {
+
+ValueTimeline::Var::Var(const locators::SpanLocator& declloc)
+    : val(make_shared<runtime::NoneValue>()), declaration(declloc) {}
 
 optional<pair<size_t, const ValueTimeline::Var*>> ValueTimeline::Lookup(const std::string& name) const {
     for (long i = static_cast<long>(stack.size()) - 1; i >= 0l; --i) {
@@ -124,13 +129,8 @@ bool ValueTimeline::AssignUnknownButUsed(const string& name) {
 
 bool ValueTimeline::Declare(const string& name, locators::SpanLocator pos) {
     auto& topscope = stack.back();
-    auto insertres = topscope.vars.emplace(name, Var());
-    if (!insertres.second) return false;
-    auto& var = insertres.first->second;
-    var.declaration = pos;
-    var.used = false;
-    var.val = make_shared<runtime::NoneValue>();
-    return true;
+    auto insertres = topscope.vars.emplace(name, Var(pos));
+    return insertres.second;
 }
 
 static void GeneralizeValue(runtime::TypeOrValue& dest, const runtime::TypeOrValue& src) {
