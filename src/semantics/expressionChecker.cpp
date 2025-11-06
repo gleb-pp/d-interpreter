@@ -63,6 +63,10 @@ DISALLOWED_VISIT(ShortFuncBody)
 DISALLOWED_VISIT(LongFuncBody)
 DISALLOWED_VISIT(TupleLiteralElement)
 
+static inline bool isUnknown(const runtime::TypeOrValue& res) {
+    return !res.index() && get<0>(res)->TypeEq(runtime::UnknownType());
+}
+
 void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Expression>>& operands,
                                            const locators::SpanLocator& position) {
     const char* const OPERATOR_NAME = isOr ? "or" : "and";
@@ -80,6 +84,7 @@ void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Exp
         op->AcceptVisitor(rec);
         if (!rec.HasResult()) errored = true;
         if (rec.Replacement()) op = rec.AssertReplacementAsExpression();
+        if (isUnknown(rec.Result())) pure = false;
     }
     if (errored) return;
 
@@ -131,7 +136,7 @@ void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Exp
             cur = val;
             loc = mergedloc;
             if (dynamic_cast<runtime::BoolValue&>(*val).Value() == IDEMPOTENT_VAL) {
-                if (pure) cut_first = i;
+                if (pure) cut_first = i + 1;
             } else {
                 values = tls[i];
                 this->res = val;
@@ -145,6 +150,7 @@ void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Exp
                 }
                 return;
             }
+            continue;
         }
         auto curtype = cur.index() ? get<1>(cur)->TypeOfValue() : get<0>(cur);
         auto newtype = ch.index() ? get<1>(ch)->TypeOfValue() : get<0>(ch);
@@ -160,6 +166,12 @@ void ExpressionChecker::VisitAndOrOperator(bool isOr, vector<shared_ptr<ast::Exp
     }
     values = tls.back();  // THIS IS ONLY CORRECT BECAUSE VARIABLES CANNOT CHANGE (can only become unknown)
     operands.erase(operands.begin(), operands.begin() + cut_first);
+    if (operands.empty()) {
+        auto id = make_shared<runtime::BoolValue>(IDEMPOTENT_VAL);
+        res = id;
+        replacement = make_shared<ast::PrecomputedValue>(position, id);
+        return;
+    }
     res = cur;
     if (res->index() && pure) replacement = make_shared<ast::PrecomputedValue>(position, get<1>(cur));
 }
@@ -183,7 +195,7 @@ void ExpressionChecker::VisitXorOperator(ast::XorOperator& node) {
         chtypes.push_back(recchecker.Result());
         valuesknown += recchecker.Result().index();
         if (recchecker.Replacement()) node.operands[i] = recchecker.AssertReplacementAsExpression();
-        pure = pure && recchecker.Pure();
+        pure = pure && recchecker.Pure() && !isUnknown(recchecker.Result());
     }
     if (errored) return;
     if (pure && valuesknown >= 2) {
@@ -270,7 +282,7 @@ void ExpressionChecker::VisitBinaryRelation(ast::BinaryRelation& node) {
             continue;
         }
         operand_pure.push_back(recur.Pure());
-        pure = pure && recur.Pure();
+        pure = pure && recur.Pure() && !isUnknown(recur.Result());
         if (recur.Replacement()) ch = recur.AssertReplacementAsExpression();
         const auto& res = recur.Result();
         if (res.index())
@@ -373,7 +385,7 @@ void ExpressionChecker::VisitSum(ast::Sum& node) {
             continue;
         }
         operand_pure.push_back(rec.Pure());
-        pure = pure && rec.Pure();
+        pure = pure && rec.Pure() && !isUnknown(rec.Result());
         if (rec.Replacement()) ch = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
         if (res.index()) {
@@ -534,7 +546,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
             errored = true;
             continue;
         }
-        pure = pure && rec.Pure();
+        pure = pure && rec.Pure() && !isUnknown(rec.Result());
         if (rec.Replacement()) ch = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
         if (res.index()) {
@@ -557,7 +569,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
         for (size_t i = 1; i < n; i++) {
             const locators::SpanLocator& newloc = operands[i]->pos;
             auto& newval = values[i];
-            auto op = operators[i];
+            auto op = operators[i - 1];
             runtime::RuntimeValueResult res =
                 op == ast::Term::TermOperator::Times ? cur->BinaryMul(*newval) : cur->BinaryDiv(*newval);
             if (!res) {
@@ -598,7 +610,7 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
                 pure = false;
                 continue;
             }
-            auto bval = dynamic_cast<runtime::IntegerValue&>(*b);
+            auto bval = dynamic_cast<runtime::IntegerValue&>(**optValues[i]);
             if (!bval.Value()) log.Log(make_shared<errors::IntegerZeroDivisionWarning>(newloc));
         }
     }
@@ -614,7 +626,7 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
     node.expr->AcceptVisitor(rec);
     if (!rec.HasResult()) return;
     if (rec.Replacement()) node.expr = rec.AssertReplacementAsExpression();
-    pure = rec.Pure();
+    pure = rec.Pure() && !isUnknown(rec.Result());
     if (node.prefixOps.empty() && node.postfixOps.empty()) {
         replacement = rec.replacement;
         res = rec.res;
@@ -670,7 +682,7 @@ void ExpressionChecker::VisitUnaryNot(ast::UnaryNot& node) {
     node.nested->AcceptVisitor(rec);
     if (!rec.HasResult()) return;
     if (rec.replacement) node.nested = rec.AssertReplacementAsExpression();
-    pure = rec.Pure();
+    pure = rec.Pure() && !isUnknown(rec.Result());
     auto result = rec.Result();
     if (result.index()) {
         auto& rval = get<1>(result);

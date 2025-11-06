@@ -1,8 +1,16 @@
-var a := 0  // will become unknown after the function call
+var a := "str"
 
-var f := func (x) is
-    if x > 0 => print "hello";
-end,
-    b := f(5)
+var mutate := func () is
+    print
+end  // non-pure function: call resets all known values
 
-print a + b
+mutate()
+
+if (not a) is bool then
+    print "true"
+else
+    print "false"
+end
+// will turn into:
+// (not a) is bool  // because operations on unknowns are not pure; this preserves the error for runtime
+// print "true"

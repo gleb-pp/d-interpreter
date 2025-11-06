@@ -35,9 +35,12 @@ optional<runtime::TypeOrValue> ValueTimeline::LookupVariable(const string& name)
     auto v = Lookup(name);
     if (!v) return {};
     auto& p = *v;
-    if (blindScopeIndices.size() && p.first < blindScopeIndices.back()) return make_shared<runtime::UnknownType>();
     p.second->used = true;
     p.second->lastUnusedAssignments.clear();
+    if (blindScopeIndices.size() && p.first < blindScopeIndices.back()) {
+        stack.back().externalReferences[name] = false;
+        return make_shared<runtime::UnknownType>();
+    }
     return p.second->val;
 }
 

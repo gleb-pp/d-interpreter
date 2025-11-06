@@ -13,10 +13,13 @@ using namespace std;
 
 namespace semantic {
 
+static inline bool isUnknown(const runtime::TypeOrValue& res) {
+    return !res.index() && get<0>(res)->TypeEq(runtime::UnknownType());
+}
+
 UnaryOpChecker::UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values,
-                               const variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>>& curvalue,
-                               const locators::SpanLocator& pos)
-    : log(log), values(values), curvalue(curvalue), pos(pos) {}
+                               const runtime::TypeOrValue& curvalue, const locators::SpanLocator& pos)
+    : log(log), values(values), curvalue(curvalue), pos(pos), pure(!isUnknown(curvalue)) {}
 bool UnaryOpChecker::HasResult() const { return static_cast<bool>(res); }
 bool UnaryOpChecker::Pure() const { return pure; }
 variant<shared_ptr<runtime::Type>, shared_ptr<runtime::RuntimeValue>> UnaryOpChecker::Result() const { return *res; }
@@ -209,7 +212,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
             errored = true;
             continue;
         }
-        pure = pure && rec.Pure();
+        pure = pure && rec.Pure() && !isUnknown(rec.Result());
         if (rec.Replacement()) arg = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
         if (res.index()) {

@@ -82,6 +82,7 @@ void StatementChecker::VisitBody(ast::Body& node) {
                     log.Log(make_shared<errors::CodeUnreachable>(
                         locators::SpanLocator(node.statements[i + 1]->pos, node.statements.back()->pos), true));
                     node.statements.resize(i + 1);
+                    n = i + 1;
                 }
                 break;
             case TerminationKind::Errored:
@@ -90,7 +91,7 @@ void StatementChecker::VisitBody(ast::Body& node) {
                 return;
         }
     }
-    terminationKind = TerminationKind::ReachedEnd;
+    if (terminationKind == TerminationKind::Errored) terminationKind = TerminationKind::ReachedEnd;
     ReportVariableProblems(log, values.EndScope());
 }
 
@@ -273,6 +274,7 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
     ReportVariableProblems(log, stats);
     for (auto& kv : stats.referencedExternals)
         if (kv.second) values.AssignUnknownButUsed(kv.first);
+        else values.LookupVariable(kv.first);
     if (rec.replacement) {
         auto& repl = *rec.replacement;
         if (repl.size() == 1 && dynamic_cast<const ast::Body*>(repl[0].get()))
