@@ -786,6 +786,7 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
         }
         if (badnames) return;
     }
+
     ValueTimeline tl(values);
     tl.StartBlindScope();
     for (auto& param : node.parameters) {
@@ -795,8 +796,19 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
         tl.AssignType(param->identifier, make_shared<runtime::UnknownType>(), loc);
     }
 
-    StatementChecker chk(log, values, true, false);
-    node.funcBody->AcceptVisitor(chk);
+    {
+        auto shrt = dynamic_pointer_cast<ast::ShortFuncBody>(node.funcBody);
+        if (shrt) {
+            auto bodypos = shrt->expressionToReturn->pos;
+            node.funcBody = make_shared<ast::LongFuncBody>(
+                node.funcBody->pos,
+                make_shared<ast::Body>(bodypos, vector<shared_ptr<ast::Statement>>{make_shared<ast::ReturnStatement>(
+                                                    bodypos, shrt->expressionToReturn)}));
+        }
+    }
+
+    StatementChecker chk(log, tl, true, false);
+    dynamic_pointer_cast<ast::LongFuncBody>(node.funcBody)->funcBody->AcceptVisitor(chk);
     if (chk.Terminated() == StatementChecker::TerminationKind::Errored) return;
     auto paraminfo = tl.EndScope();
     for (auto& unused : paraminfo.uselessAssignments)

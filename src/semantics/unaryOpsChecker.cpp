@@ -195,8 +195,10 @@ void UnaryOpChecker::VisitIndexAccessor(ast::IndexAccessor& node) {
 // A call makes every variable 'unknown'
 void UnaryOpChecker::VisitCall(ast::Call& node) {
     size_t n = node.args.size();
-    vector<optional<shared_ptr<runtime::RuntimeValue>>> optValues(n);
-    vector<shared_ptr<runtime::Type>> types(n);
+    vector<optional<shared_ptr<runtime::RuntimeValue>>> optValues;
+    optValues.reserve(n);
+    vector<shared_ptr<runtime::Type>> types;
+    types.reserve(n);
     bool errored = false;
     bool allknown = true;
     for (size_t i = 0; i < n; i++) {
@@ -246,7 +248,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
                 return;
             }
             this->res = get<0>(*res);
-            values.MakeAllUnknown();
+            if (!functype.Pure()) values.MakeAllUnknown();
             return;
         }
     }
@@ -254,6 +256,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
     if (mytype->TypeEq(runtime::UnknownType())) {
         this->res = make_shared<runtime::UnknownType>();
         pure = false;
+        values.MakeAllUnknown();
         return;
     }
     shared_ptr<runtime::FuncType> functype = dynamic_pointer_cast<runtime::FuncType>(mytype);
@@ -264,21 +267,24 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
     pure = pure && functype->Pure();
     auto needtypes = functype->ArgTypes();
     if (needtypes) {
-        if (const size_t needcount = needtypes->size(); needcount != n) {
+        const size_t needcount = needtypes->size();
+        if (needcount != n) {
             log.Log(make_shared<errors::WrongArgumentCount>(node.pos, needcount, n));
             return;
         }
         for (size_t i = 0; i < n; i++) {
             auto& neededtype = needtypes->at(i);
+            if (neededtype->TypeEq(runtime::UnknownType())) continue;
             auto& giventype = types[i];
-            if (neededtype->TypeEq(*giventype)) continue;
+            if (giventype->TypeEq(runtime::UnknownType()) || neededtype->TypeEq(*giventype)) continue;
             log.Log(make_shared<errors::WrongArgumentType>(node.args[i]->pos, neededtype, giventype));
             errored = true;
         }
         if (errored) return;
     }
     this->res = functype->ReturnType();
-    values.MakeAllUnknown();
+    if (!functype->Pure())
+        values.MakeAllUnknown();
 }
 
 void UnaryOpChecker::VisitAccessorOperator(ast::AccessorOperator& node) { node.accessor->AcceptVisitor(*this); }

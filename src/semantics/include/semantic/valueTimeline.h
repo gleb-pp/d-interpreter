@@ -16,7 +16,7 @@ struct ScopeStats {
 class ValueTimeline {
     struct Var {
         runtime::TypeOrValue val;
-        std::vector<locators::SpanLocator> lastUnusedAssignments;
+        std::set<std::shared_ptr<locators::SpanLocator>> lastUnusedAssignments;
         locators::SpanLocator declaration;
         bool used = false;
         Var(const locators::SpanLocator& declarationloc);

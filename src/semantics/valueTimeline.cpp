@@ -71,7 +71,7 @@ ScopeStats ValueTimeline::EndScope() {
             res.variablesNeverUsed.emplace_back(kv.first, var.declaration);
         else
             for (auto& asg : var.lastUnusedAssignments) {
-                res.uselessAssignments.emplace_back(kv.first, asg);
+                res.uselessAssignments.emplace_back(kv.first, *asg);
             }
     }
     if (stack.size()) {
@@ -92,7 +92,7 @@ bool ValueTimeline::AssignType(const string& name, const shared_ptr<runtime::Typ
     auto& topscope = stack.back();
     if (scopeindex != stack.size() - 1) topscope.externalReferences[name] = true;
     var->val = type;
-    var->lastUnusedAssignments = {pos};
+    var->lastUnusedAssignments = {make_shared<locators::SpanLocator>(pos)};
     var->used = true;
     return true;
 }
@@ -105,7 +105,7 @@ bool ValueTimeline::AssignValue(const string& name, const shared_ptr<runtime::Ru
     auto& topscope = stack.back();
     if (scopeindex != stack.size() - 1) topscope.externalReferences[name] = true;
     var->val = precomputed;
-    var->lastUnusedAssignments = {pos};
+    var->lastUnusedAssignments = {make_shared<locators::SpanLocator>(pos)};
     var->used = true;
     return true;
 }
@@ -175,7 +175,7 @@ void ValueTimeline::MergeTimelines(const ValueTimeline& other) {
             destvar.used = destvar.used || srcvar.used;
             auto& destunused = destvar.lastUnusedAssignments;
             auto& srcunused = srcvar.lastUnusedAssignments;
-            destunused.insert(destunused.end(), srcunused.begin(), srcunused.end());
+            destunused.insert(srcunused.begin(), srcunused.end());
             GeneralizeValue(destvar.val, srcvar.val);
         }
     }

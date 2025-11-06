@@ -426,7 +426,7 @@ void TupleValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& 
     }
     while (true) {
         string ln;
-        getline(indented, ln);
+        if (!getline(indented, ln)) break;
         out << "    " << ln << '\n';
     }
     out << '}';
