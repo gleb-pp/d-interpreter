@@ -1,7 +1,7 @@
-var d := [1, 3]
+var s := "13"
 while false loop end
-if d[1] = 1 or
-        d[2] = 2 then
+if s[1] = "1" or
+        s[2] = "2" then
     print "ok"
 else
     print "nok"

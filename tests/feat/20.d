@@ -1,3 +1,15 @@
-var a1 := []
-a1[2] := "hello"; a1[100] := "world"
-print a1 + a1 + a1
+var unk
+func () is print; end ()  // makes the checker forget that unk is a <none>
+
+var _
+
+var j
+
+if unk then
+    j := 1
+    j := 2
+else
+    j := 3
+end
+
+print

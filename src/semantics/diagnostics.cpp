@@ -172,7 +172,7 @@ IntegerZeroDivisionWarning::IntegerZeroDivisionWarning(locators::SpanLocator pos
     : SpanLocatorMessage(complog::Severity::Warning(), "IntegerZeroDivisionWarning", pos) {}
 void IntegerZeroDivisionWarning::WriteMessageToStream(
     ostream& out, [[maybe_unused]] const complog::CompilationMessage::FormatOptions& opts) const {
-    out << loc.Pretty() << ": Looks like integer division by zero; this will crash the program during execution.\n";
+    out << loc.Pretty() << ": Looks like integer division by zero; this may crash the program during execution.\n";
 }
 
 TriedToCallNonFunction::TriedToCallNonFunction(locators::SpanLocator pos, const shared_ptr<runtime::Type>& type)

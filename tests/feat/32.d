@@ -1,6 +1,10 @@
-loop
-    print "ok"
-    exit  // ok
+var f := func () is
+    var six := 6
+    if six > 5 then
+        return 3
+    else
+        return 4
+    end
 end
 
-var f := func () is exit; end;  // error
+print f + 1

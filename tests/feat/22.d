@@ -1,15 +1,7 @@
-var unk
-func () is print; end ()  // makes the checker forget that unk is a <none>
-
-var _
-
-var j
-
-if unk then
-    j := 1
-    j := 2
+var a := 1, b := 3
+if a = 1 or
+        b = 2 then
+    print "ok"
 else
-    j := 3
+    print "nok"
 end
-
-print

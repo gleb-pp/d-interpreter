@@ -1,15 +1,20 @@
-var unk
-func () is print; end ()  // makes the checker forget that unk is a <none>
+var f := func () is
+    var unk  // from within the loop, the type is not known
 
-var _
-
-var j
-
-if unk then
-    j := 1
-    j := 2
-else
-    j := 3
+    for 0 .. 10 loop
+        if unk then
+            print "hello"
+            print "world"
+            return
+            print "this is deleted"
+            print "this is deleted"
+        else
+            exit
+            print "this is also deleted"
+        end
+        print "this is deleted because we have (at least) exited in all branches"
+    end
+    print "this is kept because we could have NOT returned"
 end
 
-print
+f()

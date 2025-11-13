@@ -33,6 +33,6 @@
 33. Fields assignable only in tuples
 34. Array items assignable only in arrays
 35. Index evaluation for tuples
-36. External variables have unknown types from inside a function body, until assigned
+36. External variables have unknown types from inside a function body
 37. Value preview with recursion :)   // runtime
 38. Array concat, tuple concat  // runtime

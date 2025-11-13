@@ -1,4 +1,12 @@
-for [1, 2, 3, 4, 5] loop print "abc"; end
-for i in [1, 2, 3, 4, 5] loop print i; end
-for i in {1, 2, 3, b := 4} loop print i; end
-for i in "msdkcmsc" loop print i; end  // error
+var f := func () is
+    while true loop
+        loop
+            80
+            return 89
+        end
+    end
+end
+
+loop
+    return 1
+end

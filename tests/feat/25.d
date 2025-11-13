@@ -1,5 +1,5 @@
-var unk
-func () is print; end ()
+var val := "true"
 
-if unk => print 8 // ShortIfStatement is replaced with an IfStatement
-// to see it, run dinterp -s 25.d, and then dinterp 25.d
+while val loop
+    val := true
+end

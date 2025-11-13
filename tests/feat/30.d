@@ -1,2 +1,6 @@
-for i in 9.0 .. 10 loop end
+loop
+    print "ok"
+    exit  // ok
+end
 
+var f := func () is exit; end;  // error

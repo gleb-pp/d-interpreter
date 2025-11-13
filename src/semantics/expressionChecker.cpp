@@ -602,10 +602,12 @@ void ExpressionChecker::VisitTerm(ast::Term& node) {
             log.Log(make_shared<errors::OperatorNotApplicable>(OPERATOR_NAMES[static_cast<int>(op)], bad));
             return;
         }
+        auto prevtype = curtype;
         curtype = *optnewtype;
         loc = locators::SpanLocator(loc, newloc);
         if (op == ast::Term::TermOperator::Divide &&
             (b->TypeEq(runtime::IntegerType()) || b->TypeEq(runtime::UnknownType()))) {
+            if (prevtype->TypeEq(runtime::RealType())) continue;
             if (!optValues[i]) {
                 pure = false;
                 continue;

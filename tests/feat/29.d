@@ -1,14 +1,4 @@
-var unk
-
-var unk_trigger := func () is print; end
-unk_trigger()
-
-// ^ that code makes 'unk' have an unknown type ^
-
-var i := 1
-
-if unk then  // this is not optimized because unk is unknown
-    var j := 2
-end
-
-print j
+for [1, 2, 3, 4, 5] loop print "abc"; end
+for i in [1, 2, 3, 4, 5] loop print i; end
+for i in {1, 2, 3, b := 4} loop print i; end
+for i in "msdkcmsc" loop print i; end  // error
