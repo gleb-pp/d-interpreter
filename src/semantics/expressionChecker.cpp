@@ -654,7 +654,7 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
             val = chk.Result();
             auto iloc = node.postfixOps[ipost]->pos;
             loc = locators::SpanLocator(loc, iloc);
-            precomp = precomp && pure && val.index();
+            precomp = precomp && pure && val.index() && !get<1>(val)->TypeOfValue()->Mutable();
             if (precomp) {
                 node.postfixOps.erase(node.postfixOps.begin());
                 npost--;
@@ -669,7 +669,7 @@ void ExpressionChecker::VisitUnary(ast::Unary& node) {
             val = chk.Result();
             auto iloc = node.prefixOps[npre - ipre - 1]->pos;
             loc = locators::SpanLocator(loc, iloc);
-            precomp = precomp && pure && val.index();
+            precomp = precomp && pure && val.index() && !get<1>(val)->TypeOfValue()->Mutable();
             if (precomp) {
                 node.prefixOps.pop_back();
                 npre--;

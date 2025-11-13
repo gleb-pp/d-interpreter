@@ -15,6 +15,7 @@ namespace runtime {
 
 class Type {
 public:
+    virtual bool Mutable() const = 0;
     virtual bool TypeEq(const Type& other) const = 0;
     virtual bool StrictTypeEq(const Type& other) const;
     virtual std::shared_ptr<Type> Clone() const = 0;
@@ -45,6 +46,7 @@ public:
  */
 class IntegerType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -69,6 +71,7 @@ public:
  */
 class RealType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -96,6 +99,7 @@ public:
  */
 class StringType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -109,6 +113,7 @@ public:
 
 class NoneType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -117,6 +122,7 @@ public:
 
 class BoolType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -127,6 +133,7 @@ public:
 
 class ArrayType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -138,6 +145,7 @@ public:
 
 class TupleType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;
@@ -153,6 +161,7 @@ class FuncType : public Type {
     std::shared_ptr<Type> returnType;
 
 public:
+    bool Mutable() const override;
     FuncType(bool pure, size_t argCount, const std::shared_ptr<Type>& returnType);
     FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes, const std::shared_ptr<Type>& returnType);
     FuncType(bool pure, const std::shared_ptr<Type>& returnType);
@@ -170,6 +179,7 @@ public:
 
 class UnknownType : public Type {
 public:
+    bool Mutable() const override;
     bool TypeEq(const Type& other) const override;
     std::shared_ptr<Type> Clone() const override;
     std::string Name() const override;

@@ -4,3 +4,4 @@ print num.Floor, num.Ceil, num.Round, num.Frac
 
 print "abacaba".Length
 print "The quick brown fox jumped over the lazy dog".Slice(-10, 100, 7)
+print "The quick brown fox jumped over the lazy dog".SplitWS()

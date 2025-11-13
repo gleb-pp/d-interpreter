@@ -36,6 +36,8 @@ std::optional<std::shared_ptr<Type>> Type::Subscript([[maybe_unused]] const Type
 
 // IntegerType
 
+bool IntegerType::Mutable() const { return false; }
+
 bool IntegerType::TypeEq(const Type& other) const { return !!dynamic_cast<const IntegerType*>(&other); }
 
 std::string IntegerType::Name() const { return "int"; }
@@ -102,6 +104,8 @@ std::optional<std::shared_ptr<Type>> IntegerType::Field(const std::string& name)
 
 // RealType
 
+bool RealType::Mutable() const { return false; }
+
 shared_ptr<Type> RealType::Clone() const { return make_shared<RealType>(); }
 
 bool RealType::TypeEq(const Type& other) const { return !!dynamic_cast<const RealType*>(&other); }
@@ -135,6 +139,8 @@ std::optional<std::shared_ptr<Type>> RealType::Field(const std::string& name) co
 }
 
 // StringType
+
+bool StringType::Mutable() const { return false; }
 
 shared_ptr<Type> StringType::Clone() const { return make_shared<StringType>(); }
 
@@ -175,6 +181,8 @@ std::optional<std::shared_ptr<Type>> StringType::Subscript(const Type& other) co
 
 // NoneType
 
+bool NoneType::Mutable() const { return false; }
+
 shared_ptr<Type> NoneType::Clone() const { return make_shared<NoneType>(); }
 
 bool NoneType::TypeEq(const Type& other) const { return !!dynamic_cast<const NoneType*>(&other); }
@@ -182,6 +190,8 @@ bool NoneType::TypeEq(const Type& other) const { return !!dynamic_cast<const Non
 std::string NoneType::Name() const { return "none"; }
 
 // BoolType
+
+bool BoolType::Mutable() const { return false; }
 
 shared_ptr<Type> BoolType::Clone() const { return make_shared<BoolType>(); }
 
@@ -197,6 +207,8 @@ std::optional<std::shared_ptr<Type>> BoolType::BinaryLogical(const Type& other) 
 std::optional<std::shared_ptr<Type>> BoolType::UnaryNot() const { return make_shared<BoolType>(); }
 
 // ArrayType
+
+bool ArrayType::Mutable() const { return true; }
 
 shared_ptr<Type> ArrayType::Clone() const { return make_shared<ArrayType>(); }
 
@@ -217,6 +229,8 @@ std::optional<std::shared_ptr<Type>> ArrayType::Subscript(const Type& other) con
 }
 
 // TupleType
+
+bool TupleType::Mutable() const { return true; }
 
 shared_ptr<Type> TupleType::Clone() const { return make_shared<TupleType>(); }
 
@@ -239,6 +253,8 @@ std::optional<std::shared_ptr<Type>> TupleType::Field(const Type& other) const {
 }
 
 // FuncType
+
+bool FuncType::Mutable() const { return false; }
 
 FuncType::FuncType(bool pure, size_t argCount, const std::shared_ptr<Type>& returnType)
     : pure(pure), argTypes({vector<shared_ptr<Type>>(argCount, make_shared<UnknownType>())}), returnType(returnType) {}
@@ -300,6 +316,8 @@ std::string FuncType::Name() const {
 }
 
 // UnknownType
+
+bool UnknownType::Mutable() const { return true; }
 
 shared_ptr<Type> UnknownType::Clone() const { return make_shared<UnknownType>(); }
 

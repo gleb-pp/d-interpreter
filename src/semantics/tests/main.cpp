@@ -122,15 +122,34 @@ TEST_F(FileSample, Demo11) {
 }
 
 TEST_F(FileSample, Demo12) {
-    ReadFile("demos/12.d", tf);
+    ReadFile("demos/12.d", true);
+    auto print = dynamic_pointer_cast<ast::PrintStatement>(program->statements[1]);
+#define EXPECT_INDEX_EQ(i, runtimeType, val)                                                 \
+    EXPECT_EQ(dynamic_pointer_cast<runtime::runtimeType>(                                    \
+                  dynamic_pointer_cast<ast::PrecomputedValue>(print->expressions[i])->Value) \
+                  ->Value(),                                                                 \
+              val)
+    EXPECT_INDEX_EQ(0, IntegerValue, BigInt(123));
+    EXPECT_INDEX_EQ(1, IntegerValue, BigInt(124));
+    EXPECT_INDEX_EQ(2, IntegerValue, BigInt(123));
+    EXPECT_INDEX_EQ(2, RealValue, 0.45l);
+    print = dynamic_pointer_cast<ast::PrintStatement>(program->statements[2]);
+    EXPECT_INDEX_EQ(0, IntegerValue, BigInt(7));
+    print = dynamic_pointer_cast<ast::PrintStatement>(program->statements[3]);
+    EXPECT_INDEX_EQ(0, StringValue, "qrxdty");
+    print = dynamic_pointer_cast<ast::PrintStatement>(program->statements[4]);
+    EXPECT_TRUE(!!dynamic_pointer_cast<ast::Unary>(print->expressions[0]));
 }
 
 TEST_F(FileSample, Demo13) {
-    ReadFile("demos/13.d", tf);
+    ReadFile("demos/13.d", true);
+    ExpectFailure(7, 12, "IntegerZeroDivisionWarning");
 }
 
 TEST_F(FileSample, Demo14) {
-    ReadFile("demos/14.d", tf);
+    ReadFile("demos/14.d", true);
+    ExpectFailure(3, 0, "side effects");
+    ExpectFailure(4, 0, "side effects");
 }
 
 TEST_F(FileSample, Demo15) {
