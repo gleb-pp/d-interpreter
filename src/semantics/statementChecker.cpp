@@ -19,6 +19,17 @@ static locators::SpanLocator LocatorFromToken(const Token& tk, const shared_ptr<
     return locators::SpanLocator(file, tk.span.position, tk.span.length);
 }
 
+void StatementChecker::AddReturnType(const shared_ptr<runtime::Type>& type) {
+    if (returned)
+        returned = returned.value()->Generalize(*type);
+    else
+        returned = type;
+}
+
+void StatementChecker::AddReturnType(const optional<shared_ptr<runtime::Type>>& opttype) {
+    if (opttype) AddReturnType(*opttype);
+}
+
 StatementChecker::StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle)
     : log(log),
       pure(true),
@@ -63,15 +74,7 @@ void StatementChecker::VisitBody(ast::Body& node) {
                 n += repl.size() - 1;
             }
         }
-        {
-            auto ret = rec.Returned();
-            if (ret) {
-                if (returned)
-                    returned = returned.value()->Generalize(**ret);
-                else
-                    returned = *ret;
-            }
-        }
+        AddReturnType(rec.Returned());
         switch (rec.Terminated()) {
             case TerminationKind::ReachedEnd:
                 break;
@@ -177,11 +180,13 @@ void StatementChecker::VisitIfStatement(ast::IfStatement& node) {
                 terminationKind = trueterm;
                 pure = pure && truechk.Pure();
                 replacement->push_back(node.doIfTrue);
+                AddReturnType(truechk.Returned());
             } else {
                 terminationKind = falseterm;
                 pure = pure && falsechk.Pure();
                 values = elseTL;
                 replacement->push_back(doIfFalse);
+                AddReturnType(falsechk.Returned());
             }
         } else {
             if (trueterm == TerminationKind::ReachedEnd || falseterm == TerminationKind::ReachedEnd)
@@ -192,6 +197,8 @@ void StatementChecker::VisitIfStatement(ast::IfStatement& node) {
                 terminationKind = TerminationKind::Returned;
             pure = pure && truechk.Pure() && falsechk.Pure();
             values.MergeTimelines(elseTL);
+            AddReturnType(truechk.Returned());
+            AddReturnType(falsechk.Returned());
         }
     } else {
         auto trueterm = truechk.Terminated();
@@ -203,6 +210,7 @@ void StatementChecker::VisitIfStatement(ast::IfStatement& node) {
                 terminationKind = trueterm;
                 pure = pure && truechk.Pure();
                 replacement->push_back(node.doIfTrue);
+                AddReturnType(truechk.Returned());
             } else {
                 terminationKind = TerminationKind::ReachedEnd;
                 values = elseTL;
@@ -274,7 +282,6 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
     ReportVariableProblems(log, stats);
     for (auto& kv : stats.referencedExternals)
         if (kv.second) values.AssignUnknownButUsed(kv.first);
-        //else values.LookupVariable(kv.first);
     if (rec.replacement) {
         auto& repl = *rec.replacement;
         if (repl.size() == 1 && dynamic_cast<const ast::Body*>(repl[0].get()))
@@ -282,12 +289,7 @@ void StatementChecker::VisitLoopBodyAndEndScope(shared_ptr<ast::Body>& body) {
         else
             body = make_shared<ast::Body>(body->pos, repl);
     }
-    if (rec.Returned()) {
-        if (returned)
-            *returned = returned.value()->Generalize(**rec.Returned());
-        else
-            returned = *rec.Returned();
-    }
+    AddReturnType(rec.Returned());
     if (term == TerminationKind::Returned) {
         terminationKind = TerminationKind::Returned;
         return;

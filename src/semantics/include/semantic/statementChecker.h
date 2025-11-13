@@ -22,6 +22,8 @@ private:
     TerminationKind terminationKind;
 
     void VisitLoopBodyAndEndScope(std::shared_ptr<ast::Body>& body);
+    void AddReturnType(const std::shared_ptr<runtime::Type>& type);
+    void AddReturnType(const std::optional<std::shared_ptr<runtime::Type>>& type);
 
 public:
     StatementChecker(complog::ICompilationLog& log, ValueTimeline& values, bool inFunction, bool inCycle);
