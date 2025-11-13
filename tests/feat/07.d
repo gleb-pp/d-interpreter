@@ -1,3 +1,4 @@
+//  7. Lazy and/or checking, code deletion
 var f := func () is
     print "f"
     return true

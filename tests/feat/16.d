@@ -1,3 +1,4 @@
+//  16. Warnings for accessing a None
 var a := 0  // will become unknown after the function call
 
 var f := func (x) is

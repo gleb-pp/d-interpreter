@@ -1,3 +1,4 @@
+//  8. Xor reordering
 var f := func () is
     print "f"
     return true

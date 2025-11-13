@@ -1,3 +1,4 @@
+//  34. Array items assignable only in arrays
 var unknown := 1
 func () is if unknown = 1 then unknown := 9; else unknown := []; end; end ()
 // the checker does not know what unknown is at this point

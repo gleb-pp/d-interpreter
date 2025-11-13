@@ -1,3 +1,4 @@
+//  26. Variables used from within a loop are made unknown
 var i := 1
 
 for 0..10 loop

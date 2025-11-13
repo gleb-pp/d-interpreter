@@ -1,3 +1,4 @@
+//  30. Exit only in cycle
 loop
     print "ok"
     exit  // ok

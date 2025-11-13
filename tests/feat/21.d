@@ -1,3 +1,4 @@
+//  21. Dead code after exit/return (with path checking)
 var f := func () is
     var unk  // from within the loop, the type is not known
 

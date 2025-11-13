@@ -1,3 +1,4 @@
+//  23. Short 'if' -> Normal 'if'
 var unk
 func () is print; end ()
 

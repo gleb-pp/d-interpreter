@@ -1,3 +1,4 @@
+//  31. Return only in functions
 var f := func () is
     while true loop
         loop

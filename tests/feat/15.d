@@ -1,3 +1,4 @@
+//  15. Fixed types of expressions with unknown components (unary not, +, -; logical operators; comparisons)
 var a := "str"
 
 var mutate := func () is

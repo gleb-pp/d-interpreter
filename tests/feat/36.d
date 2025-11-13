@@ -1,3 +1,4 @@
+//  36. External variables have unknown types from inside a function body
 var a := 3
 
 func () is

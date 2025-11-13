@@ -1,3 +1,4 @@
+//  11. Chain comparison optimization
 var input := func () is
     return 9
 end

@@ -1,3 +1,4 @@
+//  33. Fields assignable only in tuples
 var unknown := 1
 func () is if unknown = 1 then unknown := 9; else unknown := []; end; end ()
 // the checker does not know what unknown is at this point

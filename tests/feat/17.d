@@ -1,3 +1,4 @@
+//  17. Variable existence checking (when declaring and referencing)
 var unk
 
 var unk_trigger := func () is print; end

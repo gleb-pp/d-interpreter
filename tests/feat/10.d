@@ -1,3 +1,4 @@
+//  10. Sequential concatenation optimized
 var input := func () is
     return "example"
 end

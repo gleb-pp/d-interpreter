@@ -1,3 +1,4 @@
+//  27. Variables go out of scope
 var unk
 
 var unk_trigger := func () is print; end

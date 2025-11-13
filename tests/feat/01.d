@@ -1,3 +1,4 @@
+//  1. Value & type precomputation, typechecking
 var s := "13"
 while false loop end
 if s[1] = "1" or
