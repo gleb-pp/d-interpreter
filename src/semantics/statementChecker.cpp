@@ -492,7 +492,6 @@ void StatementChecker::VisitPrintStatement(ast::PrintStatement& node) {
 }
 
 void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
-    pure = false;
     if (!inFunction) {
         log.Log(make_shared<errors::ReturnOutsideOfFunction>(node.pos));
         return;
@@ -510,6 +509,7 @@ void StatementChecker::VisitReturnStatement(ast::ReturnStatement& node) {
     expr->AcceptVisitor(chk);
     if (!chk.HasResult()) return;
     if (chk.Replacement()) expr = chk.AssertReplacementAsExpression();
+    pure = chk.Pure();
     terminationKind = TerminationKind::Returned;
     auto res = chk.Result();
     auto type = res.index() ? get<1>(res)->TypeOfValue() : get<0>(res);

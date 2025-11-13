@@ -728,8 +728,8 @@ void ExpressionChecker::VisitParenthesesExpression(ast::ParenthesesExpression& n
     node.expr->AcceptVisitor(*this);
 }
 
+// Tuples are mutable, cannot precompute
 void ExpressionChecker::VisitTupleLiteral(ast::TupleLiteral& node) {
-    vector<shared_ptr<runtime::RuntimeValue>> optValues;
     bool badnames = false;
     size_t n = node.elements.size();
     {
@@ -747,7 +747,7 @@ void ExpressionChecker::VisitTupleLiteral(ast::TupleLiteral& node) {
             }
         }
     }
-    bool errored = false, allknown = true;
+    bool errored = false;
     for (size_t i = 0; i < n; i++) {
         auto& expr = node.elements[i]->expression;
         ExpressionChecker rec(log, values);
@@ -759,25 +759,8 @@ void ExpressionChecker::VisitTupleLiteral(ast::TupleLiteral& node) {
         pure = pure && rec.Pure();
         if (rec.Replacement()) expr = rec.AssertReplacementAsExpression();
         auto res = rec.Result();
-        if (res.index()) {
-            auto& val = get<1>(res);
-            optValues.push_back(val);
-        } else
-            allknown = false;
     }
     if (errored || badnames) return;
-    if (allknown) {
-        vector<pair<optional<string>, shared_ptr<runtime::RuntimeValue>>> items;
-        std::ranges::transform(
-            node.elements, optValues, back_inserter(items),
-            [](const shared_ptr<ast::TupleLiteralElement>& elem, const shared_ptr<runtime::RuntimeValue>& val) {
-                return make_pair(elem->ident ? elem->ident.value()->identifier : optional<string>(), val);
-            });
-        auto val = make_shared<runtime::TupleValue>(items);
-        if (pure) replacement = make_shared<ast::PrecomputedValue>(node.pos, val);
-        this->res = val;
-        return;
-    }
     this->res = make_shared<runtime::TupleType>();
 }
 
@@ -863,10 +846,10 @@ void ExpressionChecker::VisitTokenLiteral(ast::TokenLiteral& node) {
     res = val;
 }
 
+// Arrays are mutable, cannot precompute
 void ExpressionChecker::VisitArrayLiteral(ast::ArrayLiteral& node) {
-    vector<shared_ptr<runtime::RuntimeValue>> optValues;
     size_t n = node.items.size();
-    bool errored = false, allknown = true;
+    bool errored = false;
     for (size_t i = 0; i < n; i++) {
         auto& expr = node.items[i];
         ExpressionChecker rec(log, values);
@@ -877,20 +860,8 @@ void ExpressionChecker::VisitArrayLiteral(ast::ArrayLiteral& node) {
         }
         pure = pure && rec.Pure();
         if (rec.Replacement()) expr = rec.AssertReplacementAsExpression();
-        auto res = rec.Result();
-        if (res.index()) {
-            auto& val = get<1>(res);
-            optValues.push_back(val);
-        } else
-            allknown = false;
     }
     if (errored) return;
-    if (allknown) {
-        auto val = make_shared<runtime::ArrayValue>(optValues);
-        if (pure) replacement = make_shared<ast::PrecomputedValue>(node.pos, val);
-        this->res = val;
-        return;
-    }
     this->res = make_shared<runtime::ArrayType>();
 }
 
