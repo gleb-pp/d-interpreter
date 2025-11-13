@@ -240,8 +240,8 @@ std::optional<std::shared_ptr<Type>> TupleType::Field(const Type& other) const {
 
 // FuncType
 
-FuncType::FuncType(size_t argCount, const std::shared_ptr<Type>& returnType)
-    : pure(false), argTypes({vector<shared_ptr<Type>>(argCount, make_shared<UnknownType>())}), returnType(returnType) {}
+FuncType::FuncType(bool pure, size_t argCount, const std::shared_ptr<Type>& returnType)
+    : pure(pure), argTypes({vector<shared_ptr<Type>>(argCount, make_shared<UnknownType>())}), returnType(returnType) {}
 FuncType::FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes,
                    const std::shared_ptr<Type>& returnType)
     : pure(pure), argTypes(argTypes), returnType(returnType) {}

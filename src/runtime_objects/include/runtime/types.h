@@ -153,7 +153,7 @@ class FuncType : public Type {
     std::shared_ptr<Type> returnType;
 
 public:
-    FuncType(size_t argCount, const std::shared_ptr<Type>& returnType);  // pure = false
+    FuncType(bool pure, size_t argCount, const std::shared_ptr<Type>& returnType);
     FuncType(bool pure, const std::vector<std::shared_ptr<Type>>& argTypes, const std::shared_ptr<Type>& returnType);
     FuncType(bool pure, const std::shared_ptr<Type>& returnType);
     FuncType();  // pure = false, argTypes = ?, returnType = UnknownType

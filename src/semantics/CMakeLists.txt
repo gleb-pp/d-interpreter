@@ -3,3 +3,7 @@ add_library(semantics astDeepCopy.cpp diagnostics.cpp expressionChecker.cpp prec
 target_link_libraries(semantics PUBLIC syntaxer runtime_objects)
 target_link_libraries(semantics PRIVATE common_features)
 target_include_directories(semantics PUBLIC include)
+
+if (CompileTests)
+    add_subdirectory(tests)
+endif ()

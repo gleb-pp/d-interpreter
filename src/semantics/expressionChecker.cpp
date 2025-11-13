@@ -351,6 +351,9 @@ void ExpressionChecker::VisitBinaryRelation(ast::BinaryRelation& node) {
         auto _false = make_shared<runtime::BoolValue>(false);
         replacement = make_shared<ast::PrecomputedValue>(node.pos, _false);
         this->res = _false;
+        if (n > 2)
+            log.Log(make_shared<errors::CodeUnreachable>(locators::SpanLocator(operands[2]->pos, operands.back()->pos),
+                                                         true));
         return;
     }
     if (n == 1) {
