@@ -14,4 +14,4 @@ else
 end
 // will turn into:
 // (not a) is bool  // because operations on unknowns are not pure; this preserves the error for runtime
-// print "true"
+// BODY{print "true"}

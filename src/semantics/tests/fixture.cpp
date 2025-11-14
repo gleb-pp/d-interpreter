@@ -68,13 +68,15 @@ void FileSample::ExpectFailure(size_t line, size_t col, string subMsg) {
                 }
         if (!pos_ok) continue;
         stringstream ss;
+        ss << msg->Code();
         msg->WriteMessageToStream(ss, complog::CompilationMessage::FormatOptions::All(80));
         string msgtext;
         for (char ch : ss.str())
             if (!isspace(ch)) msgtext.push_back(ch);
         if (msgtext.find(subMsg) != string::npos) return;
     }
-    cout << "The test was expected to fail.\nFull semantic analysis log:\n";
+    cout << "The test was expected to cause a message.\nLooked at 1-based-line " << line + 1 << ", col " << col
+         << ", expected to find \"" << subMsg << "\"\nFull semantic analysis log:\n";
     log->WriteToStream(cout, complog::CompilationMessage::FormatOptions::All(80));
-    ASSERT_FALSE(true) << "The compilation was expected to fail, but it passed.";
+    ASSERT_FALSE(true) << "The compilation was expected to emit a message at a specific position";
 }
