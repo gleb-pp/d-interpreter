@@ -4,4 +4,4 @@ namespace ast {
 
 IASTVisitor::~IASTVisitor() {}
 
-}
+}  // namespace ast

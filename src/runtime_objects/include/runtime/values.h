@@ -1,11 +1,11 @@
 #pragma once
+#include <iostream>
 #include <map>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
-#include <iostream>
 
 #include "bigint.h"
 #include "syntax.h"

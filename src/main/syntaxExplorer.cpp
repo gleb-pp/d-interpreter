@@ -1,5 +1,4 @@
 #include "syntaxExplorer.h"
-#include "syntaxext/precomputed.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,6 +8,7 @@
 #include <string>
 
 #include "syntax.h"
+#include "syntaxext/precomputed.h"
 using namespace std;
 
 static int StrToInt(const std::string& s) {
@@ -707,8 +707,10 @@ EXPLORER(
         return vector<ActionCommand>({{"t", "Type = " + node->Value->TypeOfValue()->Name()}, {"s", "See the value"}});
     },
     {  // Action
-        if (command == "t") output << node->Value->TypeOfValue()->Name();
-        else node->Value->PrintSelf(output);
+        if (command == "t")
+            output << node->Value->TypeOfValue()->Name();
+        else
+            node->Value->PrintSelf(output);
         return {};
     })
 
@@ -721,7 +723,9 @@ EXPLORER(
         if (command == "d") return node->Definition;
         output << "Type = " << node->Type->Name() << "\n";
         output << "Params: ";
-        if (node->Params.empty()) output << "(none)"; else {
+        if (node->Params.empty())
+            output << "(none)";
+        else {
             bool first = true;
             for (const string& s : node->Params) {
                 if (!first) output << ", ";
@@ -730,7 +734,8 @@ EXPLORER(
             }
         }
         output << "\nCaptured externals: ";
-        if (node->CapturedExternals.empty()) output << "(none)";
+        if (node->CapturedExternals.empty())
+            output << "(none)";
         else {
             bool first = true;
             for (const string& s : node->CapturedExternals) {

@@ -286,8 +286,7 @@ void UnaryOpChecker::VisitCall(ast::Call& node) {
         if (errored) return;
     }
     this->res = functype->ReturnType();
-    if (!functype->Pure())
-        values.MakeAllUnknown();
+    if (!functype->Pure()) values.MakeAllUnknown();
 }
 
 void UnaryOpChecker::VisitAccessorOperator(ast::AccessorOperator& node) { node.accessor->AcceptVisitor(*this); }

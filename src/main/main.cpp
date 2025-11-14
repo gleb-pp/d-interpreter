@@ -9,10 +9,10 @@
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
+#include "semantic.h"
 #include "syntax.h"
 #include "syntaxExplorer.h"
 #include "tokenTypeStrings.h"
-#include "semantic.h"
 using namespace std;
 
 class Options {
