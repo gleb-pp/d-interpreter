@@ -1,7 +1,7 @@
 #!/bin/env bash
 testfunc ()
 {
-    cd build
+    cd testbuild
     cmake ../src -DCompileTests=ON -DCMAKE_BUILD_TYPE=Debug || return 1
     cmake --build . || return 1
     ctest -V . || return 1
@@ -24,9 +24,9 @@ if [ ! -d .git ]; then
     exit 1
 fi
 
-if [ ! -d build ]; then
-    mkdir build
-    echo "/build directory created"
+if [ ! -d testbuild ]; then
+    mkdir testbuild
+    echo "/testbuild directory created"
 fi
 
 echo ${BOLD}=== TESTING START ===${NORM}

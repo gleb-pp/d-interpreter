@@ -28,5 +28,6 @@ public:
     size_t LineLength(size_t line) const;
     size_t LineCount() const;
     const std::string& AllText() const;
+    std::string LineTextWithoutLineFeed(size_t line) const;
 };
 }  // namespace locators

@@ -44,6 +44,16 @@ TEST_F(RealCodeFixture, LineStarts) {
     EXPECT_EQ(file->LineStartPosition(5), 86);
 }
 
+TEST_F(RealCodeFixture, LineTexts) {
+    EXPECT_EQ(file->LineTextWithoutLineFeed(0), "#include <iostream>");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(1), "using namespace std;");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(2), "");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(3), "int main() {");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(4), "    cout << \"Hello, world!\\n\";");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(5), "}");
+    EXPECT_EQ(file->LineTextWithoutLineFeed(6), "}");
+}
+
 TEST_F(RealCodeFixture, Contexts) {
     auto cont = file->Context(file->Position(0, 3), 10, 10);
     EXPECT_EQ(cont.PointerWithinText, 3);

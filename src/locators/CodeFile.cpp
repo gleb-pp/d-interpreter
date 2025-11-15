@@ -44,4 +44,10 @@ size_t CodeFile::LineLength(size_t line) const {
 }
 size_t CodeFile::LineCount() const { return eolns.size() + 1; }
 const string& CodeFile::AllText() const { return content; }
+std::string CodeFile::LineTextWithoutLineFeed(size_t line) const {
+    line = min(line, eolns.size());
+    size_t start = LineStartPosition(line);
+    size_t len = LineLength(line);
+    return content.substr(start, len);
+}
 }  // namespace locators

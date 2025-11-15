@@ -168,7 +168,7 @@ BigInt& BigInt::operator=(size_t val) {
     return *this;
 }
 
-std::vector<size_t> BigInt::Repr(size_t base) {
+std::vector<size_t> BigInt::Repr(size_t base) const {
     assert_base_ge2(base);
     vector<size_t> res;
     if (base & (base - 1)) {  // not a power of 2
@@ -205,7 +205,7 @@ std::vector<size_t> BigInt::Repr(size_t base) {
     return res;
 }
 
-std::string BigInt::ToString(size_t base) {
+std::string BigInt::ToString(size_t base) const {
     assert_base_ge2(base);
     if (base > 10 + 26) throw std::invalid_argument("base > 36 for string representation");
     auto repr = Repr(base);
@@ -648,6 +648,15 @@ std::partial_ordering BigInt::operator<=>(long double other) const {
     if (!man0 && !man1) return partial_ordering::equivalent;
     if (sign) return partial_ordering::greater;
     return partial_ordering::less;
+}
+
+long BigInt::ClampToLong() const {
+    if (*this >= numeric_limits<long>::max()) return numeric_limits<long>::max();
+    if (*this <= numeric_limits<long>::min()) return numeric_limits<long>::min();
+    unsigned long res = static_cast<unsigned long>(v[0]);
+    if (v.size() > 1) res |= static_cast<unsigned long>(v[1]) << 32;
+    if (sign) res *= -1;
+    return res;
 }
 
 long double BigInt::ToFloat() const {

@@ -117,17 +117,6 @@ bool parseSep(SyntaxContext& context);
 // AssignExpression -> tkAssign Expression
 std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context);
 
-// Body -> <* { Statement Sep } *>
-class Body : public ASTNode {
-public:
-    Body(const locators::SpanLocator& pos);
-    Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
-    std::vector<std::shared_ptr<Statement>> statements;
-    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context);
-    void AcceptVisitor(IASTVisitor& vis) override;
-    virtual ~Body() override = default;
-};
-
 // LoopBody -> tkLoop [tkNewLine] Body tkEnd
 std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context);
 
@@ -150,12 +139,23 @@ public:
     virtual ~Statement() override = default;
 };
 
+// Body -> <* { Statement Sep } *>
+class Body : public Statement {
+public:
+    Body(const locators::SpanLocator& pos);
+    Body(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Statement>>& statements);
+    std::vector<std::shared_ptr<Statement>> statements;
+    static std::optional<std::shared_ptr<Body>> parse(SyntaxContext& context);
+    void AcceptVisitor(IASTVisitor& vis) override;
+    virtual ~Body() override = default;
+};
+
 // VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
 //     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
 class VarStatement : public Statement {
 public:
     VarStatement(const locators::SpanLocator& pos);
-    std::vector<std::pair<std::string, std::optional<std::shared_ptr<Expression>>>> definitions;
+    std::vector<std::pair<std::shared_ptr<IdentifierToken>, std::optional<std::shared_ptr<Expression>>>> definitions;
     static std::optional<std::shared_ptr<VarStatement>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~VarStatement() override = default;
@@ -345,9 +345,9 @@ public:
 // Reference -> tkIdent { Accessor }
 class Reference : public ASTNode {
 public:
-    Reference(const locators::SpanLocator& pos, const std::string& baseIdent,
+    Reference(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& baseIdent,
               const std::vector<std::shared_ptr<Accessor>>& accessorChain);
-    std::string baseIdent;
+    std::shared_ptr<IdentifierToken> baseIdent;
     std::vector<std::shared_ptr<Accessor>> accessorChain;
     void AcceptVisitor(IASTVisitor& vis) override;
     static std::optional<std::shared_ptr<Reference>> parse(SyntaxContext& context);
@@ -603,9 +603,9 @@ public:
 class FuncLiteral : public Primary {
 public:
     FuncLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<IdentifierToken>>& parameters,
-                const std::optional<std::shared_ptr<FuncBody>>& funcBody);
+                const std::shared_ptr<FuncBody>& funcBody);
     std::vector<std::shared_ptr<IdentifierToken>> parameters;
-    std::optional<std::shared_ptr<FuncBody>> funcBody;
+    std::shared_ptr<FuncBody> funcBody;
     static std::optional<std::shared_ptr<FuncLiteral>> parse(SyntaxContext& context);
     void AcceptVisitor(IASTVisitor& vis) override;
     virtual ~FuncLiteral() override = default;
@@ -678,7 +678,7 @@ public:
     virtual void VisitTokenLiteral(TokenLiteral& node) = 0;
     virtual void VisitArrayLiteral(ArrayLiteral& node) = 0;
     virtual void VisitCustom(ASTNode& node) = 0;
-    virtual ~IASTVisitor() = default;
+    virtual ~IASTVisitor();
 };
 }  // namespace ast
 

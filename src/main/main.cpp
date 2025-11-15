@@ -9,6 +9,7 @@
 #include "complog/CompilationMessage.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
+#include "semantic.h"
 #include "syntax.h"
 #include "syntaxExplorer.h"
 #include "tokenTypeStrings.h"
@@ -18,6 +19,7 @@ class Options {
 public:
     bool Lexer = false;
     bool Syntaxer = false;
+    bool Semantics = false;
     bool Help = false;
     bool Check = false;
     bool Examples = false;
@@ -25,6 +27,7 @@ public:
     optional<bool*> GetLongFlag(string name) {
         if (name == "lexer") return &Lexer;
         if (name == "syntaxer") return &Syntaxer;
+        if (name == "semantics") return &Semantics;
         if (name == "help") return &Help;
         if (name == "check") return &Check;
         if (name == "examples") return &Examples;
@@ -37,6 +40,8 @@ public:
                 return &Lexer;
             case 's':
                 return &Syntaxer;
+            case 'S':
+                return &Semantics;
             case 'h':
                 return &Help;
             case 'c':
@@ -70,6 +75,7 @@ Options:
     --examples       Show some usage examples.
     --lexer      -l  Stop after lexical analysis, output the tokens.
     --syntaxer   -s  Stop after syntactic analysis, start interactive AST traversal.
+    --semantics  -S  Stop after semantic analysis, start interactive AST traversal.
     --nocontext  -C  Do not show code excerpts below errors.
 
 Every argument after -- is assumed to be a file name.
@@ -144,7 +150,29 @@ void PrintTokens(const locators::CodeFile& file, const vector<shared_ptr<Token>>
     cout << "Total: " << tokens.size() << " tokens\n\n";
 }
 
+class SpyCompilationLog : public complog::ICompilationLog {
+    bool logged = false;
+    complog::ICompilationLog& dest;
+
+public:
+    SpyCompilationLog(complog::ICompilationLog& dest) : dest(dest) {}
+    void ResetTrigger() { logged = false; }
+    bool SomethingLogged() const { return logged; }
+    void Log(const std::shared_ptr<complog::CompilationMessage>& message) override {
+        logged = true;
+        dest.Log(message);
+    }
+    virtual ~SpyCompilationLog() override = default;
+};
+
+static void WaitForUserToReadMessages() {
+    cerr << "\nSome messages were printed above. Press Enter when you are ready...";
+    string buf;
+    getline(cin, buf);
+}
+
 bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog& log) {
+    SpyCompilationLog slog(log);
     shared_ptr<const locators::CodeFile> file;
     {
         ifstream in(filename);
@@ -157,7 +185,7 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         in.close();
         file = make_shared<locators::CodeFile>(filename, sstr.str());
     }
-    auto maybeTokens = Lexer::tokenize(file, log);
+    auto maybeTokens = Lexer::tokenize(file, slog);
     if (!maybeTokens.has_value()) {
         cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
         return false;
@@ -167,13 +195,26 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         if (!opts.Check) PrintTokens(*file, tokens);
         return true;
     }
-    auto maybeProg = SyntaxAnalyzer::analyze(tokens, file, log);
+    auto maybeProg = SyntaxAnalyzer::analyze(tokens, file, slog);
     if (!maybeProg.has_value()) {
         cerr << "A syntax error was encountered in " << filename << ", stopping.\n";
         return false;
     }
     auto& prog = maybeProg.value();
-    if (true || opts.Syntaxer) {  // Currently we stop at the syntaxer step anyway
+    if (opts.Syntaxer) {
+        if (slog.SomethingLogged()) WaitForUserToReadMessages();
+        if (!opts.Check) {
+            ExplorerIO io(prog);
+            io.Explore(cout, cin);
+        }
+        return true;
+    }
+    if (!semantic::Analyze(slog, prog)) {
+        cerr << "A semantic error was encountered in " << filename << ", stopping.\n";
+        return false;
+    }
+    if (true || opts.Semantics) {
+        if (slog.SomethingLogged()) WaitForUserToReadMessages();
         if (!opts.Check) {
             ExplorerIO io(prog);
             io.Explore(cout, cin);

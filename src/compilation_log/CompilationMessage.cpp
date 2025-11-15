@@ -4,6 +4,8 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+#include "locators/locator.h"
 using namespace std;
 
 namespace complog {
@@ -43,6 +45,7 @@ CompilationMessage::FormatOptions CompilationMessage::FormatOptions::WithWidth(s
     return res;
 }
 
+vector<locators::SpanLocator> CompilationMessage::SpanLocators() const { return {}; }
 void CompilationMessage::WriteContextToStream(ostream& out, const locators::Locator& loc,
                                               const FormatOptions& options) {
     out << loc.FileName() << ":\n";
@@ -75,6 +78,37 @@ void CompilationMessage::WriteContextToStream(ostream& out, const locators::Loca
     out << ctx.Text << '\n';
     out << string(linenum.size() + 2 + ctx.PointerWithinText, ' ') << "^\n";
 }
+void CompilationMessage::WriteContextToStream(ostream& out, const locators::SpanLocator& loc,
+                                              [[maybe_unused]] const FormatOptions& options) {
+    const locators::CodeFile& file = *loc.File();
+    out << file.FileName() << ":\n";
+    size_t startpos = loc.Start().Position(), endpos = loc.End().Position();
+    if (endpos < startpos) swap(endpos, startpos);
+    auto locstart = file.LineCol(startpos);
+    auto locend = file.LineCol(endpos);
+    if (locend.first > locstart.first && locend.second == 0) {
+        locend.first--;
+        locend.second = file.LineLength(locend.first);
+    }
+    locstart.first++;
+    locend.first++;
+    int linenum_chars = to_string(locend.first).length();
+    for (size_t linenum = locstart.first; linenum <= locend.first; linenum++) {
+        bool first = linenum == locstart.first;
+        bool last = linenum == locend.first;
+        {
+            string linenum_str = to_string(linenum);
+            out << linenum_str << string(linenum_chars - linenum_str.size() + 1, ' ') << '|';
+        }
+        string linetext = file.LineTextWithoutLineFeed(linenum - 1);
+        out << linetext << '\n';
+        out << string(linenum_chars + 1, ' ') << (last ? ' ' : '|');
+        size_t hlstart = first ? locstart.second : 0;
+        size_t hlend = last ? locend.second : linetext.size() + 1;  // +1 for the \n
+        hlend += (hlstart == hlend);
+        out << string(hlstart, ' ') << string(hlend - hlstart, '^') << '\n';
+    }
+}
 CompilationMessage::CompilationMessage(Severity severity, const string& code) : severity(severity), code(code) {}
 const string& CompilationMessage::Code() const { return code; }
 const Severity CompilationMessage::MessageSeverity() const { return severity; }
@@ -86,7 +120,9 @@ string CompilationMessage::ToString(const FormatOptions& options) {
 void CompilationMessage::WriteToStream(ostream& out, const FormatOptions& options) {
     out << severity.ToString() << " (" << code << ") ";
     WriteMessageToStream(out, options);
-    if (options.Context)
+    if (options.Context) {
         for (const locators::Locator& loc : Locators()) WriteContextToStream(out, loc, options);
+        for (const locators::SpanLocator& loc : SpanLocators()) WriteContextToStream(out, loc, options);
+    }
 }
 }  // namespace complog

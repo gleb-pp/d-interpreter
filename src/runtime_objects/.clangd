@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-std=c++20, -I../syntax, -I../lexer, -I../bigint/include, -I../compilation_log/include, -I../locators/include]
+  Add: [-std=c++20, -Iinclude, -I../syntax/include, -I../lexer, -I../bigint/include, -I../compilation_log/include, -I../locators/include]

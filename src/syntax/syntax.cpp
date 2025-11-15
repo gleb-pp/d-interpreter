@@ -77,9 +77,9 @@ optional<shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context) {
     return res;
 }
 
-Body::Body(const locators::SpanLocator& pos) : ASTNode(pos) {}
+Body::Body(const locators::SpanLocator& pos) : Statement(pos) {}
 Body::Body(const locators::SpanLocator& pos, const vector<shared_ptr<Statement>>& statements)
-    : ASTNode(pos), statements(statements) {}
+    : Statement(pos), statements(statements) {}
 optional<shared_ptr<Body>> Body::parse(SyntaxContext& context) {
     USESCAN;
     auto block = tk.AutoStartUseEoln();
@@ -140,7 +140,7 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
     if (!tk.Read(Token::Type::tkVar)) return {};
     tk.Read(Token::Type::tkNewLine);
     bool first = true;
-    vector<pair<string, optional<shared_ptr<Expression>>>> defs;
+    vector<pair<shared_ptr<IdentifierToken>, optional<shared_ptr<Expression>>>> defs;
     while (true) {
         auto bl = tk.AutoStart();
         if (!first) {
@@ -152,7 +152,7 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
         if (!optIdent) break;
         auto tkIdent = dynamic_pointer_cast<IdentifierToken>(*optIdent);
         auto optAsg = parseAssignExpression(context);
-        defs.emplace_back(tkIdent->identifier, optAsg);
+        defs.emplace_back(tkIdent, optAsg);
         bl.Success();
     }
     if (defs.empty()) {
@@ -501,7 +501,7 @@ optional<shared_ptr<IndexAccessor>> IndexAccessor::parse(SyntaxContext& context)
 VISITOR(IndexAccessor)
 
 // Reference -> tkIdent { Accessor }
-Reference::Reference(const locators::SpanLocator& pos, const string& baseIdent,
+Reference::Reference(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& baseIdent,
                      const vector<shared_ptr<Accessor>>& accessorChain)
     : ASTNode(pos), baseIdent(baseIdent), accessorChain(accessorChain) {}
 optional<shared_ptr<Reference>> Reference::parse(SyntaxContext& context) {
@@ -517,7 +517,7 @@ optional<shared_ptr<Reference>> Reference::parse(SyntaxContext& context) {
         chain.push_back(*acc);
     }
     block.Success();
-    return make_shared<Reference>(tk.ReadSinceStart(), ident->identifier, chain);
+    return make_shared<Reference>(tk.ReadSinceStart(), ident, chain);
 }
 VISITOR(Reference)
 
@@ -1014,7 +1014,7 @@ VISITOR(LongFuncBody)
 
 // FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters,
-                         const optional<shared_ptr<FuncBody>>& funcBody)
+                         const shared_ptr<FuncBody>& funcBody)
     : Primary(pos), parameters(parameters), funcBody(funcBody) {}
 optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context) {
     USESCAN;

@@ -5,8 +5,8 @@
 
 namespace locators {
 class Locator {
-    const size_t pos;
-    const std::shared_ptr<const CodeFile> file;
+    size_t pos;
+    std::shared_ptr<const CodeFile> file;
 
 public:
     Locator(const std::shared_ptr<const CodeFile>& file, size_t pos);
@@ -21,12 +21,14 @@ public:
 };
 
 class SpanLocator {
-    const size_t pos, length;
-    const std::shared_ptr<const CodeFile> file;
+    size_t pos, length;
+    std::shared_ptr<const CodeFile> file;
 
 public:
     SpanLocator(const std::shared_ptr<const CodeFile>& file, size_t pos, size_t length);
+    SpanLocator(const SpanLocator& a, const SpanLocator& b);
     SpanLocator(const Locator& loc, size_t length);
+    std::string Pretty() const;
     Locator Start() const;
     Locator End() const;
     size_t Length() const;

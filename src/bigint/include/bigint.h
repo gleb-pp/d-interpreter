@@ -35,8 +35,8 @@ public:
     BigInt& operator=(size_t val);
     BigInt& operator=(const BigInt& other) = default;
     BigInt& operator=(BigInt&& other) = default;
-    std::vector<size_t> Repr(size_t base);
-    std::string ToString(size_t base = 10);
+    std::vector<size_t> Repr(size_t base) const;
+    std::string ToString(size_t base = 10) const;
     BigInt& operator+=(const BigInt& other);
     BigInt operator+(const BigInt& other) const;
     BigInt& operator-=(const BigInt& other);
@@ -61,6 +61,7 @@ public:
     int operator<=>(int other) const;
     std::partial_ordering operator<=>(long double other) const;
     long double ToFloat() const;
+    long ClampToLong() const;
     bool operator<(const BigInt& other) const;
     bool operator<(long other) const;
     bool operator<(size_t other) const;
