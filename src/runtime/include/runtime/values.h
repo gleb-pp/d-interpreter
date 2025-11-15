@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "bigint.h"
+#include "derror.h"
 #include "syntax.h"
 #include "types.h"
 
@@ -19,7 +20,7 @@ namespace runtime {
 
 class RuntimeValue;
 
-using RuntimeValueResult = std::optional<std::variant<std::shared_ptr<RuntimeValue>, std::runtime_error>>;
+using RuntimeValueResult = std::optional<std::variant<std::shared_ptr<RuntimeValue>, DRuntimeError>>;
 
 class RuntimeValue : public std::enable_shared_from_this<RuntimeValue> {
 public:

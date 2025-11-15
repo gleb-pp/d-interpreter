@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 
+#include "runtime/derror.h"
 #include "runtime/types.h"
 using namespace std;
 
@@ -58,7 +59,7 @@ RuntimeValueResult RuntimeValue::Subscript([[maybe_unused]] const RuntimeValue& 
 NUMERIC_ARITH(+, Plus)
 NUMERIC_ARITH(-, Minus)
 NUMERIC_ARITH(*, Mul)
-NUMERIC_CUSTOM(/, Div, if (!bint->Value()) return runtime_error("Integer division by 0");)
+NUMERIC_CUSTOM(/, Div, if (!bint->Value()) return DRuntimeError("Integer division by 0");)
 
 static partial_ordering OrderingFromInt(int o) {
     if (o > 0) return partial_ordering::greater;
@@ -267,7 +268,7 @@ RuntimeValueResult StringValue::Subscript(const RuntimeValue& other) const {
     auto intval = dynamic_cast<const IntegerValue*>(&other);
     if (!intval) return {};
     auto& bigint = intval->Value();
-    if (bigint <= 0 || bigint > value.size()) return runtime_error("String index out of range");
+    if (bigint <= 0 || bigint > value.size()) return DRuntimeError("String index out of range");
     long ind = bigint.ClampToLong() - 1;
     return make_shared<StringValue>(string(1, value[ind]));
 }
@@ -326,7 +327,7 @@ RuntimeValueResult ArrayValue::Subscript(const RuntimeValue& other) const {
     auto intval = dynamic_cast<const IntegerValue*>(&other);
     if (!intval) return {};
     auto iter = Value.find(intval->Value());
-    if (iter == Value.end()) return runtime_error("Array index not found");
+    if (iter == Value.end()) return DRuntimeError("Array index not found");
     return iter->second;
 }
 void ArrayValue::AssignItem(const BigInt& index, const shared_ptr<RuntimeValue>& other) { Value[index] = other; }
@@ -435,7 +436,7 @@ void TupleValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& 
 
 StringSliceFunction::StringSliceFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 3) return runtime_error("The string.Slice function requires 3 arguments that are integers");
+    if (args.size() != 3) return DRuntimeError("The string.Slice function requires 3 arguments that are integers");
     const IntegerValue* _args[3];
     ranges::transform(args, _args,
                       [](const shared_ptr<RuntimeValue>& val) { return dynamic_cast<const IntegerValue*>(val.get()); });
@@ -456,9 +457,9 @@ RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValu
             first = false;
             msg << "argument" << i + 1 << " (" << argnames[i] << ") was \"" << args[i]->TypeOfValue()->Name() << '\"';
         }
-        return runtime_error(msg.str());
+        return DRuntimeError(msg.str());
     }
-    if (!_args[2]->Value()) return runtime_error("The string.Slice function's third argument (step) cannot be 0");
+    if (!_args[2]->Value()) return DRuntimeError("The string.Slice function's third argument (step) cannot be 0");
     return make_shared<StringValue>(_this->Slice(_args[0]->Value(), _args[1]->Value(), _args[2]->Value()));
 }
 shared_ptr<runtime::Type> StringSliceFunction::TypeOfValue() const {
@@ -471,10 +472,10 @@ void StringSliceFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_pt
 
 StringSplitFunction::StringSplitFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSplitFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 1) return runtime_error("The string.Split function accepts exactly 1 string argument");
+    if (args.size() != 1) return DRuntimeError("The string.Split function accepts exactly 1 string argument");
     auto strval = dynamic_cast<const StringValue*>(args[0].get());
     if (!strval)
-        return runtime_error("The string.Split function expected a string argument, but received \"" +
+        return DRuntimeError("The string.Split function expected a string argument, but received \"" +
                              args[0]->TypeOfValue()->Name() + "\"");
     vector<shared_ptr<RuntimeValue>> strings;
     std::ranges::transform(_this->Split(strval->Value()), back_inserter(strings),
@@ -490,7 +491,7 @@ void StringSplitFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_pt
 
 StringSplitWSFunction::StringSplitWSFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringSplitWSFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size()) return runtime_error("The string.SplitWS function accepts no arguments");
+    if (args.size()) return DRuntimeError("The string.SplitWS function accepts no arguments");
     vector<shared_ptr<RuntimeValue>> strings;
     std::ranges::transform(_this->SplitWS(), back_inserter(strings),
                            [](const string& val) { return make_shared<StringValue>(val); });
@@ -505,10 +506,10 @@ void StringSplitWSFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_
 
 StringJoinFunction::StringJoinFunction(const std::shared_ptr<const StringValue>& _this) : _this(_this) {}
 RuntimeValueResult StringJoinFunction::Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 1) return runtime_error("The string.Join function accepts exactly 1 array argument");
+    if (args.size() != 1) return DRuntimeError("The string.Join function accepts exactly 1 array argument");
     auto arrval = dynamic_cast<const ArrayValue*>(args[0].get());
     if (!arrval)
-        return runtime_error("The string.Join function expects an array of strings as the argument, but received \"" +
+        return DRuntimeError("The string.Join function expects an array of strings as the argument, but received \"" +
                              args[0]->TypeOfValue()->Name() + "\"");
     vector<const StringValue*> strvals;
     strvals.reserve(arrval->Value.size());
@@ -517,7 +518,7 @@ RuntimeValueResult StringJoinFunction::Call(const std::vector<std::shared_ptr<Ru
                                return dynamic_cast<const StringValue*>(kv.second.get());
                            });
     for (auto i : strvals)
-        if (!i) return runtime_error("The string.Join function received an array with non-string values");
+        if (!i) return DRuntimeError("The string.Join function received an array with non-string values");
     vector<string> strs(strvals.size());
     std::ranges::transform(strvals, strs.begin(), [](const StringValue* val) { return val->Value(); });
     return make_shared<StringValue>(_this->Join(strs));
