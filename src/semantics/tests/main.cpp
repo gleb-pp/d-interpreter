@@ -6,7 +6,6 @@
 #include "fixture.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
-#include "semantic.h"
 #include "syntax.h"
 #include "syntaxext/precomputed.h"
 using namespace std;

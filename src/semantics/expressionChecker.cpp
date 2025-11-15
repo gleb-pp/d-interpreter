@@ -1,7 +1,6 @@
 #include "semantic/expressionChecker.h"
 
 #include <algorithm>
-#include <iterator>
 #include <memory>
 #include <stdexcept>
 

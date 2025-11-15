@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-I../bigint/include, -I../complog/include, -I../locators/include, -std=c++20]
+  Add: [-Iinclude, -I../bigint/include, -I../complog/include, -I../locators/include, -std=c++20]
