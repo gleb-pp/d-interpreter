@@ -174,4 +174,12 @@ RuntimeContext::RuntimeContext(std::istream& input, std::ostream& output, size_t
       StackTraceMaxEntries(stackTraceMaxEntries),
       State(RuntimeState::Running()) {}
 
+CallStackTrace RuntimeContext::MakeStackTrace() const {
+    return this->CallStack.Report(StackTraceMaxEntries);
+}
+
+void RuntimeContext::SetThrowingState(const runtime::DRuntimeError& error, const locators::SpanLocator& pos) {
+    State = RuntimeState::Throwing(error, pos, MakeStackTrace());
+}
+
 }  // namespace interp

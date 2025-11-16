@@ -74,10 +74,12 @@ class RuntimeContext {
 public:
     std::ostream* const Output;
     std::istream* const Input;
-    interp::CallStack CallStack;
+    CallStack CallStack;
     const size_t StackTraceMaxEntries;
     RuntimeState State;
     RuntimeContext(std::istream& input, std::ostream& output, size_t callStackCapacity, size_t stackTraceMaxEntries);
+    CallStackTrace MakeStackTrace() const;
+    void SetThrowingState(const runtime::DRuntimeError& error, const locators::SpanLocator& pos);
 };
 
 }  // namespace interp
