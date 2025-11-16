@@ -1,20 +1,62 @@
 #include "interp/closure.h"
+#include "interp/execution.h"
+#include "interp/runtimeContext.h"
+#include "interp/varScopes.h"
+#include "syntax.h"
+using namespace std;
 
 namespace runtime {
 
-/*
-class Closure : public RuntimeValue {
-    std::shared_ptr<interp::ScopeStack> initialScope;
-    std::shared_ptr<ast::FuncBody> code;
+Closure::Closure(const interp::ScopeStack& values, const shared_ptr<ast::ClosureDefinition>& def)
+    : params(def->Params), initialScope(make_shared<interp::ScopeStack>()), code(def->Definition), funcType(def->Type) {
+    for (const string& name : def->CapturedExternals) initialScope->Declare(*values.Lookup(name));
+}
 
-public:
-    Closure(const std::shared_ptr<ast::ClosureDefinition>& def);
-    std::shared_ptr<RuntimeValue> UserCall(interp::RuntimeContext& context,
-                                           const std::vector<std::shared_ptr<RuntimeValue>>& args) const;
-    std::shared_ptr<Type> TypeOfValue() const override;
-    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
-    virtual ~Closure() override = default;
-};
-*/
+shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, const vector<shared_ptr<RuntimeValue>>& args) const {
+    size_t n = params.size();
+    if (args.size() != n)
+        throw runtime_error("Wrong number arguments supplied to a user call (interpreter's validation is broken)");
+    auto scope = make_shared<interp::ScopeStack>(initialScope);
+    for (size_t i = 0; i < n; i++) initialScope->Declare(make_shared<interp::Variable>(params[i], args[i]));
+    interp::Executor exec(context, scope);
+    auto longBody = dynamic_pointer_cast<ast::LongFuncBody>(code);
+    if (longBody) {
+        exec.VisitBody(*longBody->funcBody);
+        switch (context.State.StateKind()) {
+            case interp::RuntimeState::Kind::Throwing:
+                return nullptr;
+            case interp::RuntimeState::Kind::Running:
+                return make_shared<NoneValue>();
+            case interp::RuntimeState::Kind::Exiting:
+                throw runtime_error("Cannot 'exit' out of a function");
+            case interp::RuntimeState::Kind::Returning:
+                context.State = interp::RuntimeState::Running();
+                return context.State.GetReturnValue();
+        }
+    }
+    dynamic_cast<ast::ShortFuncBody&>(*code).expressionToReturn->AcceptVisitor(exec);
+    if (context.State.IsThrowing()) return nullptr;
+#ifdef DINTERP_DEBUG
+    {
+        auto kind = context.State.StateKind();
+        if (kind != interp::RuntimeState::Kind::Running)
+            throw runtime_error("After evaluation of a short-form function body, the state was " +
+                                to_string(static_cast<int>(kind)));
+    }
+#endif
+#ifdef DINTERP_DEBUG
+    if (!exec.ExpressionValue())
+        throw runtime_error("Executor did not compute the value of a short-form function body");
+#endif
+    return exec.ExpressionValue();
+}
+
+shared_ptr<Type> Closure::TypeOfValue() const {
+    return funcType;
+}
+
+void Closure::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& recGuard) const {
+    out << "<closure: " << funcType->Name() << ">";
+}
 
 }  // namespace runtime

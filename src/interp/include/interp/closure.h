@@ -7,13 +7,16 @@
 namespace runtime {
 
 class Closure : public RuntimeValue {
+    std::vector<std::string> params;
     std::shared_ptr<interp::ScopeStack> initialScope;
     std::shared_ptr<ast::FuncBody> code;
+    std::shared_ptr<runtime::FuncType> funcType;
 
 public:
-    Closure(const std::shared_ptr<ast::ClosureDefinition>& def);
+    Closure(const interp::ScopeStack& values, const std::shared_ptr<ast::ClosureDefinition>& def);
     std::shared_ptr<RuntimeValue> UserCall(interp::RuntimeContext& context,
                                            const std::vector<std::shared_ptr<RuntimeValue>>& args) const;
+    size_t ExpectedArgCount() const;
     std::shared_ptr<Type> TypeOfValue() const override;
     void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     virtual ~Closure() override = default;
