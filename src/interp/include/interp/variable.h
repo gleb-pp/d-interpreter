@@ -12,8 +12,8 @@ class Variable : public std::enable_shared_from_this<Variable> {
     std::shared_ptr<runtime::RuntimeValue> val;
 
 public:
-    Variable(const std::shared_ptr<runtime::RuntimeValue>& content);
-    Variable();  // contains None
+    Variable(const std::string& name, const std::shared_ptr<runtime::RuntimeValue>& content);
+    Variable(const std::string& name);  // contains None
     const std::string& Name() const;
     void Assign(const std::shared_ptr<runtime::RuntimeValue>& content);
     const std::shared_ptr<runtime::RuntimeValue>& Content() const;
