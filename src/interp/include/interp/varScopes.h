@@ -23,8 +23,7 @@ public:
     ScopeStack();
     ScopeStack(const std::shared_ptr<ScopeStack>& parent);
     void Declare(const std::shared_ptr<Variable>& newvar);
-    virtual std::optional<std::shared_ptr<Variable>> Lookup(const std::string& name) const;
-    virtual ~ScopeStack() = default;
+    std::optional<std::shared_ptr<Variable>> Lookup(const std::string& name) const;
 };
 
 }  // namespace interp

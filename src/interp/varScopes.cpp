@@ -1,29 +1,32 @@
 #include "interp/varScopes.h"
 
+#include <stdexcept>
+using namespace std;
+
 namespace interp {
 
-/*
-class Scope {
-    std::map<std::string, std::shared_ptr<Variable>> vars;
+void Scope::Declare(const shared_ptr<Variable>& newvar) {
+    auto result = vars.try_emplace(newvar->Name(), newvar);
+    if (!result.second)
+        throw runtime_error("Tried to declare a new variable with a taken name \"" + newvar->Name() + "\"");
+}
 
-public:
-    void Declare(const std::shared_ptr<Variable>& newvar);
-    std::optional<std::shared_ptr<Variable>> Lookup(const std::string& name) const;
-};
-*/
+optional<shared_ptr<Variable>> Scope::Lookup(const string& name) const {
+    auto iter = vars.find(name);
+    if (iter == vars.end()) return {};
+    return {iter->second};
+}
 
-/*
-class ScopeStack {
-    Scope scope;
-    std::shared_ptr<ScopeStack> maybeParent;
+ScopeStack::ScopeStack() = default;
 
-public:
-    ScopeStack();
-    ScopeStack(const std::shared_ptr<ScopeStack>& parent);
-    void Declare(const std::shared_ptr<Variable>& newvar);
-    virtual std::optional<std::shared_ptr<Variable>> Lookup(const std::string& name) const;
-    virtual ~ScopeStack() = default;
-};
-*/
+ScopeStack::ScopeStack(const shared_ptr<ScopeStack>& parent) : maybeParent(parent) {}
+
+void ScopeStack::Declare(const shared_ptr<Variable>& newvar) { scope.Declare(newvar); }
+
+optional<shared_ptr<Variable>> ScopeStack::Lookup(const string& name) const {
+    auto res = scope.Lookup(name);
+    if (!res && maybeParent) return maybeParent->Lookup(name);
+    return res;
+}
 
 }  // namespace interp
