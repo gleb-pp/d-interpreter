@@ -2,6 +2,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+
 #include "variable.h"
 
 namespace interp {
@@ -26,4 +27,4 @@ public:
     virtual ~ScopeStack() = default;
 };
 
-}
+}  // namespace interp
