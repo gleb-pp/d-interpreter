@@ -12,10 +12,13 @@ namespace interp {
 
 class CallStackTrace {
     std::vector<locators::SpanLocator> entries;
+    size_t skippingSep;
+    size_t skipped;
 
 public:
     CallStackTrace(const std::vector<locators::SpanLocator>& entries);
-    void WriteToStream(std::ostream& out, size_t maxentries) const;
+    CallStackTrace(const std::vector<locators::SpanLocator>& entries, size_t skippingSep, size_t skipped);
+    void WriteToStream(std::ostream& out) const;
 };
 
 class CallStack {
@@ -63,7 +66,7 @@ public:
     bool IsReturning() const;
     bool IsThrowing() const;
     Kind StateKind() const;
-    const std::shared_ptr<runtime::RuntimeValue> GetReturnValue();
+    const std::shared_ptr<runtime::RuntimeValue>& GetReturnValue() const;
     const Throwing& GetError() const;
 };
 

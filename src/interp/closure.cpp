@@ -44,10 +44,6 @@ shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, cons
                                 to_string(static_cast<int>(kind)));
     }
 #endif
-#ifdef DINTERP_DEBUG
-    if (!exec.ExpressionValue())
-        throw runtime_error("Executor did not compute the value of a short-form function body");
-#endif
     return exec.ExpressionValue();
 }
 
