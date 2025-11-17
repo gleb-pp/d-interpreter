@@ -1,10 +1,11 @@
 #include "interp/execution.h"
 #include <algorithm>
-#include <ios>
 #include <memory>
 #include "interp/runtimeContext.h"
 #include "runtime/derror.h"
 #include "runtime/values.h"
+#include "interp/unaryOpExec.h"
+#include "syntax.h"
 using namespace std;
 
 namespace interp {
@@ -226,11 +227,11 @@ void Executor::VisitAssignStatement(ast::AssignStatement& node) {
         val = *optVal;
     }
     auto optvariable = scopes->Lookup(node.dest->baseIdent->identifier);
+    auto _span = node.dest->baseIdent->span;
+    locators::SpanLocator curpos(node.pos.File(), _span.position, _span.length);
     if (!optvariable) {
-        auto span = node.dest->baseIdent->span;
         context.SetThrowingState(
-            runtime::DRuntimeError("Variable not declared: \"" + node.dest->baseIdent->identifier + "\""),
-            locators::SpanLocator(node.pos.File(), span.position, span.length));
+            runtime::DRuntimeError("Variable not declared: \"" + node.dest->baseIdent->identifier + "\""), curpos);
         return;
     }
     if (node.dest->accessorChain.empty()) {
@@ -238,7 +239,71 @@ void Executor::VisitAssignStatement(ast::AssignStatement& node) {
         return;
     }
     size_t n = node.dest->accessorChain.size() - 1;
+    auto curobj = optvariable.value()->Content();
+    if (n) {
+        UnaryOpExecutor exec(context, scopes, curobj, curpos);
+        for (size_t i = 0; i < n; ++i) {
+            node.dest->accessorChain[i]->AcceptVisitor(exec);
+            if (context.State.IsThrowing()) return;
+        }
+        curobj = exec.Value();
+        curpos = exec.Position();
+    }
+    auto lastAccessor = node.dest->accessorChain.back();
+    auto indexAcc = dynamic_pointer_cast<ast::IndexAccessor>(lastAccessor);
+    if (indexAcc) {
+        auto arr = dynamic_pointer_cast<runtime::ArrayValue>(curobj);
+        if (!arr) {
+            context.SetThrowingState(runtime::DRuntimeError("Can only assign by subscript to arrays, tried with \"" +
+                                                            curobj->TypeOfValue()->Name() + "\""),
+                                     curpos);
+            return;
+        }
+        auto indObj = ExecuteExpressionInThis(indexAcc->expressionInBrackets);
+        if (!indObj) return;
+        auto intSubscript = dynamic_pointer_cast<runtime::IntegerValue>(*indObj);
+        if (!intSubscript) {
+            context.SetThrowingState(runtime::DRuntimeError("Subscript must be an integer, but it was \"" +
+                                                            indObj.value()->TypeOfValue()->Name() + "\""),
+                                     curpos);
+            return;
+        }
+        arr->AssignItem(intSubscript->Value(), val);
+        return;
+    }
 
+    auto tuple = dynamic_pointer_cast<runtime::TupleValue>(curobj);
+    if (!tuple) {
+        context.SetThrowingState(runtime::DRuntimeError("Can only assign by field to tuples, tried with \"" +
+                                                        curobj->TypeOfValue()->Name() + "\""),
+                                 curpos);
+        return;
+    }
+    auto namedAcc = dynamic_pointer_cast<ast::IdentMemberAccessor>(lastAccessor);
+    if (namedAcc) {
+        if (tuple->AssignNamedField(namedAcc->name->identifier, val)) return;
+        context.SetThrowingState(runtime::DRuntimeError("No field named \"" + namedAcc->name->identifier + "\""),
+                                 namedAcc->pos);
+        return;
+    }
+    BigInt index;
+    auto paren = dynamic_pointer_cast<ast::ParenMemberAccessor>(lastAccessor);
+    if (paren) {
+        auto indObj = ExecuteExpressionInThis(paren->expr);
+        if (!indObj) return;
+        auto intSubscript = dynamic_pointer_cast<runtime::IntegerValue>(*indObj);
+        if (!intSubscript) {
+            context.SetThrowingState(runtime::DRuntimeError("Field index must be an integer, but it was \"" +
+                                                            indObj.value()->TypeOfValue()->Name() + "\""),
+                                     curpos);
+            return;
+        }
+        index = intSubscript->Value();
+    } else
+        index = dynamic_cast<ast::IntLiteralMemberAccessor&>(*lastAccessor).index->value;
+    if (tuple->AssignIndexedField(index, val)) return;
+    context.SetThrowingState(runtime::DRuntimeError("Field index out of range: " + index.ToString()),
+                             lastAccessor->pos);
 }
 
 void Executor::VisitPrintStatement(ast::PrintStatement& node) {
