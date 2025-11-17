@@ -12,8 +12,10 @@ class Executor : public ast::IASTVisitor {
     std::shared_ptr<runtime::RuntimeValue> optExprValue;
     std::optional<std::shared_ptr<runtime::RuntimeValue>> ExecuteExpressionInThis(
         const std::shared_ptr<ast::Expression>& expr);
-    enum class OperatorKind { And, Or, Xor };
-    void ExecuteOperators
+    enum class OperatorKind { Plus, Minus, Times, Divide };
+    enum class LogicalOperatorKind { And, Or, Xor };
+    void ExecuteOperators(const std::vector<std::shared_ptr<ast::Expression>>& operands, const std::vector<OperatorKind>& ops);
+    void ExecuteLogicalOperators(LogicalOperatorKind kind, const std::vector<std::shared_ptr<ast::Expression>>& operands);
 
 public:
     Executor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes);

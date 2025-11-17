@@ -7,9 +7,9 @@ using namespace std;
 
 namespace runtime {
 
-Closure::Closure(const interp::ScopeStack& values, const shared_ptr<ast::ClosureDefinition>& def)
-    : params(def->Params), initialScope(make_shared<interp::ScopeStack>()), code(def->Definition), funcType(def->Type) {
-    for (const string& name : def->CapturedExternals) initialScope->Declare(*values.Lookup(name));
+Closure::Closure(const interp::ScopeStack& values, const ast::ClosureDefinition& def)
+    : params(def.Params), initialScope(make_shared<interp::ScopeStack>()), code(def.Definition), funcType(def.Type) {
+    for (const string& name : def.CapturedExternals) initialScope->Declare(*values.Lookup(name));
 }
 
 shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, const vector<shared_ptr<RuntimeValue>>& args) const {

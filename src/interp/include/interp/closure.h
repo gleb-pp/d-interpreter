@@ -14,7 +14,7 @@ class Closure : public interp::UserCallable {
     std::shared_ptr<runtime::FuncType> funcType;
 
 public:
-    Closure(const interp::ScopeStack& values, const std::shared_ptr<ast::ClosureDefinition>& def);
+    Closure(const interp::ScopeStack& values, const ast::ClosureDefinition& def);
     std::shared_ptr<RuntimeValue> UserCall(interp::RuntimeContext& context,
                                            const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
     std::shared_ptr<FuncType> FunctionType() const override;

@@ -1,11 +1,15 @@
 #include "interp/execution.h"
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 #include "interp/runtimeContext.h"
+#include "locators/locator.h"
 #include "runtime/derror.h"
 #include "runtime/values.h"
 #include "interp/unaryOpExec.h"
 #include "syntax.h"
+#include "syntaxext/precomputed.h"
+#include "interp/closure.h"
 using namespace std;
 
 namespace interp {
@@ -17,6 +21,114 @@ const std::shared_ptr<runtime::RuntimeValue>& Executor::ExpressionValue() const 
     if (!optExprValue) throw runtime_error("Accessed Executor::ExpressionValue(), but it was `nullptr`.");
     return optExprValue;
 }
+
+void Executor::ExecuteOperators(const std::vector<std::shared_ptr<ast::Expression>>& operands,
+                                const std::vector<OperatorKind>& ops) {
+    const char* const OPNAMES[] = {"+", "-", "*", "/"};
+    locators::SpanLocator cur = operands[0]->pos;
+    shared_ptr<runtime::RuntimeValue> val;
+    {
+        auto optVal = ExecuteExpressionInThis(operands[0]);
+        if (!optVal) return;
+        val = *optVal;
+    }
+    size_t n = ops.size();
+    for (size_t i = 0; i < n; i++) {
+        auto optRHS = ExecuteExpressionInThis(operands[i + 1]);
+        if (!optRHS) return;
+        cur = locators::SpanLocator(cur, operands[i + 1]->pos);
+        runtime::RuntimeValueResult res;
+        switch (ops[i]) {
+            case OperatorKind::Plus:
+                res = val->BinaryPlus(**optRHS);
+                break;
+            case OperatorKind::Minus:
+                res = val->BinaryMinus(**optRHS);
+                break;
+            case OperatorKind::Times:
+                res = val->BinaryMul(**optRHS);
+                break;
+            case OperatorKind::Divide:
+                res = val->BinaryDiv(**optRHS);
+                break;
+        }
+        if (!res) {
+            context.SetThrowingState(
+                runtime::DRuntimeError(string("Operator \"") + OPNAMES[static_cast<int>(ops[i])] +
+                                       "\" is not supported between \"" + val->TypeOfValue()->Name() + "\" and \"" +
+                                       optRHS.value()->TypeOfValue()->Name() + "\""),
+                cur);
+            return;
+        }
+        if (res->index()) {
+            context.SetThrowingState(get<1>(*res), cur);
+            return;
+        }
+        val = get<0>(*res);
+    }
+    optExprValue = val;
+}
+
+void Executor::ExecuteLogicalOperators(LogicalOperatorKind kind, const std::vector<std::shared_ptr<ast::Expression>>& operands) {
+    const char* const OPNAMES[] = {"and", "or", "xor"};
+    optional<bool> stopValue;
+    switch (kind) {
+        case LogicalOperatorKind::And:
+            stopValue = false;
+            break;
+        case LogicalOperatorKind::Or:
+            stopValue = true;
+            break;
+        case LogicalOperatorKind::Xor:
+            break;
+    }
+    shared_ptr<runtime::BoolValue> val;
+    auto curpos = operands[0]->pos;
+    {
+        auto optVal = ExecuteExpressionInThis(operands[0]);
+        if (!optVal) return;
+        val = dynamic_pointer_cast<runtime::BoolValue>(*optVal);
+        if (!val) {
+            context.SetThrowingState(runtime::DRuntimeError(string("Operator \"") + OPNAMES[static_cast<int>(kind)] +
+                                                            "\" expects boolean operands, but got \"" +
+                                                            optVal.value()->TypeOfValue()->Name() + "\""),
+                                     curpos);
+            return;
+        }
+    }
+    size_t n = operands.size();
+    for (size_t i = 1; i < n && (!stopValue || *stopValue != val->Value()); i++) {
+        curpos = locators::SpanLocator(curpos, operands[i]->pos);
+        auto optRHS = ExecuteExpressionInThis(operands[i]);
+        if (!optRHS) return;
+        runtime::RuntimeValueResult res;
+        switch (kind) {
+            case LogicalOperatorKind::And:
+                res = val->BinaryAnd(**optRHS);
+                break;
+            case LogicalOperatorKind::Or:
+                res = val->BinaryOr(**optRHS);
+                break;
+            case LogicalOperatorKind::Xor:
+                res = val->BinaryXor(**optRHS);
+                break;
+        }
+        if (!res) {
+            context.SetThrowingState(runtime::DRuntimeError(string("Operator \"") + OPNAMES[static_cast<int>(kind)] +
+                                                            "\" is not applicable to \"" + val->TypeOfValue()->Name() +
+                                                            "\" and \"" + optRHS.value()->TypeOfValue()->Name() + "\""),
+                                     curpos);
+            return;
+        }
+        if (res->index()) {
+            context.SetThrowingState(get<1>(*res), curpos);
+            return;
+        }
+        val = dynamic_pointer_cast<runtime::BoolValue>(get<0>(*res));
+    }
+    optExprValue = val;
+}
+
 
 #define DISALLOWED_VISIT(name) \
     void Executor::Visit##name(ast::name& node) { throw runtime_error("Executor cannot visit " #name); }
@@ -137,7 +249,7 @@ void Executor::VisitForStatement(ast::ForStatement& node) {
         auto arrayval = dynamic_pointer_cast<runtime::ArrayValue>(startOrList);
         if (arrayval) {
             if (cyclevar) {
-                range.emplace(vector<shared_ptr<runtime::RuntimeValue>>());
+                range.emplace(vector<shared_ptr<runtime::RuntimeValue>>(arrayval->Value.size()));
                 ranges::transform(arrayval->Value, get<1>(*range).begin(),
                                   [](const pair<const BigInt, shared_ptr<runtime::RuntimeValue>>& p) { return p.second; });
             } else range.emplace(arrayval->Value.size());
@@ -343,90 +455,217 @@ DISALLOWED_VISIT(IndexAccessor)
 DISALLOWED_VISIT(Reference)
 
 void Executor::VisitXorOperator(ast::XorOperator& node) {
+    ExecuteLogicalOperators(LogicalOperatorKind::Xor, node.operands);
 }
 
 void Executor::VisitOrOperator(ast::OrOperator& node) {
-    // TODO
+    ExecuteLogicalOperators(LogicalOperatorKind::Or, node.operands);
 }
 
 void Executor::VisitAndOperator(ast::AndOperator& node) {
-    // TODO
+    ExecuteLogicalOperators(LogicalOperatorKind::And, node.operands);
 }
 
 void Executor::VisitBinaryRelation(ast::BinaryRelation& node) {
-    // TODO
+    shared_ptr<runtime::RuntimeValue> lhs;
+    {
+        auto optLHS = ExecuteExpressionInThis(node.operands[0]);
+        if (!optLHS) return;
+        lhs = *optLHS;
+    }
+    size_t n = node.operators.size();
+    for (size_t i = 0; i < n; i++) {
+        auto op = node.operators[i];
+        auto optRHS = ExecuteExpressionInThis(node.operands[i + 1]);
+        if (!optRHS) return;
+        auto comp = lhs->BinaryComparison(**optRHS);
+        if (!comp) {
+            context.SetThrowingState(
+                runtime::DRuntimeError("Objects of types \"" + lhs->TypeOfValue()->Name() + "\" and \"" +
+                                       optRHS.value()->TypeOfValue()->Name() + "\" are incomparable"),
+                locators::SpanLocator(node.operands[i]->pos, node.operands[i + 1]->pos));
+            return;
+        }
+        bool result = false;
+        switch (op) {
+            case ast::BinaryRelationOperator::Less:
+                result = *comp < 0;
+                break;
+            case ast::BinaryRelationOperator::LessEq:
+                result = *comp <= 0;
+                break;
+            case ast::BinaryRelationOperator::Greater:
+                result = *comp > 0;
+                break;
+            case ast::BinaryRelationOperator::GreaterEq:
+                result = *comp >= 0;
+                break;
+            case ast::BinaryRelationOperator::Equal:
+                result = *comp == 0;
+                break;
+            case ast::BinaryRelationOperator::NotEqual:
+                result = *comp != 0;
+                break;
+        }
+        if (!result) {
+            optExprValue = make_shared<runtime::BoolValue>(false);
+            return;
+        }
+        lhs = *optRHS;
+    }
+    optExprValue = make_shared<runtime::BoolValue>(true);
 }
 
 void Executor::VisitSum(ast::Sum& node) {
-    // TODO
+    vector<OperatorKind> ops(node.operators.size());
+    ranges::transform(node.operators, ops.begin(), [](ast::Sum::SumOperator op) {
+        return op == ast::Sum::SumOperator::Plus ? OperatorKind::Plus : OperatorKind::Minus;
+    });
+    ExecuteOperators(node.terms, ops);
 }
 
 void Executor::VisitTerm(ast::Term& node) {
-    // TODO
+    vector<OperatorKind> ops(node.operators.size());
+    ranges::transform(node.operators, ops.begin(), [](ast::Term::TermOperator op) {
+        return op == ast::Term::TermOperator::Times ? OperatorKind::Times : OperatorKind::Divide;
+    });
+    ExecuteOperators(node.unaries, ops);
 }
 
 void Executor::VisitUnary(ast::Unary& node) {
-    // TODO
+    shared_ptr<runtime::RuntimeValue> val;
+    {
+        auto opt = ExecuteExpressionInThis(node.expr);
+        if (!opt) return;
+        val = *opt;
+    }
+    auto preiter = node.prefixOps.rbegin();
+    auto preend = node.prefixOps.rend();
+    auto postiter = node.postfixOps.begin();
+    auto postend = node.postfixOps.end();
+    UnaryOpExecutor unaryexec(context, scopes, val, node.expr->pos);
+    while (true) {
+        bool executePrefix = true;
+        if (preiter != preend) {
+            if (postiter != postend) executePrefix = (*preiter)->precedence() < (*postiter)->precedence();
+        } else if (postiter != postend)
+            executePrefix = false;
+        else
+            break;
+        shared_ptr<ast::ASTNode> operation =
+            executePrefix ? static_cast<shared_ptr<ast::ASTNode>>(*(preiter++)) : *(postiter++);
+        operation->AcceptVisitor(unaryexec);
+        if (context.State.IsThrowing()) return;
+    }
+    optExprValue = unaryexec.Value();
 }
 
 void Executor::VisitUnaryNot(ast::UnaryNot& node) {
-    // TODO
+    auto opt = ExecuteExpressionInThis(node.nested);
+    if (!opt) return;
+    auto val = dynamic_pointer_cast<runtime::BoolValue>(*opt);
+    if (!val) {
+        context.SetThrowingState(runtime::DRuntimeError("The unary not operator expects a boolean operand, but received \"" +
+                                                        opt.value()->TypeOfValue()->Name() + "\""),
+                                 node.nested->pos);
+        return;
+    }
+    optExprValue = make_shared<runtime::BoolValue>(!val->Value());
 }
 
-void Executor::VisitPrefixOperator(ast::PrefixOperator& node) {
-    // TODO
-}
-
-void Executor::VisitTypecheckOperator(ast::TypecheckOperator& node) {
-    // TODO
-}
-
-void Executor::VisitCall(ast::Call& node) {
-    // TODO
-}
-
-void Executor::VisitAccessorOperator(ast::AccessorOperator& node) {
-    // TODO
-}
+DISALLOWED_VISIT(PrefixOperator)
+DISALLOWED_VISIT(TypecheckOperator)
+DISALLOWED_VISIT(Call)
+DISALLOWED_VISIT(AccessorOperator)
 
 void Executor::VisitPrimaryIdent(ast::PrimaryIdent& node) {
-    // TODO
+    auto var = scopes->Lookup(node.name->identifier);
+    if (!var) {
+        context.SetThrowingState(
+            runtime::DRuntimeError("Referencing an undeclared variable: \"" + node.name->identifier + "\""), node.pos);
+        return;
+    }
+    optExprValue = var.value()->Content();
 }
 
 void Executor::VisitParenthesesExpression(ast::ParenthesesExpression& node) {
-    // TODO
+    node.expr->AcceptVisitor(*this);
 }
 
-void Executor::VisitTupleLiteralElement(ast::TupleLiteralElement& node) {
-    // TODO
-}
+DISALLOWED_VISIT(TupleLiteralElement)
 
 void Executor::VisitTupleLiteral(ast::TupleLiteral& node) {
-    // TODO
+    size_t n = node.elements.size();
+    set<string> seenNames;
+    vector<pair<optional<string>, shared_ptr<runtime::RuntimeValue>>> vals;
+    vals.reserve(n);
+    for (auto& elem : node.elements) {
+        optional<string> name;
+        if (elem->ident) {
+            if (!seenNames.insert(elem->ident.value()->identifier).second) {
+                auto span = elem->ident.value()->span;
+                context.SetThrowingState(runtime::DRuntimeError("Field name duplicated"),
+                                         locators::SpanLocator(node.pos.File(), span.position, span.length));
+                return;
+            }
+            name.emplace(elem->ident.value()->identifier);
+        }
+        auto opt = ExecuteExpressionInThis(elem->expression);
+        if (!opt) return;
+        vals.emplace_back(name, *opt);
+    }
+    optExprValue = make_shared<runtime::TupleValue>(vals);
 }
 
-void Executor::VisitShortFuncBody(ast::ShortFuncBody& node) {
-    // TODO
-}
-
-void Executor::VisitLongFuncBody(ast::LongFuncBody& node) {
-    // TODO
-}
-
-void Executor::VisitFuncLiteral(ast::FuncLiteral& node) {
-    // TODO
-}
+DISALLOWED_VISIT(ShortFuncBody)
+DISALLOWED_VISIT(LongFuncBody)
+DISALLOWED_VISIT(FuncLiteral)  // must be replaced with a ClosureDefinition by the semantic analyzer
 
 void Executor::VisitTokenLiteral(ast::TokenLiteral& node) {
-    // TODO
+    switch (node.kind) {
+        case ast::TokenLiteral::TokenLiteralKind::False:
+            optExprValue = make_shared<runtime::BoolValue>(false);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::True:
+            optExprValue = make_shared<runtime::BoolValue>(true);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::String:
+            optExprValue = make_shared<runtime::StringValue>(dynamic_cast<StringLiteral&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Int:
+            optExprValue = make_shared<runtime::IntegerValue>(dynamic_cast<IntegerToken&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::Real:
+            optExprValue = make_shared<runtime::RealValue>(dynamic_cast<RealToken&>(*node.token).value);
+            break;
+        case ast::TokenLiteral::TokenLiteralKind::None:
+            optExprValue = make_shared<runtime::NoneValue>();
+            break;
+    }
 }
 
 void Executor::VisitArrayLiteral(ast::ArrayLiteral& node) {
-    // TODO
+    size_t n = node.items.size();
+    vector<shared_ptr<runtime::RuntimeValue>> vals;
+    vals.reserve(n);
+    for (auto& elem : node.items) {
+        auto opt = ExecuteExpressionInThis(elem);
+        if (!opt) return;
+        vals.emplace_back(*opt);
+    }
+    optExprValue = make_shared<runtime::ArrayValue>(vals);
 }
 
 void Executor::VisitCustom(ast::ASTNode& node) {
-    // TODO
+    auto precomp = dynamic_cast<ast::PrecomputedValue*>(&node);
+    if (precomp) {
+        optExprValue = precomp->Value;
+        return;
+    }
+    auto closdef = dynamic_cast<ast::ClosureDefinition*>(&node);
+    if (!closdef)
+        throw runtime_error("Custom node not recognized by Executor");
+    optExprValue = make_shared<runtime::Closure>(scopes, *closdef);
 }
 
 }  // namespace interp
