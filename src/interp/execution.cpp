@@ -563,14 +563,18 @@ void Executor::VisitUnary(ast::Unary& node) {
 void Executor::VisitUnaryNot(ast::UnaryNot& node) {
     auto opt = ExecuteExpressionInThis(node.nested);
     if (!opt) return;
-    auto val = dynamic_pointer_cast<runtime::BoolValue>(*opt);
-    if (!val) {
-        context.SetThrowingState(runtime::DRuntimeError("The unary not operator expects a boolean operand, but received \"" +
+    auto res = opt.value()->UnaryNot();
+    if (!res) {
+        context.SetThrowingState(runtime::DRuntimeError("The unary not operator does not support an operand of type \"" +
                                                         opt.value()->TypeOfValue()->Name() + "\""),
                                  node.nested->pos);
         return;
     }
-    optExprValue = make_shared<runtime::BoolValue>(!val->Value());
+    if (res->index()) {
+        context.SetThrowingState(get<1>(*res), node.pos);
+        return;
+    }
+    optExprValue = get<0>(*res);
 }
 
 DISALLOWED_VISIT(PrefixOperator)

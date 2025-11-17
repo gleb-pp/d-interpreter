@@ -3,68 +3,14 @@
 #include <sstream>
 #include "locators/locator.h"
 #include "runtime/derror.h"
+#include "runtime/types.h"
 #include "runtime/values.h"
 #include "interp/execution.h"
+#include "syntax.h"
+#include "interp/userCallable.h"
 using namespace std;
 
 namespace interp {
-
-/*
-class UnaryOpExecutor : public ast::IASTVisitor {
-    RuntimeContext& context;
-    std::shared_ptr<ScopeStack> scopes;
-    std::shared_ptr<runtime::RuntimeValue> curValue;
-    locators::SpanLocator curPos;
-
-public:
-    UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,
-                    const std::shared_ptr<runtime::RuntimeValue> curValue, const locators::SpanLocator& curPos);
-    const std::shared_ptr<runtime::RuntimeValue>& Value() const;
-    const locators::SpanLocator& Position() const;
-    void VisitBody(ast::Body& node) override;
-    void VisitVarStatement(ast::VarStatement& node) override;
-    void VisitIfStatement(ast::IfStatement& node) override;
-    void VisitShortIfStatement(ast::ShortIfStatement& node) override;
-    void VisitWhileStatement(ast::WhileStatement& node) override;
-    void VisitForStatement(ast::ForStatement& node) override;
-    void VisitLoopStatement(ast::LoopStatement& node) override;
-    void VisitExitStatement(ast::ExitStatement& node) override;
-    void VisitAssignStatement(ast::AssignStatement& node) override;
-    void VisitPrintStatement(ast::PrintStatement& node) override;
-    void VisitReturnStatement(ast::ReturnStatement& node) override;
-    void VisitExpressionStatement(ast::ExpressionStatement& node) override;
-    void VisitCommaExpressions(ast::CommaExpressions& node) override;
-    void VisitCommaIdents(ast::CommaIdents& node) override;
-    void VisitIdentMemberAccessor(ast::IdentMemberAccessor& node) override;
-    void VisitIntLiteralMemberAccessor(ast::IntLiteralMemberAccessor& node) override;
-    void VisitParenMemberAccessor(ast::ParenMemberAccessor& node) override;
-    void VisitIndexAccessor(ast::IndexAccessor& node) override;
-    void VisitReference(ast::Reference& node) override;
-    void VisitXorOperator(ast::XorOperator& node) override;
-    void VisitOrOperator(ast::OrOperator& node) override;
-    void VisitAndOperator(ast::AndOperator& node) override;
-    void VisitBinaryRelation(ast::BinaryRelation& node) override;
-    void VisitSum(ast::Sum& node) override;
-    void VisitTerm(ast::Term& node) override;
-    void VisitUnary(ast::Unary& node) override;
-    void VisitUnaryNot(ast::UnaryNot& node) override;
-    void VisitPrefixOperator(ast::PrefixOperator& node) override;
-    void VisitTypecheckOperator(ast::TypecheckOperator& node) override;
-    void VisitCall(ast::Call& node) override;
-    void VisitAccessorOperator(ast::AccessorOperator& node) override;
-    void VisitPrimaryIdent(ast::PrimaryIdent& node) override;
-    void VisitParenthesesExpression(ast::ParenthesesExpression& node) override;
-    void VisitTupleLiteralElement(ast::TupleLiteralElement& node) override;
-    void VisitTupleLiteral(ast::TupleLiteral& node) override;
-    void VisitShortFuncBody(ast::ShortFuncBody& node) override;
-    void VisitLongFuncBody(ast::LongFuncBody& node) override;
-    void VisitFuncLiteral(ast::FuncLiteral& node) override;
-    void VisitTokenLiteral(ast::TokenLiteral& node) override;
-    void VisitArrayLiteral(ast::ArrayLiteral& node) override;
-    void VisitCustom(ast::ASTNode& node) override;
-    virtual ~UnaryOpExecutor() override = default;
-};
-*/
 
 UnaryOpExecutor::UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,
                 const std::shared_ptr<runtime::RuntimeValue> curValue, const locators::SpanLocator& curPos)
@@ -175,19 +121,82 @@ DISALLOWED_VISIT(Unary)
 DISALLOWED_VISIT(UnaryNot)
 
 void UnaryOpExecutor::VisitPrefixOperator(ast::PrefixOperator& node) {
-    const char* const 
+    const char* const OPNAMES[] = { "unary +", "unary -" };
+    runtime::RuntimeValueResult res =
+        node.kind == ast::PrefixOperator::PrefixOperatorKind::Plus ? curValue->UnaryPlus() : curValue->UnaryMinus();
+    if (!res) {
+        context.SetThrowingState(
+            runtime::DRuntimeError("Object (of type \"" + curValue->TypeOfValue()->Name() +
+                                   "\") does not support the " + OPNAMES[static_cast<int>(node.kind)] + " operator"),
+            node.pos);
+        return;
+    }
+    if (res->index()) {
+        context.SetThrowingState(get<1>(*res), node.pos);
+        return;
+    }
+    curValue = get<0>(*res);
+    curPos = locators::SpanLocator(curPos, node.pos);
 }
 
 void UnaryOpExecutor::VisitTypecheckOperator(ast::TypecheckOperator& node) {
-
+    unique_ptr<runtime::Type> type;
+    switch (node.typeId) {
+        case ast::TypeId::Int: type = make_unique<runtime::IntegerType>(); break;
+        case ast::TypeId::Real: type = make_unique<runtime::RealType>(); break;
+        case ast::TypeId::String: type = make_unique<runtime::StringType>(); break;
+        case ast::TypeId::Bool: type = make_unique<runtime::BoolType>(); break;
+        case ast::TypeId::None: type = make_unique<runtime::NoneType>(); break;
+        case ast::TypeId::Func: type = make_unique<runtime::FuncType>(); break;
+        case ast::TypeId::Tuple: type = make_unique<runtime::TupleType>(); break;
+        case ast::TypeId::List: type = make_unique<runtime::ArrayType>(); break;
+    }
+    curValue = make_shared<runtime::BoolValue>(curValue->TypeOfValue()->TypeEq(*type));
+    curPos = locators::SpanLocator(curPos, node.pos);
 }
 
 void UnaryOpExecutor::VisitCall(ast::Call& node) {
-
+    size_t n = node.args.size();
+    vector<shared_ptr<runtime::RuntimeValue>> args;
+    args.reserve(n);
+    for (auto& arg : node.args) {
+        Executor exec(context, scopes);
+        arg->AcceptVisitor(exec);
+        if (context.State.IsThrowing()) return;
+        args.push_back(exec.ExpressionValue());
+    }
+    curPos = locators::SpanLocator(curPos, node.pos);
+    auto userfunc = dynamic_cast<interp::UserCallable*>(curValue.get());
+    if (userfunc) {
+        context.CallStack.Push(curPos);
+        auto ret = userfunc->UserCall(context, args);
+        context.CallStack.Pop();
+        if (context.State.IsThrowing()) return;
+#ifdef DINTERP_DEBUG
+        if (!ret) throw runtime_error("User-callable function returned nullptr");
+#endif
+        curValue = ret;
+        return;
+    }
+    auto func = dynamic_cast<runtime::FuncValue*>(curValue.get());
+    if (func) {
+        auto res = func->Call(args);
+        if (res) {
+            if (res->index()) {
+                context.SetThrowingState(get<1>(*res), curPos);
+                return;
+            }
+            curValue = get<0>(*res);
+            return;
+        }
+    }
+    context.SetThrowingState(
+        runtime::DRuntimeError("Cannot call this object of type \"" + curValue->TypeOfValue()->Name() + "\""),
+        curPos);
 }
 
 void UnaryOpExecutor::VisitAccessorOperator(ast::AccessorOperator& node) {
-
+    node.accessor->AcceptVisitor(*this);
 }
 
 
