@@ -47,7 +47,7 @@ shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, cons
     return exec.ExpressionValue();
 }
 
-shared_ptr<Type> Closure::TypeOfValue() const {
+shared_ptr<FuncType> Closure::FunctionType() const {
     return funcType;
 }
 

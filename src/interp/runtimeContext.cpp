@@ -1,4 +1,5 @@
 #include "interp/runtimeContext.h"
+#include "lexer.h"
 #include "locators/locator.h"
 using namespace std;
 
@@ -47,6 +48,10 @@ bool CallStack::Push(locators::SpanLocator position) {
 
 void CallStack::Pop() {
     entries.pop_back();
+}
+
+locators::SpanLocator CallStack::Top() const {
+    return entries.back();
 }
 
 CallStackTrace CallStack::Report(size_t entry_limit) const {

@@ -3,10 +3,11 @@
 #include "runtimeContext.h"
 #include "syntaxext/precomputed.h"
 #include "varScopes.h"
+#include "userCallable.h"
 
 namespace runtime {
 
-class Closure : public RuntimeValue {
+class Closure : public interp::UserCallable {
     std::vector<std::string> params;
     std::shared_ptr<interp::ScopeStack> initialScope;
     std::shared_ptr<ast::FuncBody> code;
@@ -15,9 +16,8 @@ class Closure : public RuntimeValue {
 public:
     Closure(const interp::ScopeStack& values, const std::shared_ptr<ast::ClosureDefinition>& def);
     std::shared_ptr<RuntimeValue> UserCall(interp::RuntimeContext& context,
-                                           const std::vector<std::shared_ptr<RuntimeValue>>& args) const;
-    size_t ExpectedArgCount() const;
-    std::shared_ptr<Type> TypeOfValue() const override;
+                                           const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
+    std::shared_ptr<FuncType> FunctionType() const override;
     void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
     virtual ~Closure() override = default;
 };

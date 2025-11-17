@@ -29,6 +29,7 @@ public:
     CallStack(size_t capacity);
     bool Push(locators::SpanLocator position);
     void Pop();
+    locators::SpanLocator Top() const;
     CallStackTrace Report(size_t entry_limit) const;
 };
 
