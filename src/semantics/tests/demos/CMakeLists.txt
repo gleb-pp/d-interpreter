@@ -1,5 +1,5 @@
 set(files "")
-foreach (i RANGE 1 38)
+foreach (i RANGE 1 39)
     list(APPEND files ${i})
 endforeach()
 list(TRANSFORM files PREPEND 0 FOR 0 8)

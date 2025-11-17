@@ -301,6 +301,11 @@ TEST_F(FileSample, Demo38) {
     ExpectFailure(1, 14, "WrongArgumentCount");
 }
 
+TEST_F(FileSample, Demo39) {
+    ReadFile("demos/39.d", true);
+    ExpectFailure(2, 4, "AssignedValueUnused");
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
