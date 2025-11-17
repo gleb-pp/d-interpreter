@@ -282,6 +282,25 @@ TEST_F(FileSample, Demo36) {
     ASSERT_TRUE(!!DCAST(ast::IfStatement, funcbody->statements[0]));
 }
 
+TEST_F(FileSample, Demo37) {
+    ReadFile("demos/37.d", true);
+    ASSERT_EQ(program->statements.size(), 3);
+    ASSERT_TRUE(!!dynamic_pointer_cast<ast::ExpressionStatement>(program->statements[0]));
+    string body = program->statements[1]->pos.Excerpt();
+    {
+        size_t start = body.find_first_not_of("\n ");
+        size_t end = body.find_last_not_of("\n ");
+        body = body.substr(start, end - start + 1);
+    }
+    ASSERT_EQ(body, "print \"ok\"");
+    ASSERT_TRUE(!!dynamic_pointer_cast<ast::VarStatement>(program->statements[2]));
+}
+
+TEST_F(FileSample, Demo38) {
+    ReadFile("demos/38.d", false);
+    ExpectFailure(1, 14, "WrongArgumentCount");
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
