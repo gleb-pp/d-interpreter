@@ -2,8 +2,8 @@
 #include "runtime/values.h"
 #include "runtimeContext.h"
 #include "syntaxext/precomputed.h"
-#include "varScopes.h"
 #include "userCallable.h"
+#include "varScopes.h"
 
 namespace runtime {
 

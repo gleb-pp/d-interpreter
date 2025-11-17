@@ -1,7 +1,8 @@
 #include "interp/runner.h"
+
 #include "interp/execution.h"
-#include "interp/varScopes.h"
 #include "interp/input.h"
+#include "interp/varScopes.h"
 using namespace std;
 
 namespace interp {
@@ -13,4 +14,4 @@ void Run(interp::RuntimeContext& context, ast::Body& program) {
     program.AcceptVisitor(exec);
 }
 
-}
+}  // namespace interp

@@ -75,7 +75,7 @@ class RuntimeContext {
 public:
     std::ostream* const Output;
     std::istream* const Input;
-    CallStack CallStack;
+    CallStack Stack;
     const size_t StackTraceMaxEntries;
     RuntimeState State;
     RuntimeContext(std::istream& input, std::ostream& output, size_t callStackCapacity, size_t stackTraceMaxEntries);

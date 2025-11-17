@@ -1,4 +1,5 @@
 #include "locators/locator.h"
+
 #include <limits>
 #include <sstream>
 #include <stdexcept>

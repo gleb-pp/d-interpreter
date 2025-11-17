@@ -1,31 +1,30 @@
 #include "interp/unaryOpExec.h"
+
 #include <memory>
 #include <sstream>
+
+#include "interp/execution.h"
+#include "interp/userCallable.h"
 #include "locators/locator.h"
 #include "runtime/derror.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
-#include "interp/execution.h"
 #include "syntax.h"
-#include "interp/userCallable.h"
 using namespace std;
 
 namespace interp {
 
 UnaryOpExecutor::UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,
-                const std::shared_ptr<runtime::RuntimeValue> curValue, const locators::SpanLocator& curPos)
+                                 const std::shared_ptr<runtime::RuntimeValue> curValue,
+                                 const locators::SpanLocator& curPos)
     : context(context), scopes(scopes), curValue(curValue), curPos(curPos) {}
 
-const std::shared_ptr<runtime::RuntimeValue>& UnaryOpExecutor::Value() const {
-    return curValue;
-}
+const std::shared_ptr<runtime::RuntimeValue>& UnaryOpExecutor::Value() const { return curValue; }
 
-const locators::SpanLocator& UnaryOpExecutor::Position() const {
-    return curPos;
-}
+const locators::SpanLocator& UnaryOpExecutor::Position() const { return curPos; }
 
 #define DISALLOWED_VISIT_FULL(name, classname)                              \
-    void UnaryOpExecutor::Visit##name(ast::classname& node) {               \
+    void UnaryOpExecutor::Visit##name(ast::classname&) {                    \
         throw runtime_error("UnaryOpExecutor cannot visit " #name " node"); \
     }
 #define DISALLOWED_VISIT(name) DISALLOWED_VISIT_FULL(name, name)
@@ -121,7 +120,7 @@ DISALLOWED_VISIT(Unary)
 DISALLOWED_VISIT(UnaryNot)
 
 void UnaryOpExecutor::VisitPrefixOperator(ast::PrefixOperator& node) {
-    const char* const OPNAMES[] = { "unary +", "unary -" };
+    const char* const OPNAMES[] = {"unary +", "unary -"};
     runtime::RuntimeValueResult res =
         node.kind == ast::PrefixOperator::PrefixOperatorKind::Plus ? curValue->UnaryPlus() : curValue->UnaryMinus();
     if (!res) {
@@ -142,14 +141,30 @@ void UnaryOpExecutor::VisitPrefixOperator(ast::PrefixOperator& node) {
 void UnaryOpExecutor::VisitTypecheckOperator(ast::TypecheckOperator& node) {
     unique_ptr<runtime::Type> type;
     switch (node.typeId) {
-        case ast::TypeId::Int: type = make_unique<runtime::IntegerType>(); break;
-        case ast::TypeId::Real: type = make_unique<runtime::RealType>(); break;
-        case ast::TypeId::String: type = make_unique<runtime::StringType>(); break;
-        case ast::TypeId::Bool: type = make_unique<runtime::BoolType>(); break;
-        case ast::TypeId::None: type = make_unique<runtime::NoneType>(); break;
-        case ast::TypeId::Func: type = make_unique<runtime::FuncType>(); break;
-        case ast::TypeId::Tuple: type = make_unique<runtime::TupleType>(); break;
-        case ast::TypeId::List: type = make_unique<runtime::ArrayType>(); break;
+        case ast::TypeId::Int:
+            type = make_unique<runtime::IntegerType>();
+            break;
+        case ast::TypeId::Real:
+            type = make_unique<runtime::RealType>();
+            break;
+        case ast::TypeId::String:
+            type = make_unique<runtime::StringType>();
+            break;
+        case ast::TypeId::Bool:
+            type = make_unique<runtime::BoolType>();
+            break;
+        case ast::TypeId::None:
+            type = make_unique<runtime::NoneType>();
+            break;
+        case ast::TypeId::Func:
+            type = make_unique<runtime::FuncType>();
+            break;
+        case ast::TypeId::Tuple:
+            type = make_unique<runtime::TupleType>();
+            break;
+        case ast::TypeId::List:
+            type = make_unique<runtime::ArrayType>();
+            break;
     }
     curValue = make_shared<runtime::BoolValue>(curValue->TypeOfValue()->TypeEq(*type));
     curPos = locators::SpanLocator(curPos, node.pos);
@@ -168,9 +183,12 @@ void UnaryOpExecutor::VisitCall(ast::Call& node) {
     curPos = locators::SpanLocator(curPos, node.pos);
     auto userfunc = dynamic_cast<interp::UserCallable*>(curValue.get());
     if (userfunc) {
-        context.CallStack.Push(curPos);
+        if (!context.Stack.Push(curPos)) {
+            context.SetThrowingState(runtime::DRuntimeError("Stack overflow!"), curPos);
+            return;
+        }
         auto ret = userfunc->UserCall(context, args);
-        context.CallStack.Pop();
+        context.Stack.Pop();
         if (context.State.IsThrowing()) return;
 #ifdef DINTERP_DEBUG
         if (!ret) throw runtime_error("User-callable function returned nullptr");
@@ -191,14 +209,10 @@ void UnaryOpExecutor::VisitCall(ast::Call& node) {
         }
     }
     context.SetThrowingState(
-        runtime::DRuntimeError("Cannot call this object of type \"" + curValue->TypeOfValue()->Name() + "\""),
-        curPos);
+        runtime::DRuntimeError("Cannot call this object of type \"" + curValue->TypeOfValue()->Name() + "\""), curPos);
 }
 
-void UnaryOpExecutor::VisitAccessorOperator(ast::AccessorOperator& node) {
-    node.accessor->AcceptVisitor(*this);
-}
-
+void UnaryOpExecutor::VisitAccessorOperator(ast::AccessorOperator& node) { node.accessor->AcceptVisitor(*this); }
 
 DISALLOWED_VISIT(PrimaryIdent)
 DISALLOWED_VISIT(ParenthesesExpression)

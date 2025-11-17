@@ -13,4 +13,4 @@ public:
     virtual ~InputFunction() override = default;
 };
 
-}
+}  // namespace interp

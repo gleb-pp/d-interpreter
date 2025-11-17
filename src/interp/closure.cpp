@@ -1,4 +1,5 @@
 #include "interp/closure.h"
+
 #include "interp/execution.h"
 #include "interp/runtimeContext.h"
 #include "interp/varScopes.h"
@@ -12,7 +13,8 @@ Closure::Closure(const interp::ScopeStack& values, const ast::ClosureDefinition&
     for (const string& name : def.CapturedExternals) initialScope->Declare(*values.Lookup(name));
 }
 
-shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, const vector<shared_ptr<RuntimeValue>>& args) const {
+shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context,
+                                           const vector<shared_ptr<RuntimeValue>>& args) const {
     size_t n = params.size();
     if (args.size() != n)
         throw runtime_error("Wrong number arguments supplied to a user call (interpreter's validation is broken)");
@@ -47,11 +49,9 @@ shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context, cons
     return exec.ExpressionValue();
 }
 
-shared_ptr<FuncType> Closure::FunctionType() const {
-    return funcType;
-}
+shared_ptr<FuncType> Closure::FunctionType() const { return funcType; }
 
-void Closure::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& recGuard) const {
+void Closure::DoPrintSelf(ostream& out, [[maybe_unused]] set<shared_ptr<const RuntimeValue>>& recGuard) const {
     out << "<closure: " << funcType->Name() << ">";
 }
 

@@ -1,5 +1,5 @@
 #include "interp/runtimeContext.h"
-#include "lexer.h"
+
 #include "locators/locator.h"
 using namespace std;
 
@@ -46,13 +46,9 @@ bool CallStack::Push(locators::SpanLocator position) {
     return true;
 }
 
-void CallStack::Pop() {
-    entries.pop_back();
-}
+void CallStack::Pop() { entries.pop_back(); }
 
-locators::SpanLocator CallStack::Top() const {
-    return entries.back();
-}
+locators::SpanLocator CallStack::Top() const { return entries.back(); }
 
 CallStackTrace CallStack::Report(size_t entry_limit) const {
     size_t n = entries.size();
@@ -121,7 +117,7 @@ RuntimeState::RuntimeState(const Returning& value) : state(value) {}
 
 RuntimeState::RuntimeState(const Throwing& error) : state(error) {}
 
-RuntimeState& RuntimeState::operator=(const Running& val) {
+RuntimeState& RuntimeState::operator=(const Running&) {
     state.emplace<Running>();
     return *this;
 }
@@ -141,33 +137,21 @@ RuntimeState& RuntimeState::operator=(const Throwing& error) {
     return *this;
 }
 
-bool RuntimeState::IsRunning() const {
-    return state.index() == 0;
-}
+bool RuntimeState::IsRunning() const { return state.index() == 0; }
 
-bool RuntimeState::IsExiting() const {
-    return state.index() == 1;
-}
+bool RuntimeState::IsExiting() const { return state.index() == 1; }
 
-bool RuntimeState::IsReturning() const {
-    return state.index() == 2;
-}
+bool RuntimeState::IsReturning() const { return state.index() == 2; }
 
-bool RuntimeState::IsThrowing() const {
-    return state.index() == 3;
-}
+bool RuntimeState::IsThrowing() const { return state.index() == 3; }
 
-RuntimeState::Kind RuntimeState::StateKind() const {
-    return static_cast<Kind>(state.index());
-}
+RuntimeState::Kind RuntimeState::StateKind() const { return static_cast<Kind>(state.index()); }
 
 const std::shared_ptr<runtime::RuntimeValue>& RuntimeState::GetReturnValue() const {
     return get<Returning>(state).Value;
 }
 
-const RuntimeState::Throwing& RuntimeState::GetError() const {
-    return get<Throwing>(state);
-}
+const RuntimeState::Throwing& RuntimeState::GetError() const { return get<Throwing>(state); }
 
 // RuntimeContext
 
@@ -175,13 +159,11 @@ RuntimeContext::RuntimeContext(std::istream& input, std::ostream& output, size_t
                                size_t stackTraceMaxEntries)
     : Output(&output),
       Input(&input),
-      CallStack(callStackCapacity),
+      Stack(callStackCapacity),
       StackTraceMaxEntries(stackTraceMaxEntries),
       State(RuntimeState::Running()) {}
 
-CallStackTrace RuntimeContext::MakeStackTrace() const {
-    return this->CallStack.Report(StackTraceMaxEntries);
-}
+CallStackTrace RuntimeContext::MakeStackTrace() const { return this->Stack.Report(StackTraceMaxEntries); }
 
 void RuntimeContext::SetThrowingState(const runtime::DRuntimeError& error, const locators::SpanLocator& pos) {
     State = RuntimeState::Throwing(error, pos, MakeStackTrace());

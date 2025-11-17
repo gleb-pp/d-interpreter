@@ -1,15 +1,17 @@
 #include "interp/execution.h"
+
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
+
+#include "interp/closure.h"
 #include "interp/runtimeContext.h"
+#include "interp/unaryOpExec.h"
 #include "locators/locator.h"
 #include "runtime/derror.h"
 #include "runtime/values.h"
-#include "interp/unaryOpExec.h"
 #include "syntax.h"
 #include "syntaxext/precomputed.h"
-#include "interp/closure.h"
 using namespace std;
 
 namespace interp {
@@ -20,6 +22,17 @@ Executor::Executor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& s
 const std::shared_ptr<runtime::RuntimeValue>& Executor::ExpressionValue() const {
     if (!optExprValue) throw runtime_error("Accessed Executor::ExpressionValue(), but it was `nullptr`.");
     return optExprValue;
+}
+
+optional<shared_ptr<runtime::RuntimeValue>> Executor::ExecuteExpressionInThis(const shared_ptr<ast::Expression>& expr) {
+    expr->AcceptVisitor(*this);
+    if (!context.State.IsRunning()) {
+        optExprValue.reset();
+        return {};
+    }
+    auto val = ExpressionValue();
+    optExprValue.reset();
+    return val;
 }
 
 void Executor::ExecuteOperators(const std::vector<std::shared_ptr<ast::Expression>>& operands,
@@ -69,7 +82,8 @@ void Executor::ExecuteOperators(const std::vector<std::shared_ptr<ast::Expressio
     optExprValue = val;
 }
 
-void Executor::ExecuteLogicalOperators(LogicalOperatorKind kind, const std::vector<std::shared_ptr<ast::Expression>>& operands) {
+void Executor::ExecuteLogicalOperators(LogicalOperatorKind kind,
+                                       const std::vector<std::shared_ptr<ast::Expression>>& operands) {
     const char* const OPNAMES[] = {"and", "or", "xor"};
     optional<bool> stopValue;
     switch (kind) {
@@ -129,9 +143,8 @@ void Executor::ExecuteLogicalOperators(LogicalOperatorKind kind, const std::vect
     optExprValue = val;
 }
 
-
 #define DISALLOWED_VISIT(name) \
-    void Executor::Visit##name(ast::name& node) { throw runtime_error("Executor cannot visit " #name); }
+    void Executor::Visit##name(ast::name&) { throw runtime_error("Executor cannot visit " #name); }
 
 void Executor::VisitBody(ast::Body& node) {
     auto prevScopes = scopes;
@@ -149,7 +162,7 @@ void Executor::VisitVarStatement(ast::VarStatement& node) {
             auto span = def.first->span;
             context.SetThrowingState(
                 runtime::DRuntimeError("Variable \"" + def.first->identifier + "\" was already declared"),
-                                       locators::SpanLocator(node.pos.File(), span.position, span.length));
+                locators::SpanLocator(node.pos.File(), span.position, span.length));
             return;
         }
         shared_ptr<runtime::RuntimeValue> val;
@@ -169,13 +182,15 @@ void Executor::VisitIfStatement(ast::IfStatement& node) {
     if (!optcond) return;
     auto condval = dynamic_pointer_cast<runtime::BoolValue>(*optcond);
     if (!condval) {
-        context.SetThrowingState(runtime::DRuntimeError(
-            "if condition must be a boolean value, but \"" + condval->TypeOfValue()->Name() + "\" was provided"),
+        context.SetThrowingState(runtime::DRuntimeError("if condition must be a boolean value, but \"" +
+                                                        optcond.value()->TypeOfValue()->Name() + "\" was provided"),
                                  node.condition->pos);
         return;
     }
-    if (condval->Value()) VisitBody(*node.doIfTrue);
-    else if (node.doIfFalse) VisitBody(**node.doIfFalse);
+    if (condval->Value())
+        VisitBody(*node.doIfTrue);
+    else if (node.doIfFalse)
+        VisitBody(**node.doIfFalse);
 }
 
 void Executor::VisitShortIfStatement(ast::ShortIfStatement& node) {
@@ -183,8 +198,8 @@ void Executor::VisitShortIfStatement(ast::ShortIfStatement& node) {
     if (!optcond) return;
     auto condval = dynamic_pointer_cast<runtime::BoolValue>(*optcond);
     if (!condval) {
-        context.SetThrowingState(runtime::DRuntimeError(
-            "short-if condition must be a boolean value, but \"" + condval->TypeOfValue()->Name() + "\" was provided"),
+        context.SetThrowingState(runtime::DRuntimeError("short-if condition must be a boolean value, but \"" +
+                                                        optcond.value()->TypeOfValue()->Name() + "\" was provided"),
                                  node.condition->pos);
         return;
     }
@@ -202,8 +217,8 @@ void Executor::VisitWhileStatement(ast::WhileStatement& node) {
         if (!optcond) return;
         auto condval = dynamic_pointer_cast<runtime::BoolValue>(*optcond);
         if (!condval) {
-            context.SetThrowingState(runtime::DRuntimeError(
-                "while condition must be a boolean value, but \"" + condval->TypeOfValue()->Name() + "\" was provided"),
+            context.SetThrowingState(runtime::DRuntimeError("while condition must be a boolean value, but \"" +
+                                                            optcond.value()->TypeOfValue()->Name() + "\" was provided"),
                                      node.condition->pos);
             return;
         }
@@ -232,7 +247,8 @@ void Executor::VisitForStatement(ast::ForStatement& node) {
         if (!intstart) {
             context.SetThrowingState(
                 runtime::DRuntimeError("Starting bound was of type \"" + startOrList->TypeOfValue()->Name() +
-                                       "\", expected an integer"), node.startOrList->pos);
+                                       "\", expected an integer"),
+                node.startOrList->pos);
             return;
         }
         auto end = ExecuteExpressionInThis(*node.end);
@@ -241,7 +257,8 @@ void Executor::VisitForStatement(ast::ForStatement& node) {
         if (!intend) {
             context.SetThrowingState(
                 runtime::DRuntimeError("Ending bound was of type \"" + end.value()->TypeOfValue()->Name() +
-                                       "\", expected an integer"), node.end.value()->pos);
+                                       "\", expected an integer"),
+                node.end.value()->pos);
             return;
         }
         range.emplace(make_pair(intstart->Value(), intend->Value()));
@@ -250,17 +267,19 @@ void Executor::VisitForStatement(ast::ForStatement& node) {
         if (arrayval) {
             if (cyclevar) {
                 range.emplace(vector<shared_ptr<runtime::RuntimeValue>>(arrayval->Value.size()));
-                ranges::transform(arrayval->Value, get<1>(*range).begin(),
-                                  [](const pair<const BigInt, shared_ptr<runtime::RuntimeValue>>& p) { return p.second; });
-            } else range.emplace(arrayval->Value.size());
-        }
-        else {
+                ranges::transform(
+                    arrayval->Value, get<1>(*range).begin(),
+                    [](const pair<const BigInt, shared_ptr<runtime::RuntimeValue>>& p) { return p.second; });
+            } else
+                range.emplace(arrayval->Value.size());
+        } else {
             auto tupleval = dynamic_pointer_cast<runtime::TupleValue>(startOrList);
             if (tupleval) {
-                if (cyclevar) range.emplace(tupleval->Values());
-                else range.emplace(tupleval->Values().size());
-            }
-            else {
+                if (cyclevar)
+                    range.emplace(tupleval->Values());
+                else
+                    range.emplace(tupleval->Values().size());
+            } else {
                 context.SetThrowingState(
                     runtime::DRuntimeError("Expected an iterable type (array or tuple), but got \"" +
                                            startOrList->TypeOfValue()->Name()),
@@ -288,8 +307,10 @@ void Executor::VisitForStatement(ast::ForStatement& node) {
                     break;
                 }
                 if (cur == end) break;
-                if (decrement) --cur;
-                else ++cur;
+                if (decrement)
+                    --cur;
+                else
+                    ++cur;
             }
             break;
         }
@@ -330,9 +351,7 @@ void Executor::VisitLoopStatement(ast::LoopStatement& node) {
     }
 }
 
-void Executor::VisitExitStatement(ast::ExitStatement& node) {
-    context.State = RuntimeState::Exiting();
-}
+void Executor::VisitExitStatement(ast::ExitStatement&) { context.State = RuntimeState::Exiting(); }
 
 void Executor::VisitAssignStatement(ast::AssignStatement& node) {
     shared_ptr<runtime::RuntimeValue> val;
@@ -432,7 +451,8 @@ void Executor::VisitPrintStatement(ast::PrintStatement& node) {
 
 void Executor::VisitReturnStatement(ast::ReturnStatement& node) {
     shared_ptr<runtime::RuntimeValue> ret;
-    if (!node.returnValue) ret = make_shared<runtime::NoneValue>();
+    if (!node.returnValue)
+        ret = make_shared<runtime::NoneValue>();
     else {
         auto opt = ExecuteExpressionInThis(*node.returnValue);
         if (!opt) return;
@@ -565,9 +585,10 @@ void Executor::VisitUnaryNot(ast::UnaryNot& node) {
     if (!opt) return;
     auto res = opt.value()->UnaryNot();
     if (!res) {
-        context.SetThrowingState(runtime::DRuntimeError("The unary not operator does not support an operand of type \"" +
-                                                        opt.value()->TypeOfValue()->Name() + "\""),
-                                 node.nested->pos);
+        context.SetThrowingState(
+            runtime::DRuntimeError("The unary not operator does not support an operand of type \"" +
+                                   opt.value()->TypeOfValue()->Name() + "\""),
+            node.nested->pos);
         return;
     }
     if (res->index()) {
@@ -592,9 +613,7 @@ void Executor::VisitPrimaryIdent(ast::PrimaryIdent& node) {
     optExprValue = var.value()->Content();
 }
 
-void Executor::VisitParenthesesExpression(ast::ParenthesesExpression& node) {
-    node.expr->AcceptVisitor(*this);
-}
+void Executor::VisitParenthesesExpression(ast::ParenthesesExpression& node) { node.expr->AcceptVisitor(*this); }
 
 DISALLOWED_VISIT(TupleLiteralElement)
 
@@ -667,8 +686,7 @@ void Executor::VisitCustom(ast::ASTNode& node) {
         return;
     }
     auto closdef = dynamic_cast<ast::ClosureDefinition*>(&node);
-    if (!closdef)
-        throw runtime_error("Custom node not recognized by Executor");
+    if (!closdef) throw runtime_error("Custom node not recognized by Executor");
     optExprValue = make_shared<runtime::Closure>(scopes, *closdef);
 }
 
