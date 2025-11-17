@@ -25,7 +25,7 @@ using RuntimeValueResult = std::optional<std::variant<std::shared_ptr<RuntimeVal
 class RuntimeValue : public std::enable_shared_from_this<RuntimeValue> {
 public:
     virtual void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const = 0;
-    void PrintSelf(std::ostream& out);
+    void PrintSelf(std::ostream& out) const;
     virtual std::shared_ptr<runtime::Type> TypeOfValue() const = 0;
     virtual RuntimeValueResult BinaryPlus(const RuntimeValue& other) const;
     virtual RuntimeValueResult BinaryMinus(const RuntimeValue& other) const;

@@ -12,6 +12,7 @@ class UnaryOpExecutor : public ast::IASTVisitor {
     std::shared_ptr<ScopeStack> scopes;
     std::shared_ptr<runtime::RuntimeValue> curValue;
     locators::SpanLocator curPos;
+    void AccessFieldByIndex(const runtime::RuntimeValue& index, const locators::SpanLocator& accessorPos);
 
 public:
     UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,

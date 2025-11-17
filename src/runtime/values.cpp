@@ -17,7 +17,7 @@ namespace runtime {
  * If a function accepts an index, it is 1-based (the first element has index 1)
  */
 
-void RuntimeValue::PrintSelf(ostream& out) {
+void RuntimeValue::PrintSelf(ostream& out) const {
     set<shared_ptr<const RuntimeValue>> guard;
     DoPrintSelf(out, guard);
 }
