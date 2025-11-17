@@ -18,6 +18,9 @@ const std::shared_ptr<runtime::RuntimeValue>& Executor::ExpressionValue() const 
     return optExprValue;
 }
 
+#define DISALLOWED_VISIT(name) \
+    void Executor::Visit##name(ast::name& node) { throw runtime_error("Executor cannot visit " #name); }
+
 void Executor::VisitBody(ast::Body& node) {
     auto prevScopes = scopes;
     scopes = make_shared<ScopeStack>(scopes);
@@ -307,47 +310,39 @@ void Executor::VisitAssignStatement(ast::AssignStatement& node) {
 }
 
 void Executor::VisitPrintStatement(ast::PrintStatement& node) {
-    // TODO
+    for (auto& expr : node.expressions) {
+        auto val = ExecuteExpressionInThis(expr);
+        if (!val) return;
+        val.value()->PrintSelf(*context.Output);
+    }
+    context.Output->flush();
 }
 
 void Executor::VisitReturnStatement(ast::ReturnStatement& node) {
-    // TODO
+    shared_ptr<runtime::RuntimeValue> ret;
+    if (!node.returnValue) ret = make_shared<runtime::NoneValue>();
+    else {
+        auto opt = ExecuteExpressionInThis(*node.returnValue);
+        if (!opt) return;
+        ret = *opt;
+    }
+    context.State = RuntimeState::Returning(ret);
 }
 
 void Executor::VisitExpressionStatement(ast::ExpressionStatement& node) {
-    // TODO
+    node.expr->AcceptVisitor(*this);
+    optExprValue.reset();
 }
 
-void Executor::VisitCommaExpressions(ast::CommaExpressions& node) {
-    // TODO
-}
-
-void Executor::VisitCommaIdents(ast::CommaIdents& node) {
-    // TODO
-}
-
-void Executor::VisitIdentMemberAccessor(ast::IdentMemberAccessor& node) {
-    // TODO
-}
-
-void Executor::VisitIntLiteralMemberAccessor(ast::IntLiteralMemberAccessor& node) {
-    // TODO
-}
-
-void Executor::VisitParenMemberAccessor(ast::ParenMemberAccessor& node) {
-    // TODO
-}
-
-void Executor::VisitIndexAccessor(ast::IndexAccessor& node) {
-    // TODO
-}
-
-void Executor::VisitReference(ast::Reference& node) {
-    // TODO
-}
+DISALLOWED_VISIT(CommaExpressions)
+DISALLOWED_VISIT(CommaIdents)
+DISALLOWED_VISIT(IdentMemberAccessor)
+DISALLOWED_VISIT(IntLiteralMemberAccessor)
+DISALLOWED_VISIT(ParenMemberAccessor)
+DISALLOWED_VISIT(IndexAccessor)
+DISALLOWED_VISIT(Reference)
 
 void Executor::VisitXorOperator(ast::XorOperator& node) {
-    // TODO
 }
 
 void Executor::VisitOrOperator(ast::OrOperator& node) {

@@ -12,6 +12,8 @@ class Executor : public ast::IASTVisitor {
     std::shared_ptr<runtime::RuntimeValue> optExprValue;
     std::optional<std::shared_ptr<runtime::RuntimeValue>> ExecuteExpressionInThis(
         const std::shared_ptr<ast::Expression>& expr);
+    enum class OperatorKind { And, Or, Xor };
+    void ExecuteOperators
 
 public:
     Executor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes);
