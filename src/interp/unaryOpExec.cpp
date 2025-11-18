@@ -183,6 +183,17 @@ void UnaryOpExecutor::VisitCall(ast::Call& node) {
     curPos = locators::SpanLocator(curPos, node.pos);
     auto userfunc = dynamic_cast<interp::UserCallable*>(curValue.get());
     if (userfunc) {
+        auto& ftype = *userfunc->FunctionType();
+        if (ftype.ArgTypes()) {
+            size_t n = ftype.ArgTypes()->size();
+            if (args.size() != n) {
+                context.SetThrowingState(
+                    runtime::DRuntimeError("Function accepts " + to_string(n) + " arguments, but " +
+                                           to_string(args.size()) + " were given"),
+                    node.pos);
+                return;
+            }
+        }
         if (!context.Stack.Push(curPos)) {
             context.SetThrowingState(runtime::DRuntimeError("Stack overflow!"), curPos);
             return;

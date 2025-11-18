@@ -1,27 +1,27 @@
 // decorators
 
 var printfunc := func(value) is print value; end
-printfunc("normal")
+printfunc("normal\n")
 // expected output:
 // normal
 
 var decor := func(f) is
     return func(value) is
-        print "===-----==="
+        print "===-----===\n"
         f(value)
-        print "===-----==="
+        print "===-----===\n"
     end
 end
 
 printfunc := decor(printfunc)
-printfunc("decorated")
+printfunc("decorated\n")
 // expected output:
 // ===-----===
 // decorated
 // ===-----===
 
-var leavecontact := decor(func() is print "Call: 8 800 123 45 67"; end)
-leavecontact()
+var leavecontact := decor(func(_) is print "Call: 8 800 123 45 67\n"; end)
+leavecontact(none)
 // expected output:
 // ===-----===
 // Call: 8 800 123 45 67
