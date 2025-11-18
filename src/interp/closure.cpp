@@ -19,7 +19,7 @@ shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context,
     if (args.size() != n)
         throw runtime_error("Wrong number arguments supplied to a user call (interpreter's validation is broken)");
     auto scope = make_shared<interp::ScopeStack>(initialScope);
-    for (size_t i = 0; i < n; i++) initialScope->Declare(make_shared<interp::Variable>(params[i], args[i]));
+    for (size_t i = 0; i < n; i++) scope->Declare(make_shared<interp::Variable>(params[i], args[i]));
     interp::Executor exec(context, scope);
     auto longBody = dynamic_pointer_cast<ast::LongFuncBody>(code);
     if (longBody) {
@@ -31,9 +31,11 @@ shared_ptr<RuntimeValue> Closure::UserCall(interp::RuntimeContext& context,
                 return make_shared<NoneValue>();
             case interp::RuntimeState::Kind::Exiting:
                 throw runtime_error("Cannot 'exit' out of a function");
-            case interp::RuntimeState::Kind::Returning:
+            case interp::RuntimeState::Kind::Returning: {
+                auto res = context.State.GetReturnValue();
                 context.State = interp::RuntimeState::Running();
-                return context.State.GetReturnValue();
+                return res;
+            }
         }
     }
     dynamic_cast<ast::ShortFuncBody&>(*code).expressionToReturn->AcceptVisitor(exec);

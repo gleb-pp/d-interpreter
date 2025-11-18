@@ -19,25 +19,17 @@ var sqrtround := func(n) is
     return sqrt(4 * n) - sqrt(n)
 end
 
-var linetostr := func(list, size) is
-    var spantostr := func(list, from, to) is
-        if from = to then
-            if list[from] is none then return "  "; end
-            return list[from]
-        end
-        var m := (from + to) / 2
-        return spantostr(list, from, m) + spantostr(list, m + 1, to)
-    end
-    return spantostr(list, 1, size)
-end
-
-print " 802.11"
+print " 802.11\n"
 var width := sqrt(2 * HEIGHT * HEIGHT) + 3
 var center := width / 2 + 1
 var grid := []
-var i
-for i in 1 .. HEIGHT loop grid[i] := []; end
-var arc
+for i in 1 .. HEIGHT loop
+    var line := []
+    for i in 1 .. width loop
+        line[i] := "  "
+    end
+    grid[i] := line
+end
 for arc in 0 .. ARCS loop
     var radius := (HEIGHT - 1) * arc / ARCS
     var radius2 := radius * radius
@@ -49,7 +41,9 @@ for arc in 0 .. ARCS loop
     end
 end
 
-var line
 for line in grid loop
-    print linetostr(line, width)
+    for pixel in line loop
+        print pixel
+    end
+    print "\n"
 end

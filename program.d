@@ -1,1 +1,3 @@
-print "Hello, world!"
+loop
+    print input(), "\n"
+end    

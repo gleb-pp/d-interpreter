@@ -171,8 +171,7 @@ TEST_F(FileSample, Demo19) {
 
 TEST_F(FileSample, Demo20) {
     ReadFile("demos/20.d", true);
-    ExpectFailure(10, 5, "AssignedValueUnused");
-    ExpectFailure(12, 5, "AssignedValueUnused");
+    ExpectFailure(4, 9, "AssignedValueUnused");
 }
 
 TEST_F(FileSample, Demo21) {
