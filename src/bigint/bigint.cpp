@@ -514,7 +514,7 @@ static vector<uint32_t> BigDiv(VectorView a, ConstVectorView b) {
         ConstVectorView cview = bufview;
         if (!buf.back()) cview.end--;
         BigSub(aview, cview);
-        while (!a[ahigh - 1] && ahigh) --ahigh;
+        while (ahigh && !a[ahigh - 1]) --ahigh;
     }
     return res;
 }

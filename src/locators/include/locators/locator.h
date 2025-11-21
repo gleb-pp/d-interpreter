@@ -18,6 +18,7 @@ public:
     const std::string& FileName() const;
     CodeContext Context(size_t toleft, size_t toright) const;
     const std::shared_ptr<const CodeFile>& File() const;
+    void WritePrettyExcerpt(std::ostream& out, size_t suggested_width) const;
 };
 
 class SpanLocator {
@@ -34,5 +35,6 @@ public:
     size_t Length() const;
     std::string Excerpt() const;
     const std::shared_ptr<const CodeFile>& File() const;
+    void WritePrettyExcerpt(std::ostream& out, size_t suggested_width) const;
 };
 }  // namespace locators

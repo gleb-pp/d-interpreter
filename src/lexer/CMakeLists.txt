@@ -1,6 +1,7 @@
 add_library(lexer STATIC lexer.cpp)
-target_include_directories(lexer INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(lexer PUBLIC common_features compilationlog locators bigint)
+target_include_directories(lexer PUBLIC include)
+target_link_libraries(lexer PRIVATE common_features)
+target_link_libraries(lexer PUBLIC complog locators bigint)
 
 if (CompileTests)
     add_subdirectory(tests)

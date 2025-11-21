@@ -37,8 +37,8 @@ optional<runtime::TypeOrValue> ValueTimeline::LookupVariable(const string& name)
     auto& p = *v;
     p.second->used = true;
     p.second->lastUnusedAssignments.clear();
+    if (p.first + 1 < stack.size()) stack.back().externalReferences[name] = false;
     if (blindScopeIndices.size() && p.first < blindScopeIndices.back()) {
-        stack.back().externalReferences[name] = false;
         return make_shared<runtime::UnknownType>();
     }
     return p.second->val;
@@ -145,7 +145,7 @@ static void GeneralizeValue(runtime::TypeOrValue& dest, const runtime::TypeOrVal
 }
 
 // `used` is OR'ed
-// useless assignments are concatenated
+// useless assignments are INTERSECTED
 // vals are generalized
 // externalReferences are OR'ed
 void ValueTimeline::MergeTimelines(const ValueTimeline& other) {
@@ -179,7 +179,15 @@ void ValueTimeline::MergeTimelines(const ValueTimeline& other) {
             destvar.used = destvar.used || srcvar.used;
             auto& destunused = destvar.lastUnusedAssignments;
             auto& srcunused = srcvar.lastUnusedAssignments;
-            destunused.insert(srcunused.begin(), srcunused.end());
+            set<shared_ptr<locators::SpanLocator>> intersect;
+            {
+                auto diter = destunused.begin(), dend = destunused.end();
+                for (const auto& i : srcunused) {
+                    while (diter != dend && *diter < i) ++diter;
+                    if (diter != dend && *diter == i) intersect.insert(i);
+                }
+            }
+            destunused.swap(intersect);
             GeneralizeValue(destvar.val, srcvar.val);
         }
     }

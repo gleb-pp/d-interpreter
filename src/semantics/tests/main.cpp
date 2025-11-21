@@ -6,7 +6,6 @@
 #include "fixture.h"
 #include "runtime/types.h"
 #include "runtime/values.h"
-#include "semantic.h"
 #include "syntax.h"
 #include "syntaxext/precomputed.h"
 using namespace std;
@@ -172,8 +171,7 @@ TEST_F(FileSample, Demo19) {
 
 TEST_F(FileSample, Demo20) {
     ReadFile("demos/20.d", true);
-    ExpectFailure(10, 5, "AssignedValueUnused");
-    ExpectFailure(12, 5, "AssignedValueUnused");
+    ExpectFailure(4, 9, "AssignedValueUnused");
 }
 
 TEST_F(FileSample, Demo21) {
@@ -281,6 +279,30 @@ TEST_F(FileSample, Demo36) {
     ASSERT_EQ(funcexpr->postfixOps.size(), 1);
     auto funcbody = DCAST(ast::LongFuncBody, DCAST(ast::ClosureDefinition, funcexpr->expr)->Definition)->funcBody;
     ASSERT_TRUE(!!DCAST(ast::IfStatement, funcbody->statements[0]));
+}
+
+TEST_F(FileSample, Demo37) {
+    ReadFile("demos/37.d", true);
+    ASSERT_EQ(program->statements.size(), 3);
+    ASSERT_TRUE(!!dynamic_pointer_cast<ast::ExpressionStatement>(program->statements[0]));
+    string body = program->statements[1]->pos.Excerpt();
+    {
+        size_t start = body.find_first_not_of("\n ");
+        size_t end = body.find_last_not_of("\n ");
+        body = body.substr(start, end - start + 1);
+    }
+    ASSERT_EQ(body, "print \"ok\"");
+    ASSERT_TRUE(!!dynamic_pointer_cast<ast::VarStatement>(program->statements[2]));
+}
+
+TEST_F(FileSample, Demo38) {
+    ReadFile("demos/38.d", false);
+    ExpectFailure(1, 14, "WrongArgumentCount");
+}
+
+TEST_F(FileSample, Demo39) {
+    ReadFile("demos/39.d", true);
+    ExpectFailure(2, 4, "AssignedValueUnused");
 }
 
 int main(int argc, char** argv) {
