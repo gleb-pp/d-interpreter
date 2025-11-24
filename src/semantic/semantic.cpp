@@ -1,8 +1,8 @@
-#include "semantic.h"
+#include "dinterp/semantic.h"
 
-#include "runtime/types.h"
-#include "semantic/statementChecker.h"
-#include "semantic/valueTimeline.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/semantic/statementChecker.h"
+#include "dinterp/semantic/valueTimeline.h"
 using namespace std;
 
 bool semantic::Analyze(complog::ICompilationLog& log, const shared_ptr<ast::Body>& program) {

@@ -4,10 +4,10 @@
 #include <memory>
 #include <vector>
 
-#include "complog/CompilationLog.h"
-#include "lexer.h"
-#include "locators/CodeFile.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/syntax.h"
 
 class FileSample : public testing::Test {
 public:

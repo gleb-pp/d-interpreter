@@ -1,7 +1,7 @@
 #pragma once
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 #include "runtimeContext.h"
-#include "syntaxext/precomputed.h"
+#include "dinterp/syntaxext/precomputed.h"
 #include "userCallable.h"
 #include "varScopes.h"
 

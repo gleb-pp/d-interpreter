@@ -1,16 +1,16 @@
-#include "semantic/statementChecker.h"
+#include "dinterp/semantic/statementChecker.h"
 
 #include <stdexcept>
 
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
-#include "runtime/types.h"
-#include "semantic/diagnostics.h"
-#include "semantic/expressionChecker.h"
-#include "semantic/unaryOpsChecker.h"
-#include "semantic/valueTimeline.h"
-#include "syntax.h"
-#include "syntaxext/astDeepCopy.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/semantic/diagnostics.h"
+#include "dinterp/semantic/expressionChecker.h"
+#include "dinterp/semantic/unaryOpsChecker.h"
+#include "dinterp/semantic/valueTimeline.h"
+#include "dinterp/syntax.h"
+#include "dinterp/syntaxext/astDeepCopy.h"
 using namespace std;
 
 namespace semantic {

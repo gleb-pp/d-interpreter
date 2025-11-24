@@ -1,9 +1,9 @@
-#include "syntaxext/astDeepCopy.h"
+#include "dinterp/syntaxext/astDeepCopy.h"
 
 #include <algorithm>
 #include <memory>
 
-#include "syntax.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 namespace ast {

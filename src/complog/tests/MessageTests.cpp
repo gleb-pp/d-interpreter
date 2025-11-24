@@ -3,9 +3,9 @@
 #include <limits>
 
 #include "baderror.h"
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 #include "fixture.h"
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 #include "spanerror.h"
 
 TEST_F(PascalProgram, FullLine) {

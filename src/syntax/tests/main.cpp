@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "fixture.h"
-#include "syntax.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 TEST_F(FileSample, Basic01) {

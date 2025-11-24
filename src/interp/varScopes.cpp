@@ -1,4 +1,4 @@
-#include "interp/varScopes.h"
+#include "dinterp/interp/varScopes.h"
 
 #include <stdexcept>
 using namespace std;

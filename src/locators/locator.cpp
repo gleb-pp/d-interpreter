@@ -1,4 +1,4 @@
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 
 #include <limits>
 #include <sstream>

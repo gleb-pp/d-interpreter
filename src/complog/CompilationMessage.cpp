@@ -1,11 +1,11 @@
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 
 #include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
 namespace complog {

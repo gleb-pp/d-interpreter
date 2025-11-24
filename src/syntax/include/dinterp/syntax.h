@@ -8,11 +8,11 @@
 #include <stdexcept>
 #include <vector>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
-#include "lexer.h"
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 class WrongNumberOfOperatorsSupplied : public std::invalid_argument {
 public:

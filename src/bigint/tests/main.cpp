@@ -3,7 +3,7 @@
 #include <cmath>
 
 #include "arith_samples.h"
-#include "bigint.h"
+#include "dinterp/bigint.h"
 using namespace std;
 
 TEST(Repr, ConsStr) {

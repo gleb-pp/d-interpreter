@@ -2,7 +2,7 @@
 #include <iostream>
 #include <vector>
 
-#include "syntax.h"
+#include "dinterp/syntax.h"
 
 class ASTExplorer {
 public:

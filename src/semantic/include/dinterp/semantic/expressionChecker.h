@@ -1,27 +1,33 @@
 #pragma once
-#include "complog/CompilationLog.h"
-#include "locators/locator.h"
-#include "runtime.h"
-#include "syntax.h"
+#include <vector>
+
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
 namespace semantic {
-
-class UnaryOpChecker : public ast::IASTVisitor {
-private:
+// may modify the syntax tree
+class ExpressionChecker : public ast::IASTVisitor {
     complog::ICompilationLog& log;
-    ValueTimeline& values;
-    runtime::TypeOrValue curvalue;
-    locators::SpanLocator pos;
-    bool pure = true;
+    bool pure;
     std::optional<runtime::TypeOrValue> res;
+    std::optional<std::shared_ptr<ast::ASTNode>> replacement;
+    ValueTimeline& values;
+
+    void VisitAndOrOperator(bool isOr, std::vector<std::shared_ptr<ast::Expression>>& operands,
+                            const locators::SpanLocator& position);
 
 public:
-    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values, const runtime::TypeOrValue& curvalue,
-                   const locators::SpanLocator& pos);
-    bool HasResult() const;
+    ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);
+    bool HasResult() const;  // false in case of error
     bool Pure() const;
     runtime::TypeOrValue Result() const;
+    std::optional<std::shared_ptr<ast::ASTNode>> Replacement() const;
+    std::shared_ptr<ast::Expression> AssertReplacementAsExpression() const;
+    ValueTimeline& ProgramState() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -63,7 +69,6 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~UnaryOpChecker() override;
+    virtual ~ExpressionChecker() = default;
 };
-
 }  // namespace semantic

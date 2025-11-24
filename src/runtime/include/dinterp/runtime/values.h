@@ -7,9 +7,9 @@
 #include <variant>
 #include <vector>
 
-#include "bigint.h"
+#include "dinterp/bigint.h"
 #include "derror.h"
-#include "syntax.h"
+#include "dinterp/syntax.h"
 #include "types.h"
 
 namespace runtime {

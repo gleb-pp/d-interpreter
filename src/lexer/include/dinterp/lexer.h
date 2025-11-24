@@ -5,10 +5,10 @@
 #include <utility>
 #include <vector>
 
-#include "bigint.h"
-#include "complog/CompilationLog.h"
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/bigint.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 struct Span {
 public:

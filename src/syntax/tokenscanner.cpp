@@ -1,4 +1,4 @@
-#include "syntax.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 TokenScanner::AutoBlock::AutoBlock(TokenScanner* owner) : tk(owner) {}

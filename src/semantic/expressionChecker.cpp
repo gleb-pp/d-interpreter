@@ -1,18 +1,18 @@
-#include "semantic/expressionChecker.h"
+#include "dinterp/semantic/expressionChecker.h"
 
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
 
-#include "lexer.h"
-#include "locators/locator.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "semantic/diagnostics.h"
-#include "semantic/statementChecker.h"
-#include "semantic/unaryOpsChecker.h"
-#include "syntax.h"
-#include "syntaxext/precomputed.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/semantic/diagnostics.h"
+#include "dinterp/semantic/statementChecker.h"
+#include "dinterp/semantic/unaryOpsChecker.h"
+#include "dinterp/syntax.h"
+#include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
 namespace semantic {

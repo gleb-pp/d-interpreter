@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string>
 
-#include "syntax.h"
-#include "syntaxext/precomputed.h"
+#include "dinterp/syntax.h"
+#include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
 static int StrToInt(const std::string& s) {

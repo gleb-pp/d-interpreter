@@ -1,6 +1,6 @@
 #pragma once
-#include "complog/CompilationMessage.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/locator.h"
 
 class SpanError : public complog::CompilationMessage {
 private:

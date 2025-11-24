@@ -2,7 +2,7 @@
 #include <ostream>
 #include <string>
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 
 namespace complog {
 class Severity {

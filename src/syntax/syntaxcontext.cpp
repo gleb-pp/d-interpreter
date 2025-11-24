@@ -1,7 +1,7 @@
-#include "asterrors.h"
-#include "complog/CompilationMessage.h"
-#include "lexer.h"
-#include "syntax.h"
+#include "dinterp/asterrors.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/lexer.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 EmptyVarStatement::EmptyVarStatement(locators::Locator position)

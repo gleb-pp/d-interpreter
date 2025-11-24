@@ -1,5 +1,5 @@
 #pragma once
-#include "lexer.h"
+#include "dinterp/lexer.h"
 
 static constexpr const char* tokenTypeStrings[] = {"tkGreater",
                                                    "tkGreaterEq",

@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "complog/CompilationLog.h"
-#include "lexer.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/lexer.h"
 using namespace std;
 
 static const char* CODE = "<<===>>=></ /=/=...//=\n";

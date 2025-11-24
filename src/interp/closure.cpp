@@ -1,9 +1,9 @@
-#include "interp/closure.h"
+#include "dinterp/interp/closure.h"
 
-#include "interp/execution.h"
-#include "interp/runtimeContext.h"
-#include "interp/varScopes.h"
-#include "syntax.h"
+#include "dinterp/interp/execution.h"
+#include "dinterp/interp/runtimeContext.h"
+#include "dinterp/interp/varScopes.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 namespace runtime {

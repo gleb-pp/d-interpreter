@@ -1,4 +1,4 @@
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 
 #include <algorithm>
 #include <cmath>
@@ -7,8 +7,8 @@
 #include <memory>
 #include <sstream>
 
-#include "runtime/derror.h"
-#include "runtime/types.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/types.h"
 using namespace std;
 
 namespace runtime {

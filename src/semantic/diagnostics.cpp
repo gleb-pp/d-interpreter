@@ -1,9 +1,9 @@
-#include "semantic/diagnostics.h"
+#include "dinterp/semantic/diagnostics.h"
 
 #include <algorithm>
 #include <iterator>
 
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 using namespace std;
 
 namespace semantic {

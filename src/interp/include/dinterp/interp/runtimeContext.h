@@ -3,10 +3,10 @@
 #include <variant>
 #include <vector>
 
-#include "locators/locator.h"
-#include "runtime.h"
-#include "runtime/derror.h"
-#include "runtime/values.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/values.h"
 
 namespace interp {
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "complog/CompilationLog.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/syntax.h"
 
 namespace semantic {
 

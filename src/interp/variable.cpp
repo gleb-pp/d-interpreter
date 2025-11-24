@@ -1,6 +1,6 @@
-#include "interp/variable.h"
+#include "dinterp/interp/variable.h"
 
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 using namespace std;
 
 namespace interp {

@@ -1,9 +1,9 @@
-#include "semantic/valueTimeline.h"
+#include "dinterp/semantic/valueTimeline.h"
 
-#include "locators/locator.h"
-#include "runtime.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
 using namespace std;
 
 namespace semantic {

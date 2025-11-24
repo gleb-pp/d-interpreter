@@ -1,33 +1,27 @@
 #pragma once
-#include <vector>
-
-#include "complog/CompilationLog.h"
-#include "locators/locator.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime.h"
+#include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
 namespace semantic {
-// may modify the syntax tree
-class ExpressionChecker : public ast::IASTVisitor {
-    complog::ICompilationLog& log;
-    bool pure;
-    std::optional<runtime::TypeOrValue> res;
-    std::optional<std::shared_ptr<ast::ASTNode>> replacement;
-    ValueTimeline& values;
 
-    void VisitAndOrOperator(bool isOr, std::vector<std::shared_ptr<ast::Expression>>& operands,
-                            const locators::SpanLocator& position);
+class UnaryOpChecker : public ast::IASTVisitor {
+private:
+    complog::ICompilationLog& log;
+    ValueTimeline& values;
+    runtime::TypeOrValue curvalue;
+    locators::SpanLocator pos;
+    bool pure = true;
+    std::optional<runtime::TypeOrValue> res;
 
 public:
-    ExpressionChecker(complog::ICompilationLog& log, ValueTimeline& values);
-    bool HasResult() const;  // false in case of error
+    UnaryOpChecker(complog::ICompilationLog& log, ValueTimeline& values, const runtime::TypeOrValue& curvalue,
+                   const locators::SpanLocator& pos);
+    bool HasResult() const;
     bool Pure() const;
     runtime::TypeOrValue Result() const;
-    std::optional<std::shared_ptr<ast::ASTNode>> Replacement() const;
-    std::shared_ptr<ast::Expression> AssertReplacementAsExpression() const;
-    ValueTimeline& ProgramState() const;
     void VisitBody(ast::Body& node) override;
     void VisitVarStatement(ast::VarStatement& node) override;
     void VisitIfStatement(ast::IfStatement& node) override;
@@ -69,6 +63,7 @@ public:
     void VisitTokenLiteral(ast::TokenLiteral& node) override;
     void VisitArrayLiteral(ast::ArrayLiteral& node) override;
     void VisitCustom(ast::ASTNode& node) override;
-    virtual ~ExpressionChecker() = default;
+    virtual ~UnaryOpChecker() override;
 };
+
 }  // namespace semantic

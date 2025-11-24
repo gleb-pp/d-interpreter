@@ -2,8 +2,8 @@
 #include <memory>
 #include <variant>
 
-#include "locators/locator.h"
-#include "runtime.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime.h"
 
 namespace semantic {
 

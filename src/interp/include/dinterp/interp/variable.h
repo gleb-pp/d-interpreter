@@ -2,8 +2,8 @@
 #include <memory>
 #include <string>
 
-#include "runtime.h"
-#include "runtime/values.h"
+#include "dinterp/runtime.h"
+#include "dinterp/runtime/values.h"
 
 namespace interp {
 

@@ -1,8 +1,8 @@
 #include <variant>
 
-#include "runtime/derror.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
 
 namespace runtime {
 

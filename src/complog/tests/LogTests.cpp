@@ -2,10 +2,10 @@
 
 #include "baderror.h"
 #include "badwarning.h"
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
 #include "fixture.h"
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
 class WarnAndError : public PascalProgram {

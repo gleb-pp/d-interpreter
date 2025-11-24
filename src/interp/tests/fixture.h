@@ -1,8 +1,8 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "locators/CodeFile.h"
-#include "complog/CompilationLog.h"
-#include "syntax.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/syntax.h"
 
 namespace interp {
 

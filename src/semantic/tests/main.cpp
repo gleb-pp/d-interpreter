@@ -2,12 +2,12 @@
 
 #include <memory>
 
-#include "bigint.h"
+#include "dinterp/bigint.h"
 #include "fixture.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "syntax.h"
-#include "syntaxext/precomputed.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
+#include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
 #define DCAST(type, ptr) dynamic_pointer_cast<type>(ptr)

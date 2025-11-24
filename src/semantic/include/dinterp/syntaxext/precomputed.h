@@ -1,8 +1,8 @@
 #pragma once
-#include "locators/locator.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "syntax.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
 
 namespace ast {
 

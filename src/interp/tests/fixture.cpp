@@ -1,13 +1,13 @@
 #include "fixture.h"
 #include <sstream>
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 #include "fstream"
-#include "interp/runner.h"
-#include "interp/runtimeContext.h"
+#include "dinterp/interp/runner.h"
+#include "dinterp/interp/runtimeContext.h"
 #include "sstream"
-#include "lexer.h"
-#include "syntax.h"
-#include "semantic.h"
+#include "dinterp/lexer.h"
+#include "dinterp/syntax.h"
+#include "dinterp/semantic.h"
 using namespace std;
 
 namespace interp {

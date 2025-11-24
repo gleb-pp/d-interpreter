@@ -1,4 +1,4 @@
-#include "locators/CodeFile.h"
+#include "dinterp/locators/CodeFile.h"
 
 #include <algorithm>
 using namespace std;

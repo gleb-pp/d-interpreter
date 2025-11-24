@@ -1,7 +1,7 @@
 #pragma once
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 #include "runtimeContext.h"
-#include "syntax.h"
+#include "dinterp/syntax.h"
 #include "varScopes.h"
 
 namespace interp {

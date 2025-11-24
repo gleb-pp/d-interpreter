@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "fixture.h"
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 using namespace locators;
 

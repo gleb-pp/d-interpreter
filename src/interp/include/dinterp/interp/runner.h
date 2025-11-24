@@ -3,7 +3,7 @@
 
 #include "execution.h"
 #include "runtimeContext.h"
-#include "syntax.h"
+#include "dinterp/syntax.h"
 
 namespace interp {
 

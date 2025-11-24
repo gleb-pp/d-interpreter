@@ -3,12 +3,12 @@
 #include <fstream>
 #include <sstream>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
 #include "gtest/gtest.h"
-#include "lexer.h"
-#include "semantic.h"
-#include "syntax.h"
+#include "dinterp/lexer.h"
+#include "dinterp/semantic.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 void FileSample::ReadFile(std::string name, bool expectSuccess) {

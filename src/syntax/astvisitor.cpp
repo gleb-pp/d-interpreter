@@ -1,4 +1,4 @@
-#include "syntax.h"
+#include "dinterp/syntax.h"
 
 namespace ast {
 

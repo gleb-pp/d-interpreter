@@ -1,4 +1,4 @@
-#include "interp/input.h"
+#include "dinterp/interp/input.h"
 using namespace std;
 
 namespace interp {

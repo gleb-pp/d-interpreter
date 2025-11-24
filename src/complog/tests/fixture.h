@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 class PascalProgram : public testing::Test {
 protected:

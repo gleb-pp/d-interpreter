@@ -1,14 +1,14 @@
-#include "semantic/unaryOpsChecker.h"
+#include "dinterp/semantic/unaryOpsChecker.h"
 
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
 
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "semantic/diagnostics.h"
-#include "semantic/expressionChecker.h"
-#include "syntax.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/semantic/diagnostics.h"
+#include "dinterp/semantic/expressionChecker.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 namespace semantic {

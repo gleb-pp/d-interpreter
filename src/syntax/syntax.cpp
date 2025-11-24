@@ -1,4 +1,4 @@
-#include "syntax.h"
+#include "dinterp/syntax.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -7,10 +7,10 @@
 #include <stdexcept>
 #include <variant>
 
-#include "asterrors.h"
-#include "complog/CompilationLog.h"
-#include "lexer.h"
-#include "locators/locator.h"
+#include "dinterp/asterrors.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
 /*

@@ -1,8 +1,8 @@
 #pragma once
-#include "complog/CompilationLog.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
 namespace semantic {

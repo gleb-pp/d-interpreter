@@ -1,4 +1,4 @@
-#include "syntax.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
 WrongNumberOfOperatorsSupplied::WrongNumberOfOperatorsSupplied(const std::string& astclass, size_t operandscount,

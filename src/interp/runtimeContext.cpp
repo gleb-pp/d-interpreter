@@ -1,6 +1,6 @@
-#include "interp/runtimeContext.h"
+#include "dinterp/interp/runtimeContext.h"
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
 namespace interp {

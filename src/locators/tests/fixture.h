@@ -1,7 +1,7 @@
 #pragma once
 #include <gtest/gtest.h>
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 
 class RealCodeFixture : public testing::Test {
 protected:

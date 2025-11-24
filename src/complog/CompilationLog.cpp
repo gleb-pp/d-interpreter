@@ -1,8 +1,8 @@
-#include "complog/CompilationLog.h"
+#include "dinterp/complog/CompilationLog.h"
 
 #include <sstream>
 
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 using namespace std;
 
 namespace complog {

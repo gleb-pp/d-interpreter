@@ -1,13 +1,13 @@
-#include "lexer.h"
+#include "dinterp/lexer.h"
 
 #include <algorithm>
 #include <cctype>
 #include <utility>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 using namespace std;
 

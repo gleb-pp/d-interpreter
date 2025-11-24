@@ -5,14 +5,14 @@
 #include <optional>
 #include <sstream>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
-#include "interp/runner.h"
-#include "interp/runtimeContext.h"
-#include "lexer.h"
-#include "locators/CodeFile.h"
-#include "semantic.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/interp/runner.h"
+#include "dinterp/interp/runtimeContext.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/semantic.h"
+#include "dinterp/syntax.h"
 #include "syntaxExplorer.h"
 #include "tokenTypeStrings.h"
 using namespace std;
