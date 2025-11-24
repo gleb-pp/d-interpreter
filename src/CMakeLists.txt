@@ -25,6 +25,7 @@ if(CompileTests)
 endif()
 
 add_executable(dinterp)
+add_library(dinterptools)
 
 add_subdirectory(bigint)
 add_subdirectory(complog)

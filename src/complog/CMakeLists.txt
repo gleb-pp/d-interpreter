@@ -3,6 +3,8 @@ target_link_libraries(complog PRIVATE common_features)
 target_link_libraries(complog PUBLIC locators)
 target_include_directories(complog PUBLIC include)
 
+target_sources(dinterptools PRIVATE $<TARGET_OBJECTS:complog>)
+target_include_directories(dinterptools PUBLIC include)
 if (CompileTests)
     add_subdirectory(tests)
 endif()
