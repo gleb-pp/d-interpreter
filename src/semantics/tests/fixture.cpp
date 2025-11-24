@@ -36,7 +36,8 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
     if (expectSuccess) {
         log->WriteToStream(cout, complog::Severity::Error(), complog::CompilationMessage::FormatOptions::All(80));
         ASSERT_TRUE(ok_semantic);
-    }
+    } else
+        ASSERT_FALSE(ok_semantic) << "Semantic analysis did not detect an error";
 }
 
 void FileSample::ExpectFailure(size_t line, size_t col) {

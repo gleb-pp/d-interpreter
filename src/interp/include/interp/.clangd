@@ -1,0 +1,4 @@
+CompileFlags:
+  Add: [-std=c++20, -I../../../bigint/include, -I../../../complog/include, -I../../../lexer/include,
+        -I../../../locators/include, -I../../../main/include, -I../../../runtime/include, -I../../../semantics/include,
+        -I../../../syntax/include]

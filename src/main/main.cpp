@@ -7,6 +7,8 @@
 
 #include "complog/CompilationLog.h"
 #include "complog/CompilationMessage.h"
+#include "interp/runner.h"
+#include "interp/runtimeContext.h"
 #include "lexer.h"
 #include "locators/CodeFile.h"
 #include "semantic.h"
@@ -24,6 +26,9 @@ public:
     bool Check = false;
     bool Examples = false;
     bool NoContext = false;
+    bool NoTraceback = false;
+    size_t CallStackCap = 1024;
+    size_t TraceLen = 50;
     optional<bool*> GetLongFlag(string name) {
         if (name == "lexer") return &Lexer;
         if (name == "syntaxer") return &Syntaxer;
@@ -48,6 +53,8 @@ public:
                 return &Check;
             case 'C':
                 return &NoContext;
+            case 'T':
+                return &NoTraceback;
             default:
                 return {};
         }
@@ -77,11 +84,18 @@ Options:
     --syntaxer   -s  Stop after syntactic analysis, start interactive AST traversal.
     --semantics  -S  Stop after semantic analysis, start interactive AST traversal.
     --nocontext  -C  Do not show code excerpts below errors.
+    --notrace    -T  Do not show the call stack traceback on error.
+Parameter options:
+    --callstack <nonnegative integer>  Set the call stack capacity (default = 1024).
+    --tracelen  <nonnegative integer>  On error, output at most this many call stack entries (default = 50).
 
 Every argument after -- is assumed to be a file name.
 )%%";
     static constexpr const char* EXAMPLES =
         R"%%(-- EXAMPLES --
+
+Run a script:
+dinterp script.d
 
 Tokenize files:
 dinterp -l abc.d program.d
@@ -97,8 +111,22 @@ dinterp -- -abc.d
 
 Explore the syntax of a program:
 dinterp -s prog.d
+
+Explore the optimized syntax of a program:
+dinterp -S prog.d
 )%%";
 };
+
+static optional<size_t> ParseSizeT(const std::string& s) {
+    size_t res = 0;
+    for (char ch : s) {
+        if (ch < '0' || ch > '9') return {};
+        size_t prevres = res;
+        res = res * 10 + (ch - '0');
+        if ((res - (ch - '0')) / 10 != prevres) return {};
+    }
+    return res;
+}
 
 bool InterpretArgs(int argc, char** argv, Options& opts, vector<string>& files) {
     bool onlyFiles = false;
@@ -112,6 +140,23 @@ bool InterpretArgs(int argc, char** argv, Options& opts, vector<string>& files) 
             arg.erase(0, 2);
             if (arg.empty()) {
                 onlyFiles = true;
+                continue;
+            }
+            if (arg == "tracelen" || arg == "callstack") {
+                ++i;
+                if (i == argc) {
+                    cerr << "Expected a number after \"--" << arg << "\"\n";
+                    return false;
+                }
+                optional<size_t> parsedarg = ParseSizeT(argv[i]);
+                if (!parsedarg) {
+                    cerr << "Could not parse a nonnegative integer: \"" << argv[i] << "\"\n";
+                    return false;
+                }
+                if (arg == "tracelen")
+                    opts.TraceLen = *parsedarg;
+                else
+                    opts.CallStackCap = *parsedarg;
                 continue;
             }
             if (!opts.SetLongFlag(arg)) {
@@ -213,13 +258,32 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         cerr << "A semantic error was encountered in " << filename << ", stopping.\n";
         return false;
     }
-    if (true || opts.Semantics) {
+    if (opts.Semantics) {
         if (slog.SomethingLogged()) WaitForUserToReadMessages();
         if (!opts.Check) {
             ExplorerIO io(prog);
             io.Explore(cout, cin);
         }
         return true;
+    }
+
+    if (opts.Check) return true;
+    interp::RuntimeContext context(cin, cout, opts.CallStackCap, opts.TraceLen);
+    interp::Run(context, *prog);
+    if (context.State.IsThrowing()) {
+        cout.flush();
+        auto& details = context.State.GetError();
+        cerr << "Runtime error encountered while executing " << filename << ".\n\n";
+        if (!opts.NoTraceback) {
+            cerr << "Call stack traceback (most recent call LAST):\n";
+            details.StackTrace.WriteToStream(cerr);
+            cerr << "\n\n";
+        }
+        cerr << "At " << details.Position.Pretty() << ":\n";
+        if (!opts.NoContext) details.Position.WritePrettyExcerpt(cerr, 100);
+        cerr << details.Error.what() << '\n';
+        cerr.flush();
+        return false;
     }
     return true;
 }

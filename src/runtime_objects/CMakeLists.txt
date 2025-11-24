@@ -1,4 +1,0 @@
-add_library(runtime_objects types.cpp values.cpp)
-target_link_libraries(runtime_objects PRIVATE common_features)
-target_link_libraries(runtime_objects PUBLIC syntaxer lexer compilationlog locators)
-target_include_directories(runtime_objects PUBLIC include)

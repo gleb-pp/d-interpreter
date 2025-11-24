@@ -2,7 +2,7 @@
 var unk
 func () is print; end ()  // makes the checker forget that unk is a <none>
 
-var _
+var _ := 80
 
 var j
 

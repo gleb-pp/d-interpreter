@@ -1,7 +1,6 @@
 #include "semantic/expressionChecker.h"
 
 #include <algorithm>
-#include <iterator>
 #include <memory>
 #include <stdexcept>
 
@@ -816,6 +815,8 @@ void ExpressionChecker::VisitFuncLiteral(ast::FuncLiteral& node) {
     vector<string> captured(paraminfo.referencedExternals.size());
     std::ranges::transform(paraminfo.referencedExternals, captured.begin(),
                            [](const pair<const string, bool>& kv) { return kv.first; });
+    for (auto& name : captured)
+        values.AssignUnknownButUsed(name);
     auto optreturnedtype = chk.Returned();
     auto returnedtype = optreturnedtype ? *optreturnedtype : make_shared<runtime::NoneType>();
     auto functype = make_shared<runtime::FuncType>(
