@@ -448,14 +448,15 @@ RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValu
         }
     }
     if (!types_ok) {
-        stringstream msg("The string.Slice function expected \"int\" arguments, but ");
+        stringstream msg;
+        msg << "The string.Slice function expected \"int\" arguments, but ";
         bool first = true;
         const char* const argnames[] = {"start", "stop", "step"};
         for (int i = 0; i < 3; i++) {
             if (_args[i]) continue;
             if (!first) msg << "; ";
             first = false;
-            msg << "argument" << i + 1 << " (" << argnames[i] << ") was \"" << args[i]->TypeOfValue()->Name() << '\"';
+            msg << "argument " << i + 1 << " (" << argnames[i] << ") was \"" << args[i]->TypeOfValue()->Name() << '\"';
         }
         return DRuntimeError(msg.str());
     }

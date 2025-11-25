@@ -192,7 +192,7 @@ void WrongArgumentCount::WriteMessageToStream(
 
 WrongArgumentType::WrongArgumentType(locators::SpanLocator pos, const std::shared_ptr<runtime::Type>& expected,
                                      const std::shared_ptr<runtime::Type>& given)
-    : SpanLocatorMessage(complog::Severity::Error(), "WrongArgumentCount", pos), expected(expected), given(given) {}
+    : SpanLocatorMessage(complog::Severity::Error(), "WrongArgumentType", pos), expected(expected), given(given) {}
 void WrongArgumentType::WriteMessageToStream(
     std::ostream& out, [[maybe_unused]] const complog::CompilationMessage::FormatOptions& opts) const {
     out << loc.Pretty() << ": Expected an argument of type \"" << expected->Name() << "\", but received \""
