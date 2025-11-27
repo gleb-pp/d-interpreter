@@ -140,6 +140,7 @@ public:
     std::string Name() const override;
     std::optional<std::shared_ptr<Type>> BinaryPlus(const Type& other) const override;
     bool BinaryEq(const Type& other) const override;
+    std::optional<std::shared_ptr<Type>> Field(const std::string& name) const override;
     std::optional<std::shared_ptr<Type>> Subscript(const Type& other) const override;
     virtual ~ArrayType() override = default;
 };

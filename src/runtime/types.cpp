@@ -222,6 +222,14 @@ std::optional<std::shared_ptr<Type>> ArrayType::BinaryPlus(const Type& other) co
     return {};
 }
 
+std::optional<std::shared_ptr<Type>> ArrayType::Field(const std::string& name) const {
+    if (name == "Indices") return make_shared<ArrayType>();
+    if (name == "Del")
+        return make_shared<FuncType>(false, vector<shared_ptr<Type>>{make_shared<IntegerType>()},
+                                     make_shared<NoneType>());
+    return {};
+}
+
 bool ArrayType::BinaryEq(const Type& other) const { return TypeEq(other) || other.TypeEq(UnknownType()); }
 
 std::optional<std::shared_ptr<Type>> ArrayType::Subscript(const Type& other) const {

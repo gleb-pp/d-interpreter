@@ -301,6 +301,14 @@ TEST_F(Sample, Complex15) {
     }
 }
 
+TEST_F(Sample, ExtraArray) {
+    ReadFile("samples/extra/array.d", true);
+    RunAndExpect("", R"([ [1] a, [3] c, [10] d ]
+false
+[ [1] 1, [2] 3, [3] 10 ]
+)");
+}
+
 int main(int argc, char** argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

@@ -39,7 +39,7 @@ public:
     virtual RuntimeValueResult UnaryMinus() const;
     virtual RuntimeValueResult UnaryPlus() const;
     virtual RuntimeValueResult UnaryNot() const;
-    virtual RuntimeValueResult Field(const std::string& name) const;        // a.fieldname
+    virtual RuntimeValueResult Field(const std::string& name);              // a.fieldname
     virtual RuntimeValueResult Field(const RuntimeValue& index) const;      // a.(2 + 3)
     virtual RuntimeValueResult Subscript(const RuntimeValue& other) const;  // a[3 + 2]
     virtual ~RuntimeValue() = default;
@@ -67,7 +67,7 @@ public:
     std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     RuntimeValueResult UnaryMinus() const override;
     RuntimeValueResult UnaryPlus() const override;
-    RuntimeValueResult Field(const std::string& name) const override;
+    RuntimeValueResult Field(const std::string& name) override;
     virtual ~IntegerValue() override = default;
 };
 
@@ -93,7 +93,7 @@ public:
     std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     RuntimeValueResult UnaryMinus() const override;
     RuntimeValueResult UnaryPlus() const override;
-    RuntimeValueResult Field(const std::string& name) const override;
+    RuntimeValueResult Field(const std::string& name) override;
     virtual ~RealValue() override = default;
 };
 
@@ -125,7 +125,7 @@ public:
     std::string Slice(const BigInt& start, const BigInt& stop, const BigInt& step) const;
     RuntimeValueResult BinaryPlus(const RuntimeValue& other) const override;
     std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
-    RuntimeValueResult Field(const std::string& name) const override;
+    RuntimeValueResult Field(const std::string& name) override;
     RuntimeValueResult Subscript(const RuntimeValue& other) const override;
     virtual ~StringValue() override = default;
 };
@@ -163,6 +163,7 @@ public:
     std::optional<std::partial_ordering> BinaryComparison(const RuntimeValue& other) const override;
     RuntimeValueResult Subscript(const RuntimeValue& other) const override;
     void AssignItem(const BigInt& index, const std::shared_ptr<RuntimeValue>& other);
+    RuntimeValueResult Field(const std::string& name) override;  // Indices
     virtual ~ArrayValue() override = default;
 };
 
@@ -182,7 +183,7 @@ public:
     RuntimeValueResult ValueByIndex(BigInt index) const;
     std::shared_ptr<runtime::Type> TypeOfValue() const override;
     RuntimeValueResult BinaryPlus(const RuntimeValue& other) const override;
-    RuntimeValueResult Field(const std::string& name) const override;
+    RuntimeValueResult Field(const std::string& name) override;
     RuntimeValueResult Field(const RuntimeValue& index) const override;
     bool AssignNamedField(const std::string& name, const std::shared_ptr<RuntimeValue>& val);
     bool AssignIndexedField(const BigInt& index, const std::shared_ptr<RuntimeValue>& val);
@@ -193,6 +194,17 @@ class FuncValue : public RuntimeValue {
 public:
     virtual RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const = 0;
     virtual ~FuncValue() override = default;
+};
+
+class ArrayDelFunction : public FuncValue {
+    std::shared_ptr<ArrayValue> _this;
+
+public:
+    void DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>& recGuard) const override;
+    ArrayDelFunction(const std::shared_ptr<ArrayValue>& _this);
+    RuntimeValueResult Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const override;
+    std::shared_ptr<runtime::Type> TypeOfValue() const override;
+    virtual ~ArrayDelFunction() override = default;
 };
 
 class StringSplitFunction : public FuncValue {
