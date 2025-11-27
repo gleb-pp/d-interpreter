@@ -20,8 +20,12 @@ if [ -t 1 -a $(tput colors) -ge 8 ]; then
 fi
 
 if [ ! -d .git ]; then
-    echo "${BAD}This script must be run in the project's root directory (as ./build.sh)${NORM}" >/dev/stderr
-    exit 1
+    if [ -d ../.git ]; then
+        cd ..
+    else
+        echo "${BAD}This script must be run from the project's root directory or one of its immediate subdirectories${NORM}" >/dev/stderr
+        exit 1
+    fi
 fi
 
 if [ ! -d build ]; then

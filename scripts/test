@@ -1,0 +1,14 @@
+#/bin/env bash
+
+if [ ! -d .git ]; then
+    if [ -d ../.git ]; then
+        cd ..
+    else
+        echo "This script must be run from the project's root directory or one of its immediate subdirectories" >/dev/stderr
+        exit 1
+    fi
+fi
+
+set -e
+docker build ./scripts/docker-test -t d-interp-tester
+docker run -it -v ./src:/project -v ./testbuild:/build --rm d-interp-tester
