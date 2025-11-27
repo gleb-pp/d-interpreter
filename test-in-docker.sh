@@ -7,4 +7,4 @@ fi
 
 set -e
 docker build ./tests/docker-gtest -t d-interp-tester
-docker run -it -v ./src:/project -v ./build:/build --rm d-interp-tester
+docker run -it -v ./src:/project -v ./docker-testbuild:/build --rm d-interp-tester

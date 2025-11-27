@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(dinterpreter VERSION 0.0.0 LANGUAGES CXX)
+set(version_maj 1)
+set(version ${version_maj}.0.0)
+project(dinterpreter VERSION ${version} LANGUAGES CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "CMAKE_BUILD_TYPE set to Release")
@@ -24,8 +26,12 @@ if(CompileTests)
     target_link_libraries(test_features INTERFACE pthread GTest::gtest)
 endif()
 
+include(GNUInstallDirs)
+
 add_executable(dinterp)
 add_library(dinterptools)
+set_property(TARGET dinterptools PROPERTY VERSION ${version})
+set_property(TARGET dinterptools PROPERTY SOVERSION ${version_maj})
 
 add_subdirectory(bigint)
 add_subdirectory(complog)
@@ -36,3 +42,22 @@ add_subdirectory(runtime)
 add_subdirectory(semantic)
 add_subdirectory(interp)
 add_subdirectory(main)
+
+include(CMakePackageConfigHelpers)
+install(TARGETS dinterptools EXPORT DInterpExport FILE_SET HEADERS)
+install(EXPORT DInterpExport FILE DInterpTargets.cmake NAMESPACE DInterp:: DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp)
+configure_package_config_file(
+    dinterpreterConfig.cmake.in
+    dinterpreterConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+)
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+)
