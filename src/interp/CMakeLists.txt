@@ -5,7 +5,7 @@ target_link_libraries(interp PUBLIC semantics)
 target_include_directories(interp PUBLIC include)
 
 target_sources(dinterptools PRIVATE $<TARGET_OBJECTS:interp>)
-target_include_directories(dinterptools INTERFACE $<BUILD_INTERFACE:include>
+target_include_directories(dinterptools INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_sources(dinterptools PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
     include/dinterp/interp.h
