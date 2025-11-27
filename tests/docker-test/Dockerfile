@@ -12,5 +12,6 @@ RUN mkdir /project /build /sampleproj
 WORKDIR /build
 COPY ./sample_user_project/CMakeLists.txt /sampleproj/CMakeLists.txt
 COPY ./sample_user_project/main.cpp /sampleproj/main.cpp
+COPY ./sampleprogram.d /sampleprogram.d
 COPY ./test.sh /test.sh
 CMD ["sh", "/test.sh"]

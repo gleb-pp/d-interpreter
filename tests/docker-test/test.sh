@@ -7,6 +7,7 @@ testfunc ()
     cmake --build . || return 1
     ctest -V . || return 1
     cmake --install . || return 1
+    dinterp /sampleprogram.d || return 1
     cd /sampleproj
     mkdir build && cd build
     cmake .. || return 1
