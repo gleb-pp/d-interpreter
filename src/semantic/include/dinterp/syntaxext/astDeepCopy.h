@@ -1,6 +1,7 @@
 #pragma once
 #include "dinterp/syntax.h"
 
+namespace dinterp {
 namespace ast {
 
 class AstDeepCopier : public IASTVisitor {
@@ -52,3 +53,4 @@ public:
 };
 
 }  // namespace ast
+}

@@ -11,7 +11,7 @@ using namespace std;
 int main() {
     cout << "Hello, world!\n";
 })%%%";
-    std::shared_ptr<locators::CodeFile> file;
+    std::shared_ptr<dinterp::locators::CodeFile> file;
     virtual void SetUp() override;
     virtual void TearDown() override;
 };

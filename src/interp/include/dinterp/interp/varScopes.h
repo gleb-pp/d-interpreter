@@ -5,6 +5,7 @@
 
 #include "variable.h"
 
+namespace dinterp {
 namespace interp {
 
 class Scope {
@@ -27,3 +28,4 @@ public:
 };
 
 }  // namespace interp
+}

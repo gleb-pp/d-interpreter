@@ -4,6 +4,7 @@
 
 #include "dinterp/locators/locator.h"
 
+namespace dinterp {
 namespace complog {
 class Severity {
 private:
@@ -71,3 +72,4 @@ public:
     virtual ~CompilationMessage() = default;
 };
 }  // namespace complog
+}

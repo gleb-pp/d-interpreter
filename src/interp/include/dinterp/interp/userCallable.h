@@ -3,6 +3,7 @@
 #include "dinterp/runtime/values.h"
 #include "runtimeContext.h"
 
+namespace dinterp {
 namespace interp {
 
 class UserCallable : public runtime::RuntimeValue {
@@ -15,3 +16,4 @@ public:
 };
 
 }  // namespace interp
+}

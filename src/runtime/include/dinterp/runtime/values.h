@@ -12,6 +12,7 @@
 #include "dinterp/syntax.h"
 #include "types.h"
 
+namespace dinterp {
 namespace runtime {
 
 /*
@@ -241,3 +242,4 @@ public:
 // No value must have UnknownType, that type is reserved for typechecking
 
 }  // namespace runtime
+}

@@ -4,6 +4,7 @@
 #include "dinterp/complog/CompilationMessage.h"
 #include "dinterp/lexer.h"
 
+namespace dinterp {
 class EmptyVarStatement : public complog::CompilationMessage {
 private:
     locators::Locator loc;
@@ -27,3 +28,4 @@ public:
     std::vector<locators::Locator> Locators() const override;
     virtual ~UnexpectedTokenTypeError() override = default;
 };
+}

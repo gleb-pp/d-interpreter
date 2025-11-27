@@ -55,4 +55,4 @@ static constexpr const char* tokenTypeStrings[] = {"tkGreater",
                                                    "tkIdent",
                                                    "tkEof"};
 
-constexpr inline std::string TokenTypeToString(Token::Type type) { return tokenTypeStrings[static_cast<int>(type)]; }
+constexpr inline std::string TokenTypeToString(dinterp::Token::Type type) { return tokenTypeStrings[static_cast<int>(type)]; }

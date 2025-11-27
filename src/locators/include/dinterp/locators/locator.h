@@ -3,6 +3,7 @@
 
 #include "CodeFile.h"
 
+namespace dinterp {
 namespace locators {
 class Locator {
     size_t pos;
@@ -38,3 +39,4 @@ public:
     void WritePrettyExcerpt(std::ostream& out, size_t suggested_width) const;
 };
 }  // namespace locators
+}

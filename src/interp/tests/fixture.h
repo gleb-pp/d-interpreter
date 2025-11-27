@@ -4,6 +4,7 @@
 #include "dinterp/complog/CompilationLog.h"
 #include "dinterp/syntax.h"
 
+namespace dinterp {
 namespace interp {
 
 class Sample : public testing::Test {
@@ -17,4 +18,5 @@ public:
     void RunAndExpectCrash(const char* input);
 };
 
+}
 }

@@ -5,6 +5,7 @@
 #include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
+namespace dinterp {
 namespace semantic {
 
 // may modify the syntax tree
@@ -77,3 +78,4 @@ public:
 };
 
 }  // namespace semantic
+}

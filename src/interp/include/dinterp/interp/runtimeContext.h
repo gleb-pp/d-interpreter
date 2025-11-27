@@ -8,6 +8,7 @@
 #include "dinterp/runtime/derror.h"
 #include "dinterp/runtime/values.h"
 
+namespace dinterp {
 namespace interp {
 
 class CallStackTrace {
@@ -84,3 +85,4 @@ public:
 };
 
 }  // namespace interp
+}

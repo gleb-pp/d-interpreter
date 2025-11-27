@@ -2,6 +2,7 @@
 #include <exception>
 #include <string>
 
+namespace dinterp {
 namespace runtime {
 
 class DRuntimeError : public std::exception {
@@ -14,3 +15,4 @@ public:
 };
 
 }  // namespace runtime
+}

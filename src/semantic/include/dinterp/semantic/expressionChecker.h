@@ -8,6 +8,7 @@
 #include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
+namespace dinterp {
 namespace semantic {
 // may modify the syntax tree
 class ExpressionChecker : public ast::IASTVisitor {
@@ -72,3 +73,4 @@ public:
     virtual ~ExpressionChecker() = default;
 };
 }  // namespace semantic
+}  // namespace dinterp

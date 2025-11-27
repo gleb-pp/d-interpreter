@@ -11,6 +11,7 @@
  * If the virtual method is not overridden, the default is to return {} ("not supported").
  */
 
+namespace dinterp {
 namespace runtime {
 
 class Type {
@@ -200,3 +201,4 @@ public:
 };
 
 }  // namespace runtime
+}

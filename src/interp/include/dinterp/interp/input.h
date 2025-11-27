@@ -2,6 +2,7 @@
 #include "dinterp/runtime.h"
 #include "userCallable.h"
 
+namespace dinterp {
 namespace interp {
 
 class InputFunction : public UserCallable {
@@ -14,3 +15,4 @@ public:
 };
 
 }  // namespace interp
+}

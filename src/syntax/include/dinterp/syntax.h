@@ -14,6 +14,7 @@
 #include "dinterp/locators/CodeFile.h"
 #include "dinterp/locators/locator.h"
 
+namespace dinterp {
 class WrongNumberOfOperatorsSupplied : public std::invalid_argument {
 public:
     WrongNumberOfOperatorsSupplied(const std::string& astclass, size_t operandscount, size_t operatorscount);
@@ -688,3 +689,4 @@ public:
                                                              const std::shared_ptr<const locators::CodeFile>& file,
                                                              complog::ICompilationLog& log);
 };
+}

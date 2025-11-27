@@ -4,6 +4,7 @@
 
 #include "CompilationMessage.h"
 
+namespace dinterp {
 namespace complog {
 class ICompilationLog {
 public:
@@ -47,3 +48,4 @@ public:
     virtual ~CombinedCompilationLog() override = default;
 };
 }  // namespace complog
+}

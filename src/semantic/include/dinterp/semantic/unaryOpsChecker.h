@@ -5,6 +5,7 @@
 #include "dinterp/syntax.h"
 #include "valueTimeline.h"
 
+namespace dinterp {
 namespace semantic {
 
 class UnaryOpChecker : public ast::IASTVisitor {
@@ -67,3 +68,4 @@ public:
 };
 
 }  // namespace semantic
+}

@@ -4,6 +4,7 @@
 #include "dinterp/runtime/values.h"
 #include "dinterp/syntax.h"
 
+namespace dinterp {
 namespace ast {
 
 class PrecomputedValue : public Expression {
@@ -28,3 +29,4 @@ public:
 };
 
 }  // namespace ast
+}

@@ -11,10 +11,10 @@
 
 class FileSample : public testing::Test {
 public:
-    std::shared_ptr<const locators::CodeFile> file;
-    std::vector<std::shared_ptr<Token>> tokens;
-    std::unique_ptr<complog::AccumulatedCompilationLog> log;
-    std::shared_ptr<ast::Body> program;
+    std::shared_ptr<const dinterp::locators::CodeFile> file;
+    std::vector<std::shared_ptr<dinterp::Token>> tokens;
+    std::unique_ptr<dinterp::complog::AccumulatedCompilationLog> log;
+    std::shared_ptr<dinterp::ast::Body> program;
     void ReadFile(std::string name, bool expectSuccess);
     void ExpectFailure(size_t line, size_t col);
 };

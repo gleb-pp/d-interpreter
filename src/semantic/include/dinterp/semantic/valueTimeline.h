@@ -5,6 +5,7 @@
 #include "dinterp/locators/locator.h"
 #include "dinterp/runtime.h"
 
+namespace dinterp {
 namespace semantic {
 
 struct ScopeStats {
@@ -52,3 +53,4 @@ public:
 };
 
 }  // namespace semantic
+}

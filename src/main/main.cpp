@@ -16,6 +16,7 @@
 #include "syntaxExplorer.h"
 #include "tokenTypeStrings.h"
 using namespace std;
+using namespace dinterp;
 
 class Options {
 public:

@@ -5,6 +5,7 @@
 #include "dinterp/runtime.h"
 #include "dinterp/runtime/values.h"
 
+namespace dinterp {
 namespace interp {
 
 class Variable : public std::enable_shared_from_this<Variable> {
@@ -20,3 +21,4 @@ public:
 };
 
 }  // namespace interp
+}

@@ -10,6 +10,7 @@
 #include "dinterp/locators/CodeFile.h"
 #include "dinterp/locators/locator.h"
 
+namespace dinterp {
 struct Span {
 public:
     size_t position;
@@ -157,3 +158,4 @@ public:
     static std::optional<std::vector<std::shared_ptr<Token>>> tokenize(
         const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& log);
 };
+}

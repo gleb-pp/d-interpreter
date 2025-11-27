@@ -5,6 +5,7 @@
 #include "dinterp/syntax.h"
 #include "varScopes.h"
 
+namespace dinterp {
 namespace interp {
 
 class UnaryOpExecutor : public ast::IASTVisitor {
@@ -64,3 +65,4 @@ public:
 };
 
 }  // namespace interp
+}

@@ -5,6 +5,7 @@
 #include "userCallable.h"
 #include "varScopes.h"
 
+namespace dinterp {
 namespace runtime {
 
 class Closure : public interp::UserCallable {
@@ -23,3 +24,4 @@ public:
 };
 
 }  // namespace runtime
+}

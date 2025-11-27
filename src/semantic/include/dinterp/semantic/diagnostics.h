@@ -5,6 +5,7 @@
 #include "dinterp/locators/locator.h"
 #include "dinterp/runtime/types.h"
 
+namespace dinterp {
 namespace semantic {
 namespace errors {
 
@@ -285,3 +286,4 @@ public:
 
 }  // namespace errors
 }  // namespace semantic
+}
