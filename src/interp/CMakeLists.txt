@@ -20,6 +20,6 @@ target_sources(dinterptools PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
     include/dinterp/interp/runtimeContext.h
 )
 
-if (CompileTests)
+if (Testing)
     add_subdirectory(tests)
 endif()

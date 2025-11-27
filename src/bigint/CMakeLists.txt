@@ -7,6 +7,6 @@ target_include_directories(dinterptools INTERFACE $<BUILD_INTERFACE:${CMAKE_CURR
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 target_sources(dinterptools PUBLIC FILE_SET HEADERS BASE_DIRS include FILES include/dinterp/bigint.h)
 
-if (CompileTests)
+if (Testing)
     add_subdirectory(tests)
 endif()

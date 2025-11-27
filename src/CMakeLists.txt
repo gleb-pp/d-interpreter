@@ -16,9 +16,9 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
     target_compile_definitions(common_features INTERFACE DINTERP_DEBUG)
 endif()
 
-option(CompileTests "Compile tests (requires GTest)" OFF)
+option(Testing "Compile tests (requires GTest)" OFF)
 
-if(CompileTests)
+if(Testing)
     find_package(GTest REQUIRED)
     enable_testing()
     add_library(test_features INTERFACE)

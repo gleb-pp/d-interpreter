@@ -2,7 +2,7 @@
 buildfunc ()
 {
     cd build
-    cmake ../src -DCompileTests=OFF || return 1
+    cmake ../src -DTesting=OFF || return 1
     cmake --build . || return 1
     ctest -V . || return 1
 }

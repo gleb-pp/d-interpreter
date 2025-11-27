@@ -3,7 +3,7 @@
 testfunc ()
 {
     cd /build
-    cmake /project -DCompileTests=ON -DCMAKE_BUILD_TYPE=Debug || return 1
+    cmake /project -DTesting=ON -DCMAKE_BUILD_TYPE=Debug || return 1
     cmake --build . || return 1
     ctest -V . || return 1
     cmake --install . || return 1

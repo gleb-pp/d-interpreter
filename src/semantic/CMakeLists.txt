@@ -18,6 +18,6 @@ target_sources(dinterptools PUBLIC FILE_SET HEADERS BASE_DIRS include FILES
     include/dinterp/syntaxext/astDeepCopy.h
 )
 
-if (CompileTests)
+if (Testing)
     add_subdirectory(tests)
 endif ()

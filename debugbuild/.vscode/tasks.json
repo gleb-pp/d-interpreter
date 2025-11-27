@@ -4,7 +4,7 @@
         {
             "label": "Compile",
             "type": "shell",
-            "command": "CXX=/usr/bin/clang++ cmake -DCMAKE_BUILD_TYPE=Debug -DCompileTests=ON '-DCMAKE_CXX_FLAGS=-glldb -fstandalone-debug' ../src; cmake --build ."
+            "command": "CXX=/usr/bin/clang++ cmake -DCMAKE_BUILD_TYPE=Debug -DTesting=ON '-DCMAKE_CXX_FLAGS=-glldb -fstandalone-debug' ../src; cmake --build ."
         },
         {
             "label": "Compile G++",
