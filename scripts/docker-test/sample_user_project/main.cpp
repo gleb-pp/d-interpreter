@@ -12,7 +12,7 @@ int main() {
     dinterp::interp::RuntimeContext context(input, output, 1000, 0);
     dinterp::complog::AccumulatedCompilationLog log;
     auto file = make_shared<dinterp::locators::CodeFile>("<memory>", "print \"Hello, world!\\n\"");
-    auto tokens = dinterp::Lexer::tokenize(file, log);
+    auto tokens = dinterp::Lexer::tokenize(file, log, true);
     if (!tokens) {
         log.WriteToStream(cerr, dinterp::complog::CompilationMessage::FormatOptions::All(80));
         return 1;

@@ -17,7 +17,7 @@ void FileSample::ReadFile(std::string name, bool expectSuccess) {
     text << fs.rdbuf();
     file = make_shared<locators::CodeFile>(name, text.str());
     log = make_unique<complog::AccumulatedCompilationLog>();
-    auto optTokens = Lexer::tokenize(file, *log);
+    auto optTokens = Lexer::tokenize(file, *log, false);
     log->WriteToStream(cout, complog::Severity::Error(), complog::CompilationMessage::FormatOptions::All(80));
     ASSERT_TRUE(optTokens.has_value());
     tokens = optTokens.value();

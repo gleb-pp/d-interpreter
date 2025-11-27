@@ -289,11 +289,15 @@ static bool checkIdentifierToken(size_t& i, size_t n, const string& code, vector
 }
 
 optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locators::CodeFile>& file,
-                                                    complog::ICompilationLog& log) {
+                                                    complog::ICompilationLog& log, bool skipShebang) {
     vector<shared_ptr<Token>> tokens;
     size_t i = 0;
     const std::string& code = file->AllText();
     size_t n = code.length();
+    if (skipShebang && code.starts_with("#!")) {
+        while (i < n && code[i] != '\n') ++i;
+        i += i < n;
+    }
     while (i < n) {
         if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') {
             i++;

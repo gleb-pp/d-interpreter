@@ -7,8 +7,7 @@
             "name": "C++",
             "preLaunchTask": "Compile",
             "expressions": "native",
-            "program": "dinterp",
-            "args": ["../tests/samples/complex/04.d"]
+            "program": "lexer/tests/lexer_tests"
         }
     ]
 }

@@ -11,7 +11,7 @@ static const char* CODE = "var a := \"hello";
 TEST(badtests, unclosed_quote) {
     auto file = make_shared<locators::CodeFile>("BadTest3.d", CODE);
     complog::AccumulatedCompilationLog log;
-    auto maybeTokens = Lexer::tokenize(file, log);
+    auto maybeTokens = Lexer::tokenize(file, log, false);
     ASSERT_FALSE(maybeTokens.has_value());
     auto msgs = log.Messages();
     ASSERT_NE(msgs.size(), 0ul);

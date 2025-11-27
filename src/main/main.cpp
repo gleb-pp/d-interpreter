@@ -231,7 +231,7 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         in.close();
         file = make_shared<locators::CodeFile>(filename, sstr.str());
     }
-    auto maybeTokens = Lexer::tokenize(file, slog);
+    auto maybeTokens = Lexer::tokenize(file, slog, true);
     if (!maybeTokens.has_value()) {
         cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
         return false;

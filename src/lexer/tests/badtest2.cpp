@@ -13,7 +13,7 @@ static const char* CODE = R"%%(
 TEST(badtests, invalid_colon) {
     auto file = make_shared<locators::CodeFile>("BadTest2.d", CODE);
     complog::AccumulatedCompilationLog log;
-    auto maybeTokens = Lexer::tokenize(file, log);
+    auto maybeTokens = Lexer::tokenize(file, log, false);
     ASSERT_FALSE(maybeTokens.has_value());
     auto msgs = log.Messages();
     ASSERT_NE(msgs.size(), 0ul);

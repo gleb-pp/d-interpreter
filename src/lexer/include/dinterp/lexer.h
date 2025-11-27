@@ -156,6 +156,6 @@ public:
 class Lexer {
 public:
     static std::optional<std::vector<std::shared_ptr<Token>>> tokenize(
-        const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& log);
+        const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& log, bool skipShebang);
 };
 }  // namespace dinterp

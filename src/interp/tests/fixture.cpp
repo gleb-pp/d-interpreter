@@ -21,7 +21,7 @@ void Sample::ReadFile(const char* name, bool compiles) {
     ss << fs.rdbuf();
     filename = name;
     file = make_shared<locators::CodeFile>(name, ss.str());
-    auto opttks = Lexer::tokenize(file, log);
+    auto opttks = Lexer::tokenize(file, log, false);
     if (!opttks) {
         if (!compiles) return;
         log.WriteToStream(cerr, complog::CompilationMessage::FormatOptions::All(100));

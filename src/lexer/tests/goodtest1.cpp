@@ -18,7 +18,7 @@ goodbye end
 TEST(goodtests, test1) {
     shared_ptr<locators::CodeFile> file = make_shared<locators::CodeFile>("Test1.d", CODE);
     complog::AccumulatedCompilationLog log;
-    auto maybeTokens = Lexer::tokenize(file, log);
+    auto maybeTokens = Lexer::tokenize(file, log, false);
     ASSERT_TRUE(maybeTokens.has_value());
     ASSERT_EQ(log.Messages().size(), 0ul);
     auto& tokens = maybeTokens.value();
