@@ -5,7 +5,7 @@
 #include "dinterp/semantic/valueTimeline.h"
 using namespace std;
 
-bool semantic::Analyze(complog::ICompilationLog& log, const shared_ptr<ast::Body>& program) {
+bool dinterp::semantic::Analyze(complog::ICompilationLog& log, const shared_ptr<ast::Body>& program) {
     ValueTimeline tl;
     tl.StartScope();
     {

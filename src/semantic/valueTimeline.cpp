@@ -6,6 +6,7 @@
 #include "dinterp/runtime/values.h"
 using namespace std;
 
+namespace dinterp {
 namespace semantic {
 
 ValueTimeline::Var::Var(const locators::SpanLocator& declloc)
@@ -194,3 +195,4 @@ void ValueTimeline::MergeTimelines(const ValueTimeline& other) {
 }
 
 }  // namespace semantic
+}  // namespace dinterp

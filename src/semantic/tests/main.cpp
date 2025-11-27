@@ -3,12 +3,13 @@
 #include <memory>
 
 #include "dinterp/bigint.h"
-#include "fixture.h"
 #include "dinterp/runtime/types.h"
 #include "dinterp/runtime/values.h"
 #include "dinterp/syntax.h"
 #include "dinterp/syntaxext/precomputed.h"
+#include "fixture.h"
 using namespace std;
+using namespace dinterp;
 
 #define DCAST(type, ptr) dynamic_pointer_cast<type>(ptr)
 

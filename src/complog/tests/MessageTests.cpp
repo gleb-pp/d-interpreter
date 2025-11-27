@@ -4,9 +4,10 @@
 
 #include "baderror.h"
 #include "dinterp/complog/CompilationMessage.h"
-#include "fixture.h"
 #include "dinterp/locators/locator.h"
+#include "fixture.h"
 #include "spanerror.h"
+using namespace dinterp;
 
 TEST_F(PascalProgram, FullLine) {
     locators::Locator loc(file, file->Position(4, 24));

@@ -7,8 +7,8 @@
 #include <variant>
 #include <vector>
 
-#include "dinterp/bigint.h"
 #include "derror.h"
+#include "dinterp/bigint.h"
 #include "dinterp/syntax.h"
 #include "types.h"
 
@@ -242,4 +242,4 @@ public:
 // No value must have UnknownType, that type is reserved for typechecking
 
 }  // namespace runtime
-}
+}  // namespace dinterp

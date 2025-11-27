@@ -39,4 +39,4 @@ public:
     void WritePrettyExcerpt(std::ostream& out, size_t suggested_width) const;
 };
 }  // namespace locators
-}
+}  // namespace dinterp

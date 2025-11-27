@@ -1,6 +1,7 @@
 #include "dinterp/interp/input.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 std::shared_ptr<runtime::RuntimeValue> InputFunction::UserCall(
@@ -26,3 +27,4 @@ void InputFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<cons
 }
 
 }  // namespace interp
+}  // namespace dinterp

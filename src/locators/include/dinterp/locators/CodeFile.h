@@ -32,4 +32,4 @@ public:
     std::string LineTextWithoutLineFeed(size_t line) const;
 };
 }  // namespace locators
-}
+}  // namespace dinterp

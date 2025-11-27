@@ -5,6 +5,7 @@
 #include "arith_samples.h"
 #include "dinterp/bigint.h"
 using namespace std;
+using namespace dinterp;
 
 TEST(Repr, ConsStr) {
     EXPECT_EQ(BigInt("1239423", 10), 1239423);

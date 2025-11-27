@@ -135,4 +135,4 @@ bool operator!=(size_t a, const BigInt& b);
 
 std::string to_string(const BigInt& a);
 std::ostream& operator<<(std::ostream& out, const BigInt& a);
-}
+}  // namespace dinterp

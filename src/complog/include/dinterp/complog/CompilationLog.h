@@ -48,4 +48,4 @@ public:
     virtual ~CombinedCompilationLog() override = default;
 };
 }  // namespace complog
-}
+}  // namespace dinterp

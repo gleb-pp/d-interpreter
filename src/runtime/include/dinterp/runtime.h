@@ -10,4 +10,4 @@ namespace runtime {
 using TypeOrValue = std::variant<std::shared_ptr<Type>, std::shared_ptr<RuntimeValue>>;
 
 }
-}
+}  // namespace dinterp

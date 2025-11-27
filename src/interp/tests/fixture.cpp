@@ -1,16 +1,18 @@
 #include "fixture.h"
+
 #include <sstream>
+
 #include "dinterp/complog/CompilationMessage.h"
-#include "fstream"
 #include "dinterp/interp/runner.h"
 #include "dinterp/interp/runtimeContext.h"
-#include "sstream"
 #include "dinterp/lexer.h"
-#include "dinterp/syntax.h"
 #include "dinterp/semantic.h"
+#include "dinterp/syntax.h"
+#include "fstream"
+#include "sstream"
 using namespace std;
-
-namespace interp {
+using namespace dinterp;
+using namespace interp;
 
 void Sample::ReadFile(const char* name, bool compiles) {
     ifstream fs(name);
@@ -61,6 +63,4 @@ void Sample::RunAndExpectCrash(const char* input) {
     RuntimeContext context(sin, sout, 1000, 10);
     interp::Run(context, *program);
     ASSERT_TRUE(context.State.IsThrowing());
-}
-
 }

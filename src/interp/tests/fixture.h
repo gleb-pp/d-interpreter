@@ -1,7 +1,8 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "dinterp/locators/CodeFile.h"
+
 #include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/CodeFile.h"
 #include "dinterp/syntax.h"
 
 namespace dinterp {
@@ -18,5 +19,5 @@ public:
     void RunAndExpectCrash(const char* input);
 };
 
-}
-}
+}  // namespace interp
+}  // namespace dinterp

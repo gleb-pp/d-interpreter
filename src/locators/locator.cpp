@@ -5,6 +5,7 @@
 #include <stdexcept>
 using namespace std;
 
+namespace dinterp {
 namespace locators {
 Locator::Locator(const shared_ptr<const CodeFile>& file, size_t pos) : pos(pos), file(file) {}
 std::string Locator::Pretty() const {
@@ -107,3 +108,4 @@ void SpanLocator::WritePrettyExcerpt(ostream& out, [[maybe_unused]] size_t sugge
 }
 
 }  // namespace locators
+}  // namespace dinterp

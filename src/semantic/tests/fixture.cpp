@@ -5,11 +5,12 @@
 
 #include "dinterp/complog/CompilationLog.h"
 #include "dinterp/complog/CompilationMessage.h"
-#include "gtest/gtest.h"
 #include "dinterp/lexer.h"
 #include "dinterp/semantic.h"
 #include "dinterp/syntax.h"
+#include "gtest/gtest.h"
 using namespace std;
+using namespace dinterp;
 
 void FileSample::ReadFile(std::string name, bool expectSuccess) {
     ifstream fs(name);

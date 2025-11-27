@@ -14,6 +14,7 @@
 #include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 Executor::Executor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes)
@@ -691,3 +692,4 @@ void Executor::VisitCustom(ast::ASTNode& node) {
 }
 
 }  // namespace interp
+}  // namespace dinterp

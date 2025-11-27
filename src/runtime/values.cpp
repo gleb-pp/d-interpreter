@@ -11,6 +11,7 @@
 #include "dinterp/runtime/types.h"
 using namespace std;
 
+namespace dinterp {
 namespace runtime {
 
 /*
@@ -532,3 +533,4 @@ void StringJoinFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr
 }
 
 }  // namespace runtime
+}  // namespace dinterp

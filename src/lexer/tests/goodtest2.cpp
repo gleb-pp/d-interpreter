@@ -5,6 +5,7 @@
 #include "dinterp/complog/CompilationLog.h"
 #include "dinterp/lexer.h"
 using namespace std;
+using namespace dinterp;
 
 static const char* CODE = "<<===>>=></ /=/=...//=\n";
 //                                            ^ this is a comment!

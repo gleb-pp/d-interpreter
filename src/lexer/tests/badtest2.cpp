@@ -4,6 +4,7 @@
 #include "dinterp/lexer.h"
 #include "dinterp/locators/locator.h"
 using namespace std;
+using namespace dinterp;
 
 static const char* CODE = R"%%(
 := := := : := := :=

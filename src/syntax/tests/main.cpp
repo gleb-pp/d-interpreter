@@ -2,9 +2,10 @@
 
 #include <memory>
 
-#include "fixture.h"
 #include "dinterp/syntax.h"
+#include "fixture.h"
 using namespace std;
+using namespace dinterp;
 
 TEST_F(FileSample, Basic01) {
     ReadFile("basic/01.d", true);

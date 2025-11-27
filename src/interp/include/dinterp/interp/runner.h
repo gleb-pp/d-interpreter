@@ -1,9 +1,9 @@
 #pragma once
 #include <optional>
 
+#include "dinterp/syntax.h"
 #include "execution.h"
 #include "runtimeContext.h"
-#include "dinterp/syntax.h"
 
 namespace dinterp {
 namespace interp {
@@ -11,4 +11,4 @@ namespace interp {
 void Run(interp::RuntimeContext& context, ast::Body& program);
 
 }
-}
+}  // namespace dinterp

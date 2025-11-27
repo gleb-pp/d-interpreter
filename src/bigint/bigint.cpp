@@ -13,20 +13,7 @@
 #include <vector>
 using namespace std;
 
-/*
-template<class T>
-static ostream& operator<<(ostream& out, const vector<T>& v) {
-    out << '{';
-    bool first = true;
-    for (auto& i : v) {
-        if (!first) out << ", ";
-        first = false;
-        out << i;
-    }
-    return out << '}';
-}
-*/
-
+namespace dinterp {
 ZeroDivisionException::ZeroDivisionException() : runtime_error("Tried to divide by BigInt(0)") {}
 
 BigInt::BigInt(const vector<uint32_t>& v, bool sign) : v(v), sign(sign) { normalize(); }
@@ -781,3 +768,4 @@ std::string BigInt::RawRepr() const {
 }
 
 std::string to_string(const BigInt& a) { return a.RawRepr(); }
+}  // namespace dinterp

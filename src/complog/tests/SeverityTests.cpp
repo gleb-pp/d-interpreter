@@ -4,6 +4,7 @@
 
 #include "dinterp/complog/CompilationMessage.h"
 using namespace std;
+using namespace dinterp;
 using namespace complog;
 
 TEST(SeverityTests, Ctor) {

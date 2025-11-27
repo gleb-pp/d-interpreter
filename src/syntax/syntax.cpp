@@ -35,6 +35,7 @@ bool AssertToken(SyntaxContext& context, size_t pos, Token::Type expected) {
 // If a class has an ::AcceptVisitor(vis) method, the implementation simply calls
 //  vis.VisitMyClass(*this);
 
+namespace dinterp {
 namespace ast {
 
 #define VISITOR(classname) \
@@ -1091,3 +1092,4 @@ optional<shared_ptr<ast::Body>> SyntaxAnalyzer::analyze(const vector<shared_ptr<
         for (auto& err : context.tokens.Report().MakeReport()) log.Log(err);
     return res;
 }
+}  // namespace dinterp

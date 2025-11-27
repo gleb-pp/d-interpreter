@@ -6,6 +6,7 @@
 #include "dinterp/complog/CompilationMessage.h"
 using namespace std;
 
+namespace dinterp {
 namespace semantic {
 namespace errors {
 
@@ -273,3 +274,4 @@ void ReturnOutsideOfFunction::WriteMessageToStream(
 
 }  // namespace errors
 }  // namespace semantic
+}  // namespace dinterp

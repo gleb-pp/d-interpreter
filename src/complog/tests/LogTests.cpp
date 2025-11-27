@@ -4,9 +4,10 @@
 #include "badwarning.h"
 #include "dinterp/complog/CompilationLog.h"
 #include "dinterp/complog/CompilationMessage.h"
-#include "fixture.h"
 #include "dinterp/locators/locator.h"
+#include "fixture.h"
 using namespace std;
+using namespace dinterp;
 
 class WarnAndError : public PascalProgram {
 protected:

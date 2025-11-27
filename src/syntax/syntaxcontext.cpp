@@ -4,6 +4,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 EmptyVarStatement::EmptyVarStatement(locators::Locator position)
     : CompilationMessage(complog::Severity::Error(), "EmptyVarStatement"), loc(position) {}
 void EmptyVarStatement::WriteMessageToStream(ostream& out, [[maybe_unused]] const FormatOptions& options) const {
@@ -53,3 +54,4 @@ vector<shared_ptr<complog::CompilationMessage>> SyntaxErrorReport::MakeReport() 
 SyntaxContext::SyntaxContext(const std::vector<std::shared_ptr<Token>>& tokens,
                              const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& complog)
     : tokens(tokens, file), compilationLog(&complog) {}
+}  // namespace dinterp

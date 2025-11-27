@@ -6,6 +6,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 namespace runtime {
 
 Closure::Closure(const interp::ScopeStack& values, const ast::ClosureDefinition& def)
@@ -58,3 +59,4 @@ void Closure::DoPrintSelf(ostream& out, [[maybe_unused]] set<shared_ptr<const Ru
 }
 
 }  // namespace runtime
+}  // namespace dinterp

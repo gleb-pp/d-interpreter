@@ -12,6 +12,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 UnaryOpExecutor::UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,
@@ -237,3 +238,4 @@ DISALLOWED_VISIT(ArrayLiteral)
 DISALLOWED_VISIT_FULL(Custom, ASTNode)
 
 }  // namespace interp
+}  // namespace dinterp

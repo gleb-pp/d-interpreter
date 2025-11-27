@@ -30,6 +30,7 @@ include(GNUInstallDirs)
 
 add_executable(dinterp)
 add_library(dinterptools)
+target_compile_features(dinterptools INTERFACE cxx_std_20)
 set_property(TARGET dinterptools PROPERTY VERSION ${version})
 set_property(TARGET dinterptools PROPERTY SOVERSION ${version_maj})
 
@@ -48,16 +49,16 @@ install(TARGETS dinterptools EXPORT DInterpExport FILE_SET HEADERS)
 install(EXPORT DInterpExport FILE DInterpTargets.cmake NAMESPACE DInterp:: DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp)
 configure_package_config_file(
-    dinterpreterConfig.cmake.in
-    dinterpreterConfig.cmake
+    DInterpConfig.cmake.in
+    DInterpConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
 )
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/dinterpreterConfigVersion.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
 )

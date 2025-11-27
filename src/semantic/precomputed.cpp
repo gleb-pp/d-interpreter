@@ -1,6 +1,7 @@
 #include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
+namespace dinterp {
 namespace ast {
 
 PrecomputedValue::PrecomputedValue(const locators::SpanLocator& pos, const std::shared_ptr<runtime::RuntimeValue>& val)
@@ -15,3 +16,4 @@ ClosureDefinition::ClosureDefinition(const locators::SpanLocator& pos, const std
 void ClosureDefinition::AcceptVisitor(IASTVisitor& vis) { vis.VisitCustom(*this); }
 
 }  // namespace ast
+}  // namespace dinterp

@@ -689,4 +689,4 @@ public:
                                                              const std::shared_ptr<const locators::CodeFile>& file,
                                                              complog::ICompilationLog& log);
 };
-}
+}  // namespace dinterp

@@ -13,6 +13,7 @@ using namespace std;
 
 static bool isLatin(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'); }
 
+namespace dinterp {
 LexerError::LexerError(const locators::Locator& position)
     : complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) {}
 
@@ -312,3 +313,4 @@ optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locat
     tokens.push_back(eof);
     return tokens;
 }
+}  // namespace dinterp

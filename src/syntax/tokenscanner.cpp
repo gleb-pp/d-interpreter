@@ -1,6 +1,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 TokenScanner::AutoBlock::AutoBlock(TokenScanner* owner) : tk(owner) {}
 void TokenScanner::AutoBlock::Success() { success = true; }
 TokenScanner::AutoBlock::~AutoBlock() {
@@ -123,3 +124,4 @@ TokenScanner::AutoBlock TokenScanner::AutoStartUseEoln() {
     StartUseEoln();
     return AutoBlock(this);
 }
+}  // namespace dinterp

@@ -6,6 +6,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 namespace ast {
 
 shared_ptr<ast::ASTNode> AstDeepCopier::Clone(ast::ASTNode& node) {
@@ -348,3 +349,4 @@ void AstDeepCopier::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
 }
 
 }  // namespace ast
+}  // namespace dinterp

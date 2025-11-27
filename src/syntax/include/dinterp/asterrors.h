@@ -28,4 +28,4 @@ public:
     std::vector<locators::Locator> Locators() const override;
     virtual ~UnexpectedTokenTypeError() override = default;
 };
-}
+}  // namespace dinterp

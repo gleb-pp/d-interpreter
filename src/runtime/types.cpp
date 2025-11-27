@@ -11,6 +11,7 @@ using namespace std;
  * If the virtual method is not overridden, the default is to return {} ("not supported").
  */
 
+namespace dinterp {
 namespace runtime {
 
 // Type
@@ -379,3 +380,4 @@ std::optional<std::shared_ptr<Type>> UnknownType::Subscript(const Type& other) c
 }
 
 }  // namespace runtime
+}  // namespace dinterp

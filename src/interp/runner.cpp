@@ -5,6 +5,7 @@
 #include "dinterp/interp/varScopes.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 void Run(interp::RuntimeContext& context, ast::Body& program) {
@@ -15,3 +16,4 @@ void Run(interp::RuntimeContext& context, ast::Body& program) {
 }
 
 }  // namespace interp
+}  // namespace dinterp

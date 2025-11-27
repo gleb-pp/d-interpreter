@@ -6,6 +6,12 @@ testfunc ()
     cmake /project -DCompileTests=ON -DCMAKE_BUILD_TYPE=Debug || return 1
     cmake --build . || return 1
     ctest -V . || return 1
+    cmake --install . || return 1
+    cd /sampleproj
+    mkdir build && cd build
+    cmake .. || return 1
+    cmake --build . || return 1
+    ctest -V . || return 1
 }
 
 GOOD=""

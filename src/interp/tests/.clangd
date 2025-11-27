@@ -6,5 +6,5 @@ CompileFlags:
         -I../../locators/include,
         -I../../main/include,
         -I../../runtime/include,
-        -I../../semantics/include,
+        -I../../semantic/include,
         -I../../syntax/include]

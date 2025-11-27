@@ -286,4 +286,4 @@ public:
 
 }  // namespace errors
 }  // namespace semantic
-}
+}  // namespace dinterp

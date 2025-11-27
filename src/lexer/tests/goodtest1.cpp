@@ -5,6 +5,7 @@
 #include "dinterp/complog/CompilationLog.h"
 #include "dinterp/lexer.h"
 using namespace std;
+using namespace dinterp;
 
 static const char* CODE =
     R"%%(var i := 5.5

@@ -13,6 +13,7 @@
 #include "dinterp/syntaxext/astDeepCopy.h"
 using namespace std;
 
+namespace dinterp {
 namespace semantic {
 
 static locators::SpanLocator LocatorFromToken(const Token& tk, const shared_ptr<const locators::CodeFile>& file) {
@@ -568,3 +569,4 @@ void StatementChecker::VisitCustom([[maybe_unused]] ast::ASTNode& node) {
 }
 
 }  // namespace semantic
+}  // namespace dinterp

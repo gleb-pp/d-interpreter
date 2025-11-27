@@ -1,7 +1,7 @@
 #pragma once
 #include "dinterp/runtime/values.h"
-#include "runtimeContext.h"
 #include "dinterp/syntax.h"
+#include "runtimeContext.h"
 #include "varScopes.h"
 
 namespace dinterp {
@@ -68,4 +68,4 @@ public:
 };
 
 }  // namespace interp
-}
+}  // namespace dinterp

@@ -72,4 +72,4 @@ public:
     virtual ~CompilationMessage() = default;
 };
 }  // namespace complog
-}
+}  // namespace dinterp

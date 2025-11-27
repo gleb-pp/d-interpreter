@@ -11,6 +11,7 @@
 #include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 namespace semantic {
 
 static inline bool isUnknown(const runtime::TypeOrValue& res) {
@@ -336,3 +337,4 @@ void UnaryOpChecker::VisitTypecheckOperator(ast::TypecheckOperator& node) {
 UnaryOpChecker::~UnaryOpChecker() {}
 
 }  // namespace semantic
+}  // namespace dinterp
