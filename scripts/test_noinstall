@@ -1,9 +1,10 @@
 #!/bin/env bash
-buildfunc ()
+testfunc ()
 {
-    cd build
-    cmake ../src -DTesting=OFF || return 1
+    cd testbuild
+    cmake ../src -DTesting=ON || return 1
     cmake --build . || return 1
+    ctest -V . || return 1
 }
 
 GOOD=""
@@ -27,13 +28,13 @@ if [ ! -d .git ]; then
     fi
 fi
 
-if [ ! -d build ]; then
-    mkdir build
-    echo "/build directory created"
+if [ ! -d testbuild ]; then
+    mkdir testbuild
+    echo "/testbuild directory created"
 fi
 
 echo ${BOLD}=== BUILD START ===${NORM}
-if buildfunc; then
+if testfunc; then
     echo ${GOOD}=== ALL GOOD!! ===${NORM}
 else
     echo ${BAD}=== ERRORS FOUND ===${NORM}
