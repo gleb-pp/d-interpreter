@@ -17,6 +17,8 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
 endif()
 
 option(Testing "Compile tests (requires GTest)" OFF)
+option(InstallSDK "Enable installing the DInterp::dinterptools development library (as a CMake package)" OFF)
+option(InstallInterpreter "Enable installing the dinterp binary" ON)
 
 if(Testing)
     find_package(GTest REQUIRED)
@@ -44,21 +46,23 @@ add_subdirectory(semantic)
 add_subdirectory(interp)
 add_subdirectory(main)
 
-include(CMakePackageConfigHelpers)
-install(TARGETS dinterptools EXPORT DInterpExport FILE_SET HEADERS)
-install(EXPORT DInterpExport FILE DInterpTargets.cmake NAMESPACE DInterp:: DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp)
-configure_package_config_file(
-    DInterpConfig.cmake.in
-    DInterpConfig.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
-)
-write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion)
-install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
-)
+if (InstallSDK)
+    include(CMakePackageConfigHelpers)
+    install(TARGETS dinterptools EXPORT DInterpExport FILE_SET HEADERS)
+    install(EXPORT DInterpExport FILE DInterpTargets.cmake NAMESPACE DInterp:: DESTINATION
+        ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp)
+    configure_package_config_file(
+        DInterpConfig.cmake.in
+        DInterpConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+    )
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+    )
+endif()
