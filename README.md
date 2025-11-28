@@ -1,6 +1,7 @@
 # The **D** Language 🔥🔥🔥
 
-An interpreter for the [dynamic language](https://github.com/gleb-pp/d-interpreter/blob/main/proj-description/Project%20D.pdf) implemented in С++.
+An interpreter for the [dynamic
+language](https://github.com/Error10556/d-interpreter/blob/main/proj-description/Project%20D.pdf) implemented in С++.
 
 # Brief Language Description
 
@@ -155,3 +156,7 @@ To compile without CMake, simply add `-ldinterptools` (and perhaps `-std=c++20`)
 # Implementation details
 
 See `src/README.md`.
+
+# Credits
+
+- **Eugene Zouev**, an Innopolis University professor, for inventing the **D** toy language.
