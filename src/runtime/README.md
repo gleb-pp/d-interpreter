@@ -92,17 +92,17 @@ print {a := 3, b := 4} + {c := 5, b := 6}, "\n"
 
 ### Binary Minus, Multiplication, and Division
 
-| **-, *, /** | int  | real | str | none | bool | [] | {} | func | ?    |
-|-------------|------|------|-----|------|------|----|----|------|------|
-| int         | int  | real |     |      |      |    |    |      | ?    |
-| real        | real | real |     |      |      |    |    |      | real |
-| str         |      |      |     |      |      |    |    |      |      |
-| none        |      |      |     |      |      |    |    |      |      |
-| bool        |      |      |     |      |      |    |    |      |      |
-| []          |      |      |     |      |      |    |    |      |      |
-| {}          |      |      |     |      |      |    |    |      |      |
-| func        |      |      |     |      |      |    |    |      |      |
-| ?           | ?    | real |     |      |      |    |    |      | ?    |
+| -, *, / | int  | real | str | none | bool | [] | {} | func | ?    |
+|---------|------|------|-----|------|------|----|----|------|------|
+| int     | int  | real |     |      |      |    |    |      | ?    |
+| real    | real | real |     |      |      |    |    |      | real |
+| str     |      |      |     |      |      |    |    |      |      |
+| none    |      |      |     |      |      |    |    |      |      |
+| bool    |      |      |     |      |      |    |    |      |      |
+| []      |      |      |     |      |      |    |    |      |      |
+| {}      |      |      |     |      |      |    |    |      |      |
+| func    |      |      |     |      |      |    |    |      |      |
+| ?       | ?    | real |     |      |      |    |    |      | ?    |
 
 Remark: Division is pure iff it is known that it will be real division because integer division may throw.
 

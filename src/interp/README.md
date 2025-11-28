@@ -22,7 +22,11 @@ and assignments (these are passed to the topmost scope);
 middle;
 - `CallStack` is a stack of locators where function calls took place, used to track recursion depth and create
 `CallStackTrace`s;
-- `RuntimeState` 
+- `RuntimeState` is an algebraic data type (a smart enum) that can have values:
+    - `Running` (normal state),
+    - `Exiting` (`exit` encountered, terminating execution until a reaching a cycle),
+    - `Returning(RuntimeValue)` (`return` encountered, terminating execution until exiting from a closure),
+    - `Throwing(the error, position, stack trace)` (an error encountered, terminating execution);
 - `RuntimeContext` is an object that holds the input/output streams, the current execution state (`RuntimeState`), and
 the call stack (`CallStack`). It also stores the settings of maximum call stack capacity and desired length of the stack
 trace to report in case of an error.

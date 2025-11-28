@@ -1,6 +1,6 @@
 # Implementation Overview
 
-The interpreter implementation is subdivided into subsystems:
+The interpreter implementation is divided into subsystems:
 
 - `locators` library provides abstractions of a code file and positions within it;
 - `complog` library provides a way to produce diagnostic messages;
