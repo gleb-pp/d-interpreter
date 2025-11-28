@@ -107,32 +107,16 @@ public:
 class Statement;
 class Body;
 
-// PROGRAM -> <* [ { Statement Sep } Statement [Sep] ] *>
 std::optional<std::shared_ptr<Body>> parseProgram(SyntaxContext& context);
 
 class Expression;
 
-// Sep -> tkSemicolon | tkNewLine
 bool parseSep(SyntaxContext& context);
 
-// AssignExpression -> tkAssign Expression
 std::optional<std::shared_ptr<Expression>> parseAssignExpression(SyntaxContext& context);
 
-// LoopBody -> tkLoop [tkNewLine] Body tkEnd
 std::optional<std::shared_ptr<Body>> parseLoopBody(SyntaxContext& context);
 
-// Statement -> VarStatement // var a := 3
-//     | IfStatement         // if a = 3 then ... else ...
-//     | ShortIfStatement    // if a = 3 => ...
-//     | WhileStatement      // while ... loop ... end
-//     | ForStatement        // for i in start..stop loop ... end
-//     | LoopStatement       // loop print "working..."; end
-//     | ExitStatement       // exit
-//     | AssignStatement     // a := 3
-//     | PrintStatement      // print a, b, "c"
-//     | ReturnStatement     // return a + 4
-//     | ExpressionStatement // myObj.method(a, a + 1)
-//     | EmptyStatement      // ;
 class Statement : public ASTNode {
 public:
     Statement(const locators::SpanLocator& pos);
@@ -140,7 +124,6 @@ public:
     virtual ~Statement() override = default;
 };
 
-// Body -> <* { Statement Sep } *>
 class Body : public Statement {
 public:
     Body(const locators::SpanLocator& pos);
@@ -151,8 +134,6 @@ public:
     virtual ~Body() override = default;
 };
 
-// VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
-//     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
 class VarStatement : public Statement {
 public:
     VarStatement(const locators::SpanLocator& pos);
@@ -162,8 +143,6 @@ public:
     virtual ~VarStatement() override = default;
 };
 
-// IfStatement -> tkIf < Expression > [tkNewLine] tkThen [tkNewLine] Body
-//     [ tkElse [tkNewLine] Body ] tkEnd
 class IfStatement : public Statement {
 public:
     IfStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& condition,
@@ -176,7 +155,6 @@ public:
     virtual ~IfStatement() override = default;
 };
 
-// ShortIfStatement -> tkIf < Expression > [tkNewLine] kArrow [tkNewLine] Statement
 class ShortIfStatement : public Statement {
 public:
     ShortIfStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& condition,
@@ -188,7 +166,6 @@ public:
     virtual ~ShortIfStatement() override = default;
 };
 
-// WhileStatement -> tkWhile < Expression > LoopBody
 class WhileStatement : public Statement {
 public:
     WhileStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& condition,
@@ -200,7 +177,6 @@ public:
     virtual ~WhileStatement() override = default;
 };
 
-// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
 class ForStatement : public Statement {
 public:
     ForStatement(const locators::SpanLocator& pos);
@@ -213,7 +189,6 @@ public:
     virtual ~ForStatement() override = default;
 };
 
-// LoopStatement -> LoopBody
 class LoopStatement : public Statement {
 public:
     LoopStatement(const locators::SpanLocator& pos, const std::shared_ptr<Body>& body);
@@ -223,7 +198,6 @@ public:
     virtual ~LoopStatement() override = default;
 };
 
-// ExitStatement -> tkExit
 class ExitStatement : public Statement {
 public:
     ExitStatement(const locators::SpanLocator& pos);
@@ -234,7 +208,6 @@ public:
 
 class Reference;
 
-// AssignStatement -> Reference tkAssign Expression
 class AssignStatement : public Statement {
 public:
     AssignStatement(const locators::SpanLocator& pos, const std::shared_ptr<Reference>& dest,
@@ -246,7 +219,6 @@ public:
     virtual ~AssignStatement() override = default;
 };
 
-// PrintStatement -> tkPrint [ CommaExpressions ]
 class PrintStatement : public Statement {
 public:
     PrintStatement(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& expressions);
@@ -256,7 +228,6 @@ public:
     virtual ~PrintStatement() override = default;
 };
 
-// ReturnStatement -> tkReturn [ Expression ]
 class ReturnStatement : public Statement {
 public:
     ReturnStatement(const locators::SpanLocator& pos, const std::optional<std::shared_ptr<Expression>>& returnValue);
@@ -266,7 +237,6 @@ public:
     virtual ~ReturnStatement() override = default;
 };
 
-// ExpressionStatement -> Expression
 class ExpressionStatement : public Statement {
 public:
     ExpressionStatement(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expr);
@@ -276,7 +246,6 @@ public:
     virtual ~ExpressionStatement() override = default;
 };
 
-// CommaExpressions -> Expression { tkComma Expression }
 class CommaExpressions : public ASTNode {
 public:
     CommaExpressions(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& expressions);
@@ -286,7 +255,6 @@ public:
     virtual ~CommaExpressions() override = default;
 };
 
-// CommaIdents -> tkIdent { tkComma tkIdent }
 class CommaIdents : public ASTNode {
 public:
     CommaIdents(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<IdentifierToken>>& idents);
@@ -296,9 +264,6 @@ public:
     virtual ~CommaIdents() override = default;
 };
 
-// Accessor -> MemberAccessor | IndexAccessor
-// MemberAccessor -> tkDot ( tkIdent | tkIntLiteral | ParenthesesExpression )
-//                           a.value   a.2            a.(1 + i)
 class Accessor : public ASTNode {
 public:
     Accessor(const locators::SpanLocator& pos);
@@ -333,7 +298,6 @@ public:
     virtual ~ParenMemberAccessor() override = default;
 };
 
-// IndexAccessor -> tkOpenBracket < Expression > tkClosedBracket
 class IndexAccessor : public Accessor {
 public:
     IndexAccessor(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expressionInBrackets);
@@ -343,7 +307,6 @@ public:
     virtual ~IndexAccessor() override = default;
 };
 
-// Reference -> tkIdent { Accessor }
 class Reference : public ASTNode {
 public:
     Reference(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& baseIdent,
@@ -406,7 +369,6 @@ public:
     virtual ~BinaryRelation() override = default;
 };
 
-// BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
 enum class BinaryRelationOperator { Less, LessEq, Greater, GreaterEq, Equal, NotEqual };
 std::optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context);
 
@@ -430,7 +392,6 @@ public:
     virtual ~Term() override = default;
 };
 
-// UnaryNot -> tkNot Expression(precedence < And::precedence)
 class UnaryNot : public Expression {
 public:
     std::shared_ptr<Expression> nested;
@@ -443,7 +404,6 @@ public:
 class PrefixOperator;
 class PostfixOperator;
 
-// Unary -> {PrefixOperator} Primary {PostfixOperator}
 class Unary : public Expression {
 public:
     Unary(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<PrefixOperator>>& prefixOps,
@@ -456,12 +416,6 @@ public:
     virtual ~Unary() override = default;
 };
 
-// Unary operator precedence:
-// 1. function(args)  obj.field  arr[index]  // call & accessors
-// 2. +num -num
-// 3. obj is type
-
-// PrefixOperator -> tkNot | tkMinus | tkPlus
 class PrefixOperator : public ASTNode {
 public:
     enum class PrefixOperatorKind { Plus, Minus };
@@ -473,7 +427,6 @@ public:
     virtual ~PrefixOperator() override = default;
 };
 
-// PostfixOperator -> TypecheckOperator | Call | AccessorOperator
 class PostfixOperator : public ASTNode {
 public:
     PostfixOperator(const locators::SpanLocator& pos);
@@ -484,7 +437,6 @@ public:
 
 enum class TypeId;
 
-// TypecheckOperator -> tkIs TypeId
 class TypecheckOperator : public PostfixOperator {
 public:
     TypecheckOperator(const locators::SpanLocator& pos, TypeId typeId);
@@ -495,12 +447,9 @@ public:
     virtual ~TypecheckOperator() override = default;
 };
 
-// TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
-//     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
 enum class TypeId { Int, Real, String, Bool, None, Func, Tuple, List };
 std::optional<TypeId> parseTypeId(SyntaxContext& context);
 
-// Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
 class Call : public PostfixOperator {
 public:
     Call(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& args);
@@ -511,7 +460,6 @@ public:
     virtual ~Call() override = default;
 };
 
-// AccessorOperator -> Accessor
 class AccessorOperator : public PostfixOperator {
 public:
     AccessorOperator(const locators::SpanLocator& pos, const std::shared_ptr<Accessor>& accessor);
@@ -522,7 +470,6 @@ public:
     virtual ~AccessorOperator() override = default;
 };
 
-// Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
 class Primary : public Expression {
 public:
     Primary(const locators::SpanLocator& pos);
@@ -530,7 +477,6 @@ public:
     virtual ~Primary() override = default;
 };
 
-// PrimaryIdent -> tkIdent
 class PrimaryIdent : public Primary {
 public:
     PrimaryIdent(const locators::SpanLocator& pos, const std::shared_ptr<IdentifierToken>& name);
@@ -540,7 +486,6 @@ public:
     virtual ~PrimaryIdent() override = default;
 };
 
-// ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
 class ParenthesesExpression : public Primary {
 public:
     ParenthesesExpression(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expr);
@@ -550,7 +495,6 @@ public:
     virtual ~ParenthesesExpression() override = default;
 };
 
-// TupleLiteralElement -> [ tkIdent tkAssign ] Expression
 class TupleLiteralElement : public ASTNode {
 public:
     TupleLiteralElement(const locators::SpanLocator& pos, const std::optional<std::shared_ptr<IdentifierToken>>& ident,
@@ -562,7 +506,6 @@ public:
     virtual ~TupleLiteralElement() override = default;
 };
 
-// TupleLiteral -> tkOpenCurlyBrace < [ TupleLiteralElement { tkComma TupleLiteralElement } ] > tkClosedCurlyBrace
 class TupleLiteral : public Primary {
 public:
     TupleLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<TupleLiteralElement>>& elements);
@@ -572,7 +515,6 @@ public:
     virtual ~TupleLiteral() override = default;
 };
 
-// FuncBody -> ShortFuncBody | LongFuncBody
 class FuncBody : public ASTNode {
 public:
     FuncBody(const locators::SpanLocator& pos);
@@ -580,7 +522,6 @@ public:
     virtual ~FuncBody() override = default;
 };
 
-// ShortFuncBody -> tkArrow Expression
 class ShortFuncBody : public FuncBody {
 public:
     ShortFuncBody(const locators::SpanLocator& pos, const std::shared_ptr<Expression>& expressionToReturn);
@@ -590,7 +531,6 @@ public:
     virtual ~ShortFuncBody() override = default;
 };
 
-// LongFuncBody -> tkIs Body tkEnd
 class LongFuncBody : public FuncBody {
 public:
     LongFuncBody(const locators::SpanLocator& pos, const std::shared_ptr<Body>& funcBody);
@@ -600,7 +540,6 @@ public:
     virtual ~LongFuncBody() override = default;
 };
 
-// FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 class FuncLiteral : public Primary {
 public:
     FuncLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<IdentifierToken>>& parameters,
@@ -612,7 +551,6 @@ public:
     virtual ~FuncLiteral() override = default;
 };
 
-// TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
 class TokenLiteral : public Primary {
 public:
     enum class TokenLiteralKind { String, Int, Real, True, False, None };
@@ -626,7 +564,6 @@ public:
     virtual ~TokenLiteral() override = default;
 };
 
-// ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
 class ArrayLiteral : public Primary {
 public:
     ArrayLiteral(const locators::SpanLocator& pos, const std::vector<std::shared_ptr<Expression>>& items);

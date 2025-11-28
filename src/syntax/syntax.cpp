@@ -13,28 +13,6 @@
 #include "dinterp/locators/locator.h"
 using namespace std;
 
-/*
-// Use this to check if a token is of the provided type. This automatically
-// produces a compilation log message if the token is unexpected
-bool AssertToken(SyntaxContext& context, size_t pos, Token::Type expected) {
-    auto& token = *context.tokens[pos];
-    if (token.type == expected) return true;
-    size_t textpos = token.span.position;
-    context.report.ReportUnexpectedToken(textpos, expected, token.type);
-    return false;
-}
-*/
-
-// AST Node classes
-// Every class in the ::parse implementation must:
-// 1. On success, advance size_t& pos to the first unused token (after the last used token)
-// 2. On failure, report unexpected tokens and what was expected
-//    (perhaps by using AssertToken or context.report.Report)
-// 3. On failure, reset size_t& pos to what it was at the start
-// 4. Set SpanLocators (use context.MakeSpanFromTokens)
-// If a class has an ::AcceptVisitor(vis) method, the implementation simply calls
-//  vis.VisitMyClass(*this);
-
 namespace dinterp {
 namespace ast {
 
@@ -132,8 +110,6 @@ optional<shared_ptr<Statement>> Statement::parse(SyntaxContext& context) {
     return {};
 }
 
-// VarStatement -> tkVar [tkNewLine] tkIdent [ AssignExpression ]
-//     { tkComma [tkNewLine] tkIdent [ AssignExpression ] }
 VarStatement::VarStatement(const locators::SpanLocator& pos) : Statement(pos) {}
 optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
     USESCAN;
@@ -167,8 +143,6 @@ optional<shared_ptr<VarStatement>> VarStatement::parse(SyntaxContext& context) {
 }
 VISITOR(VarStatement)
 
-// IfStatement -> tkIf < Expression > tkThen [tkNewLine] Body
-//     [ tkElse [tkNewLine] Body ] tkEnd
 IfStatement::IfStatement(const locators::SpanLocator& pos, const shared_ptr<Expression>& condition,
                          const shared_ptr<Body>& doIfTrue, const optional<shared_ptr<Body>>& doIfFalse)
     : Statement(pos), condition(condition), doIfTrue(doIfTrue), doIfFalse(doIfFalse) {}
@@ -198,7 +172,6 @@ optional<shared_ptr<IfStatement>> IfStatement::parse(SyntaxContext& context) {
 }
 VISITOR(IfStatement)
 
-// ShortIfStatement -> tkIf < Expression > [tkNewLine] tkArrow [tkNewLine] Statement
 ShortIfStatement::ShortIfStatement(const locators::SpanLocator& pos, const shared_ptr<Expression>& condition,
                                    const shared_ptr<Statement>& doIfTrue)
     : Statement(pos), condition(condition), doIfTrue(doIfTrue) {}
@@ -222,7 +195,6 @@ optional<shared_ptr<ShortIfStatement>> ShortIfStatement::parse(SyntaxContext& co
 }
 VISITOR(ShortIfStatement)
 
-// WhileStatement -> tkWhile < Expression > LoopBody
 WhileStatement::WhileStatement(const locators::SpanLocator& pos, const shared_ptr<Expression>& condition,
                                const shared_ptr<Body>& action)
     : Statement(pos), condition(condition), action(action) {}
@@ -244,7 +216,6 @@ optional<shared_ptr<WhileStatement>> WhileStatement::parse(SyntaxContext& contex
 }
 VISITOR(WhileStatement)
 
-// ForStatement -> tkFor [ tkIdent tkIn ] < Expression > [ tkRange < Expression > ] [tkNewLine] LoopBody
 ForStatement::ForStatement(const locators::SpanLocator& pos) : Statement(pos) {}
 optional<shared_ptr<ForStatement>> ForStatement::parse(SyntaxContext& context) {
     USESCAN;
@@ -288,7 +259,6 @@ optional<shared_ptr<ForStatement>> ForStatement::parse(SyntaxContext& context) {
 }
 VISITOR(ForStatement)
 
-// LoopStatement -> LoopBody
 LoopStatement::LoopStatement(const locators::SpanLocator& pos, const shared_ptr<Body>& body)
     : Statement(pos), body(body) {}
 optional<shared_ptr<LoopStatement>> LoopStatement::parse(SyntaxContext& context) {
@@ -301,7 +271,6 @@ optional<shared_ptr<LoopStatement>> LoopStatement::parse(SyntaxContext& context)
 }
 VISITOR(LoopStatement)
 
-// ExitStatement -> tkExit
 ExitStatement::ExitStatement(const locators::SpanLocator& pos) : Statement(pos) {}
 optional<shared_ptr<ExitStatement>> ExitStatement::parse(SyntaxContext& context) {
     USESCAN;
@@ -312,7 +281,6 @@ optional<shared_ptr<ExitStatement>> ExitStatement::parse(SyntaxContext& context)
 }
 VISITOR(ExitStatement)
 
-// AssignStatement -> Reference tkAssign Expression
 AssignStatement::AssignStatement(const locators::SpanLocator& pos, const shared_ptr<Reference>& dest,
                                  const shared_ptr<Expression>& src)
     : Statement(pos), dest(dest), src(src) {}
@@ -329,7 +297,6 @@ optional<shared_ptr<AssignStatement>> AssignStatement::parse(SyntaxContext& cont
 }
 VISITOR(AssignStatement)
 
-// PrintStatement -> tkPrint [ CommaExpressions ]
 PrintStatement::PrintStatement(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& expressions)
     : Statement(pos), expressions(expressions) {}
 optional<shared_ptr<PrintStatement>> PrintStatement::parse(SyntaxContext& context) {
@@ -344,7 +311,6 @@ optional<shared_ptr<PrintStatement>> PrintStatement::parse(SyntaxContext& contex
 }
 VISITOR(PrintStatement)
 
-// ReturnStatement -> tkReturn [ Expression ]
 ReturnStatement::ReturnStatement(const locators::SpanLocator& pos, const optional<shared_ptr<Expression>>& returnValue)
     : Statement(pos), returnValue(returnValue) {}
 optional<shared_ptr<ReturnStatement>> ReturnStatement::parse(SyntaxContext& context) {
@@ -357,7 +323,6 @@ optional<shared_ptr<ReturnStatement>> ReturnStatement::parse(SyntaxContext& cont
 }
 VISITOR(ReturnStatement)
 
-// ExpressionStatement -> Expression
 ExpressionStatement::ExpressionStatement(const locators::SpanLocator& pos, const shared_ptr<Expression>& expr)
     : Statement(pos), expr(expr) {}
 optional<shared_ptr<ExpressionStatement>> ExpressionStatement::parse(SyntaxContext& context) {
@@ -367,7 +332,6 @@ optional<shared_ptr<ExpressionStatement>> ExpressionStatement::parse(SyntaxConte
 }
 VISITOR(ExpressionStatement)
 
-// CommaExpressions -> Expression { tkComma Expression }
 CommaExpressions::CommaExpressions(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& expressions)
     : ASTNode(pos), expressions(expressions) {}
 optional<shared_ptr<CommaExpressions>> CommaExpressions::parse(SyntaxContext& context) {
@@ -392,7 +356,6 @@ optional<shared_ptr<CommaExpressions>> CommaExpressions::parse(SyntaxContext& co
 }
 VISITOR(CommaExpressions)
 
-// CommaIdents -> tkIdent { tkComma tkIdent }
 CommaIdents::CommaIdents(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& idents)
     : ASTNode(pos), idents(idents) {}
 optional<shared_ptr<CommaIdents>> CommaIdents::parse(SyntaxContext& context) {
@@ -481,7 +444,6 @@ optional<shared_ptr<ParenMemberAccessor>> ParenMemberAccessor::parse(SyntaxConte
 }
 VISITOR(ParenMemberAccessor)
 
-// IndexAccessor -> tkOpenBracket < Expression > tkClosedBracket
 IndexAccessor::IndexAccessor(const locators::SpanLocator& pos, const shared_ptr<Expression>& expressionInBrackets)
     : Accessor(pos), expressionInBrackets(expressionInBrackets) {}
 optional<shared_ptr<IndexAccessor>> IndexAccessor::parse(SyntaxContext& context) {
@@ -501,7 +463,6 @@ optional<shared_ptr<IndexAccessor>> IndexAccessor::parse(SyntaxContext& context)
 }
 VISITOR(IndexAccessor)
 
-// Reference -> tkIdent { Accessor }
 Reference::Reference(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& baseIdent,
                      const vector<shared_ptr<Accessor>>& accessorChain)
     : ASTNode(pos), baseIdent(baseIdent), accessorChain(accessorChain) {}
@@ -649,22 +610,18 @@ locators::SpanLocator SpanLocatorFromExpressions(const vector<shared_ptr<Express
     return SpanLocatorFromExpressions(*exprs.front(), *exprs.back());
 }
 
-// XorOperator -> OrOperator { tkXor OrOperator }
 XorOperator::XorOperator(const vector<shared_ptr<Expression>>& operands)
     : Expression(SpanLocatorFromExpressions(operands)), operands(operands) {}
 VISITOR(XorOperator)
 
-// OrOperator -> AndOperator { tkOr AndOperator }
 OrOperator::OrOperator(const vector<shared_ptr<Expression>>& operands)
     : Expression(SpanLocatorFromExpressions(operands)), operands(operands) {}
 VISITOR(OrOperator)
 
-// AndOperator -> BinaryRelation { tkAnd BinaryRelation }
 AndOperator::AndOperator(const vector<shared_ptr<Expression>>& operands)
     : Expression(SpanLocatorFromExpressions(operands)), operands(operands) {}
 VISITOR(AndOperator)
 
-// BinaryRelation -> Sum { BinaryRelationOperator Sum }
 BinaryRelation::BinaryRelation(const vector<shared_ptr<Expression>>& operands,
                                const vector<BinaryRelationOperator>& operators)
     : Expression(SpanLocatorFromExpressions(operands)), operands(operands), operators(operators) {
@@ -673,7 +630,6 @@ BinaryRelation::BinaryRelation(const vector<shared_ptr<Expression>>& operands,
 }
 VISITOR(BinaryRelation)
 
-// BinaryRelationOperator -> tkLess | tkLessEq | tkGreater | tkGreaterEq | tkEqual | tkNotEqual
 optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& context) {
     USESCAN;
 #define TRY(op) \
@@ -688,7 +644,6 @@ optional<BinaryRelationOperator> parseBinaryRelationOperator(SyntaxContext& cont
 #undef TRY
 }
 
-// Sum -> Term { (tkPlus | tkMinus) Term }
 Sum::Sum(const vector<shared_ptr<Expression>>& terms, const vector<SumOperator>& operators)
     : Expression(SpanLocatorFromExpressions(terms)), terms(terms), operators(operators) {
     size_t nds = terms.size(), ors = operators.size();
@@ -696,7 +651,6 @@ Sum::Sum(const vector<shared_ptr<Expression>>& terms, const vector<SumOperator>&
 }
 VISITOR(Sum)
 
-// Term -> Unary { (tkTimes | tkDivide) Unary }
 Term::Term(const vector<shared_ptr<Expression>>& unaries, const vector<TermOperator>& operators)
     : Expression(SpanLocatorFromExpressions(unaries)), unaries(unaries), operators(operators) {
     size_t nds = unaries.size(), ors = operators.size();
@@ -704,7 +658,6 @@ Term::Term(const vector<shared_ptr<Expression>>& unaries, const vector<TermOpera
 }
 VISITOR(Term)
 
-// Unary -> {PrefixOperator} Primary {PostfixOperator}
 Unary::Unary(const locators::SpanLocator& pos, const vector<shared_ptr<PrefixOperator>>& prefixOps,
              const vector<shared_ptr<PostfixOperator>>& postfixOps, const shared_ptr<Expression>& expr)
     : Expression(pos), prefixOps(prefixOps), postfixOps(postfixOps), expr(expr) {}
@@ -743,12 +696,6 @@ optional<shared_ptr<UnaryNot>> UnaryNot::parse(SyntaxContext& context) {
 }
 VISITOR(UnaryNot)
 
-// Unary operator precedence:
-// 1. function(args)  obj.field  arr[index]  // call & accessors
-// 2. +num -num
-// 3. obj is type
-
-// PrefixOperator -> tkMinus | tkPlus
 PrefixOperator::PrefixOperator(const locators::SpanLocator& pos, PrefixOperatorKind kind) : ASTNode(pos), kind(kind) {}
 int PrefixOperator::precedence() {  // the less, the more priority
     return 2;
@@ -768,7 +715,6 @@ optional<shared_ptr<PrefixOperator>> PrefixOperator::parse(SyntaxContext& contex
     return make_shared<PrefixOperator>(tk.ReadSinceStart(), kind);
 }
 
-// PostfixOperator -> TypecheckOperator | Call | AccessorOperator
 PostfixOperator::PostfixOperator(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<PostfixOperator>> PostfixOperator::parse(SyntaxContext& context) {
 #define TRY(classname)                        \
@@ -783,7 +729,6 @@ optional<shared_ptr<PostfixOperator>> PostfixOperator::parse(SyntaxContext& cont
 #undef TRY
 }
 
-// TypecheckOperator -> tkIs TypeId
 TypecheckOperator::TypecheckOperator(const locators::SpanLocator& pos, TypeId typeId)
     : PostfixOperator(pos), typeId(typeId) {}
 int TypecheckOperator::precedence() { return 3; }
@@ -798,8 +743,6 @@ optional<shared_ptr<TypecheckOperator>> TypecheckOperator::parse(SyntaxContext& 
 }
 VISITOR(TypecheckOperator)
 
-// TypeId -> tkInt | tkReal | tkString | tkBool | tkNone | tkFunc
-//     | tkOpenBracket tkClosedBracket | tkOpenCurlyBrace tkClosedCurlyBrace
 optional<TypeId> parseTypeId(SyntaxContext& context) {
     USESCAN;
 #define TRY(name)                         \
@@ -830,7 +773,6 @@ optional<TypeId> parseTypeId(SyntaxContext& context) {
     return {};
 }
 
-// Call -> tkOpenParenthesis < [ CommaExpressions ] > tkClosedParenthesis
 Call::Call(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& args)
     : PostfixOperator(pos), args(args) {}
 int Call::precedence() { return 1; }
@@ -852,7 +794,6 @@ optional<shared_ptr<Call>> Call::parse(SyntaxContext& context) {
 }
 VISITOR(Call)
 
-// AccessorOperator -> Accessor
 AccessorOperator::AccessorOperator(const locators::SpanLocator& pos, const shared_ptr<Accessor>& accessor)
     : PostfixOperator(pos), accessor(accessor) {}
 int AccessorOperator::precedence() { return 1; }
@@ -863,7 +804,6 @@ optional<shared_ptr<AccessorOperator>> AccessorOperator::parse(SyntaxContext& co
 }
 VISITOR(AccessorOperator)
 
-// Primary -> PrimaryIdent | ParenthesesExpression | FuncLiteral | TokenLiteral | ArrayLiteral | TupleLiteral
 Primary::Primary(const locators::SpanLocator& pos) : Expression(pos) {}
 optional<shared_ptr<Primary>> Primary::parse(SyntaxContext& context) {
 #define TRY(classname)                        \
@@ -881,7 +821,6 @@ optional<shared_ptr<Primary>> Primary::parse(SyntaxContext& context) {
     return {};
 }
 
-// PrimaryIdent -> tkIdent
 PrimaryIdent::PrimaryIdent(const locators::SpanLocator& pos, const shared_ptr<IdentifierToken>& name)
     : Primary(pos), name(name) {}
 optional<shared_ptr<PrimaryIdent>> PrimaryIdent::parse(SyntaxContext& context) {
@@ -894,7 +833,6 @@ optional<shared_ptr<PrimaryIdent>> PrimaryIdent::parse(SyntaxContext& context) {
 }
 VISITOR(PrimaryIdent)
 
-// ParenthesesExpression -> tkOpenParenthesis < Expression > tkClosedParenthesis
 ParenthesesExpression::ParenthesesExpression(const locators::SpanLocator& pos, const shared_ptr<Expression>& expr)
     : Primary(pos), expr(expr) {}
 optional<shared_ptr<ParenthesesExpression>> ParenthesesExpression::parse(SyntaxContext& context) {
@@ -914,7 +852,6 @@ optional<shared_ptr<ParenthesesExpression>> ParenthesesExpression::parse(SyntaxC
 }
 VISITOR(ParenthesesExpression)
 
-// TupleLiteralElement -> [ tkIdent tkAssign ] Expression
 TupleLiteralElement::TupleLiteralElement(const locators::SpanLocator& pos,
                                          const optional<shared_ptr<IdentifierToken>>& ident,
                                          const shared_ptr<Expression>& expression)
@@ -940,7 +877,6 @@ optional<shared_ptr<TupleLiteralElement>> TupleLiteralElement::parse(SyntaxConte
 }
 VISITOR(TupleLiteralElement)
 
-// TupleLiteral -> tkOpenCurlyBrace < [ TupleLiteralElement { tkComma TupleLiteralElement } ] > tkClosedCurlyBrace
 TupleLiteral::TupleLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<TupleLiteralElement>>& elements)
     : Primary(pos), elements(elements) {}
 optional<shared_ptr<TupleLiteral>> TupleLiteral::parse(SyntaxContext& context) {
@@ -970,7 +906,6 @@ optional<shared_ptr<TupleLiteral>> TupleLiteral::parse(SyntaxContext& context) {
 }
 VISITOR(TupleLiteral)
 
-// FuncBody -> ShortFuncBody | LongFuncBody
 FuncBody::FuncBody(const locators::SpanLocator& pos) : ASTNode(pos) {}
 optional<shared_ptr<FuncBody>> FuncBody::parse(SyntaxContext& context) {
 #define TRY(classname)                        \
@@ -984,7 +919,6 @@ optional<shared_ptr<FuncBody>> FuncBody::parse(SyntaxContext& context) {
     return {};
 }
 
-// ShortFuncBody -> tkArrow Expression
 ShortFuncBody::ShortFuncBody(const locators::SpanLocator& pos, const shared_ptr<Expression>& expressionToReturn)
     : FuncBody(pos), expressionToReturn(expressionToReturn) {}
 optional<shared_ptr<ShortFuncBody>> ShortFuncBody::parse(SyntaxContext& context) {
@@ -998,7 +932,6 @@ optional<shared_ptr<ShortFuncBody>> ShortFuncBody::parse(SyntaxContext& context)
 }
 VISITOR(ShortFuncBody)
 
-// LongFuncBody -> tkIs Body tkEnd
 LongFuncBody::LongFuncBody(const locators::SpanLocator& pos, const shared_ptr<Body>& funcBody)
     : FuncBody(pos), funcBody(funcBody) {}
 optional<shared_ptr<LongFuncBody>> LongFuncBody::parse(SyntaxContext& context) {
@@ -1013,7 +946,6 @@ optional<shared_ptr<LongFuncBody>> LongFuncBody::parse(SyntaxContext& context) {
 }
 VISITOR(LongFuncBody)
 
-// FuncLiteral -> tkFunc tkOpenParenthesis < [ CommaIdents ] > tkClosedParenthesis FuncBody
 FuncLiteral::FuncLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<IdentifierToken>>& parameters,
                          const shared_ptr<FuncBody>& funcBody)
     : Primary(pos), parameters(parameters), funcBody(funcBody) {}
@@ -1037,7 +969,6 @@ optional<shared_ptr<FuncLiteral>> FuncLiteral::parse(SyntaxContext& context) {
 }
 VISITOR(FuncLiteral)
 
-// TokenLiteral -> tkStringLiteral | tkIntLiteral | tkRealLiteral | tkTrue | tkFalse | tkNone
 TokenLiteral::TokenLiteral(const locators::SpanLocator& pos, TokenLiteralKind kind, const shared_ptr<Token>& token)
     : Primary(pos), kind(kind), token(token) {}
 optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context) {
@@ -1062,7 +993,6 @@ optional<shared_ptr<TokenLiteral>> TokenLiteral::parse(SyntaxContext& context) {
 }
 VISITOR(TokenLiteral)
 
-// ArrayLiteral -> tkOpenBracket < [ CommaExpressions ] > tkClosedBracket
 ArrayLiteral::ArrayLiteral(const locators::SpanLocator& pos, const vector<shared_ptr<Expression>>& items)
     : Primary(pos), items(items) {}
 optional<shared_ptr<ArrayLiteral>> ArrayLiteral::parse(SyntaxContext& context) {

@@ -1,7 +1,7 @@
 # Lexer
 
 The purpose of this library is to split the program text into a list of tokens. Thus, the only function that needs be
-called is `Lexer::Tokenize`.
+called is `Lexer::tokenize`.
 
 This library provides the following classes:
 
@@ -19,5 +19,5 @@ Four diagnostics can be produced by the lexer:
 - `WrongEscapeSequenceError`
 - `UnclosedStringLiteralError`
 
-The class `Lexer` only contains the static method `Tokenize`. This method may return a list of tokens or nothing in case
+The class `Lexer` only contains the static method `tokenize`. This method may return a list of tokens or nothing in case
 of an error. Errors are reported to the logger supplied as an argument.
