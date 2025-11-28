@@ -21,3 +21,7 @@ Four diagnostics can be produced by the lexer:
 
 The class `Lexer` only contains the static method `tokenize`. This method may return a list of tokens or nothing in case
 of an error. Errors are reported to the logger supplied as an argument.
+
+## Known issues
+
+There is no way to express an arbitrary non-printable character.

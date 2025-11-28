@@ -358,6 +358,7 @@ RuntimeValueResult ArrayValue::Field(const string& name) {
         });
         return make_shared<ArrayValue>(indices);
     }
+    if (name == "Length") return make_shared<IntegerValue>(BigInt(Value.size()));
     return {};
 }
 

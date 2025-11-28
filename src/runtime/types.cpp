@@ -227,6 +227,7 @@ std::optional<std::shared_ptr<Type>> ArrayType::Field(const std::string& name) c
     if (name == "Del")
         return make_shared<FuncType>(false, vector<shared_ptr<Type>>{make_shared<IntegerType>()},
                                      make_shared<NoneType>());
+    if (name == "Length") return make_shared<IntegerType>();
     return {};
 }
 
