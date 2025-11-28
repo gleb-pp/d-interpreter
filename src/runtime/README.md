@@ -75,6 +75,21 @@ performed.
 | func  |      |      |     |      |      |    |    |      |      |
 | ?     | ?    | real | str |      |      | [] | {} |      | ?    |
 
+Addition of tuples having a field named the same does not throw an exception, it silently drops the name from the right
+operand instead:
+
+```text
+print {a := 3, b := 4} + {c := 5, b := 6}, "\n"
+```
+```text
+{
+    a := 3
+    b := 4
+    c := 5
+    4 := 6
+}
+```
+
 ### Binary Minus, Multiplication, and Division
 
 | **-, *, /** | int  | real | str | none | bool | [] | {} | func | ?    |
