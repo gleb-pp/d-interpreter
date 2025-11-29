@@ -38,4 +38,5 @@ if testfunc; then
     echo ${GOOD}=== ALL GOOD!! ===${NORM}
 else
     echo ${BAD}=== ERRORS FOUND ===${NORM}
+    exit 1
 fi
