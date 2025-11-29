@@ -1,16 +1,18 @@
 #include "fixture.h"
-#include <sstream>
-#include "complog/CompilationMessage.h"
-#include "fstream"
-#include "interp/runner.h"
-#include "interp/runtimeContext.h"
-#include "sstream"
-#include "lexer.h"
-#include "syntax.h"
-#include "semantic.h"
-using namespace std;
 
-namespace interp {
+#include <sstream>
+
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/interp/runner.h"
+#include "dinterp/interp/runtimeContext.h"
+#include "dinterp/lexer.h"
+#include "dinterp/semantic.h"
+#include "dinterp/syntax.h"
+#include "fstream"
+#include "sstream"
+using namespace std;
+using namespace dinterp;
+using namespace interp;
 
 void Sample::ReadFile(const char* name, bool compiles) {
     ifstream fs(name);
@@ -19,7 +21,7 @@ void Sample::ReadFile(const char* name, bool compiles) {
     ss << fs.rdbuf();
     filename = name;
     file = make_shared<locators::CodeFile>(name, ss.str());
-    auto opttks = Lexer::tokenize(file, log);
+    auto opttks = Lexer::tokenize(file, log, false);
     if (!opttks) {
         if (!compiles) return;
         log.WriteToStream(cerr, complog::CompilationMessage::FormatOptions::All(100));
@@ -61,6 +63,4 @@ void Sample::RunAndExpectCrash(const char* input) {
     RuntimeContext context(sin, sout, 1000, 10);
     interp::Run(context, *program);
     ASSERT_TRUE(context.State.IsThrowing());
-}
-
 }

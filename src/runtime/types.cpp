@@ -1,4 +1,4 @@
-#include "runtime/types.h"
+#include "dinterp/runtime/types.h"
 
 #include <algorithm>
 #include <memory>
@@ -11,6 +11,7 @@ using namespace std;
  * If the virtual method is not overridden, the default is to return {} ("not supported").
  */
 
+namespace dinterp {
 namespace runtime {
 
 // Type
@@ -221,6 +222,15 @@ std::optional<std::shared_ptr<Type>> ArrayType::BinaryPlus(const Type& other) co
     return {};
 }
 
+std::optional<std::shared_ptr<Type>> ArrayType::Field(const std::string& name) const {
+    if (name == "Indices") return make_shared<ArrayType>();
+    if (name == "Del")
+        return make_shared<FuncType>(false, vector<shared_ptr<Type>>{make_shared<IntegerType>()},
+                                     make_shared<NoneType>());
+    if (name == "Length") return make_shared<IntegerType>();
+    return {};
+}
+
 bool ArrayType::BinaryEq(const Type& other) const { return TypeEq(other) || other.TypeEq(UnknownType()); }
 
 std::optional<std::shared_ptr<Type>> ArrayType::Subscript(const Type& other) const {
@@ -379,3 +389,4 @@ std::optional<std::shared_ptr<Type>> UnknownType::Subscript(const Type& other) c
 }
 
 }  // namespace runtime
+}  // namespace dinterp

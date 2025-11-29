@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 class PascalProgram : public testing::Test {
 protected:
@@ -19,7 +19,7 @@ begin
     end;
     readln;
 end.)%%%";
-    std::shared_ptr<locators::CodeFile> file;
+    std::shared_ptr<dinterp::locators::CodeFile> file;
     virtual void SetUp() override;
     virtual void TearDown() override;
 };

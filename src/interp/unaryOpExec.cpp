@@ -1,17 +1,18 @@
-#include "interp/unaryOpExec.h"
+#include "dinterp/interp/unaryOpExec.h"
 
 #include <memory>
 #include <sstream>
 
-#include "interp/execution.h"
-#include "interp/userCallable.h"
-#include "locators/locator.h"
-#include "runtime/derror.h"
-#include "runtime/types.h"
-#include "runtime/values.h"
-#include "syntax.h"
+#include "dinterp/interp/execution.h"
+#include "dinterp/interp/userCallable.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/types.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 UnaryOpExecutor::UnaryOpExecutor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes,
@@ -237,3 +238,4 @@ DISALLOWED_VISIT(ArrayLiteral)
 DISALLOWED_VISIT_FULL(Custom, ASTNode)
 
 }  // namespace interp
+}  // namespace dinterp

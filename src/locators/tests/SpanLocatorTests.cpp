@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
+#include "dinterp/locators/locator.h"
 #include "fixture.h"
-#include "locators/locator.h"
 using namespace std;
-using namespace locators;
+using namespace dinterp::locators;
 
 TEST_F(RealCodeFixture, spanLocTest) {
     size_t start = file->Position(1, 1);

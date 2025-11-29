@@ -1,8 +1,9 @@
-#include "locators/CodeFile.h"
+#include "dinterp/locators/CodeFile.h"
 
 #include <algorithm>
 using namespace std;
 
+namespace dinterp {
 namespace locators {
 CodeContext::CodeContext(const string& text, size_t pointerPositionWithinText)
     : Text(text), PointerWithinText(pointerPositionWithinText) {}
@@ -51,3 +52,4 @@ std::string CodeFile::LineTextWithoutLineFeed(size_t line) const {
     return content.substr(start, len);
 }
 }  // namespace locators
+}  // namespace dinterp

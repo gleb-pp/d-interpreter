@@ -1,8 +1,9 @@
-#include "interp/variable.h"
+#include "dinterp/interp/variable.h"
 
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 Variable::Variable(const string& name, const shared_ptr<runtime::RuntimeValue>& content) : name(name), val(content) {}
@@ -16,3 +17,4 @@ void Variable::Assign(const shared_ptr<runtime::RuntimeValue>& content) { val = 
 const shared_ptr<runtime::RuntimeValue>& Variable::Content() const { return val; }
 
 }  // namespace interp
+}  // namespace dinterp

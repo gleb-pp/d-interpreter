@@ -1,0 +1,161 @@
+#pragma once
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "dinterp/bigint.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
+
+namespace dinterp {
+struct Span {
+public:
+    size_t position;
+    size_t length;
+    bool operator==(const Span& other) const = default;
+    bool operator!=(const Span& other) const = default;
+};
+
+class LexerError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+
+public:
+    LexerError(const locators::Locator& position);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~LexerError() override = default;
+};
+
+class NewlineInStringLiteralError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+
+public:
+    NewlineInStringLiteralError(const locators::Locator& position);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~NewlineInStringLiteralError() override = default;
+};
+
+class WrongEscapeSequenceError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+    std::string badsequence;
+
+public:
+    WrongEscapeSequenceError(const locators::Locator& position, const std::string& badsequence);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~WrongEscapeSequenceError() override = default;
+};
+
+class UnclosedStringLiteralError : public complog::CompilationMessage {
+private:
+    locators::Locator position;
+    std::string badsequence;
+
+public:
+    UnclosedStringLiteralError(const locators::Locator& position);
+    void WriteMessageToStream(std::ostream& out, const FormatOptions& opts) const override;
+    std::vector<locators::Locator> Locators() const override;
+    virtual ~UnclosedStringLiteralError() override = default;
+};
+
+class Token {
+public:
+    Span span;
+    enum class Type {
+        tkGreater,
+        tkGreaterEq,
+        tkLess,
+        tkLessEq,
+        tkEqual,
+        tkNotEqual,
+        tkPlus,
+        tkMinus,
+        tkTimes,
+        tkDivide,
+        tkNewLine,
+        tkAssign,
+        tkOpenBracket,
+        tkClosedBracket,
+        tkOpenParenthesis,
+        tkClosedParenthesis,
+        tkOpenCurlyBrace,
+        tkClosedCurlyBrace,
+        tkSemicolon,
+        tkVar,
+        tkWhile,
+        tkFor,
+        tkIf,
+        tkThen,
+        tkEnd,
+        tkArrow,
+        tkExit,
+        tkPrint,
+        tkRange,
+        tkIn,
+        tkElse,
+        tkLoop,
+        tkDot,
+        tkComma,
+        tkAnd,
+        tkOr,
+        tkNot,
+        tkXor,
+        tkInt,
+        tkReal,
+        tkBool,
+        tkString,
+        tkNone,
+        tkFunc,
+        tkTrue,
+        tkFalse,
+        tkIs,
+        tkReturn,
+        tkIntLiteral,
+        tkRealLiteral,
+        tkStringLiteral,
+        tkIdent,
+        tkEof,
+    } type;
+
+    static const std::vector<std::pair<std::string, Type>> typeChars;
+    static std::string TypeToString(Type type);
+    virtual ~Token() = default;
+};
+
+class IdentifierToken : public Token {
+public:
+    std::string identifier;
+    virtual ~IdentifierToken() override = default;
+};
+
+class IntegerToken : public Token {
+public:
+    BigInt value;
+    virtual ~IntegerToken() override = default;
+};
+
+class RealToken : public Token {
+public:
+    long double value;
+    virtual ~RealToken() override = default;
+};
+
+class StringLiteral : public Token {
+public:
+    std::string value;
+    virtual ~StringLiteral() override = default;
+};
+
+class Lexer {
+public:
+    static std::optional<std::vector<std::shared_ptr<Token>>> tokenize(
+        const std::shared_ptr<const locators::CodeFile>& file, complog::ICompilationLog& log, bool skipShebang);
+};
+}  // namespace dinterp

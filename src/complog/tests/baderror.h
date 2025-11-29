@@ -1,29 +1,29 @@
 #pragma once
-#include "complog/CompilationMessage.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/locator.h"
 
-class BadError : public complog::CompilationMessage {
+class BadError : public dinterp::complog::CompilationMessage {
 private:
-    locators::Locator loc;
+    dinterp::locators::Locator loc;
 
 protected:
     void WriteMessageToStream(std::ostream& out,
-                              const complog::CompilationMessage::FormatOptions& options) const override;
-    std::vector<locators::Locator> Locators() const override;
+                              const dinterp::complog::CompilationMessage::FormatOptions& options) const override;
+    std::vector<dinterp::locators::Locator> Locators() const override;
 
 public:
-    BadError(const locators::Locator& loc);
+    BadError(const dinterp::locators::Locator& loc);
 };
 
-class DoubleBadError : public complog::CompilationMessage {
+class DoubleBadError : public dinterp::complog::CompilationMessage {
 private:
-    const locators::Locator loc1, loc2;
+    const dinterp::locators::Locator loc1, loc2;
 
 protected:
     void WriteMessageToStream(std::ostream& out,
-                              const complog::CompilationMessage::FormatOptions& options) const override;
-    std::vector<locators::Locator> Locators() const override;
+                              const dinterp::complog::CompilationMessage::FormatOptions& options) const override;
+    std::vector<dinterp::locators::Locator> Locators() const override;
 
 public:
-    DoubleBadError(const locators::Locator& loc1, const locators::Locator& loc2);
+    DoubleBadError(const dinterp::locators::Locator& loc1, const dinterp::locators::Locator& loc2);
 };

@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "codelldb",
+            "request": "launch",
+            "name": "C++",
+            "preLaunchTask": "Compile",
+            "expressions": "native",
+            "program": "lexer/tests/lexer_tests"
+        }
+    ]
+}

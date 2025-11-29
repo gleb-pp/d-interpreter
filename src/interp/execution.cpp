@@ -1,19 +1,20 @@
-#include "interp/execution.h"
+#include "dinterp/interp/execution.h"
 
 #include <algorithm>
 #include <memory>
 #include <stdexcept>
 
-#include "interp/closure.h"
-#include "interp/runtimeContext.h"
-#include "interp/unaryOpExec.h"
-#include "locators/locator.h"
-#include "runtime/derror.h"
-#include "runtime/values.h"
-#include "syntax.h"
-#include "syntaxext/precomputed.h"
+#include "dinterp/interp/closure.h"
+#include "dinterp/interp/runtimeContext.h"
+#include "dinterp/interp/unaryOpExec.h"
+#include "dinterp/locators/locator.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/values.h"
+#include "dinterp/syntax.h"
+#include "dinterp/syntaxext/precomputed.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 Executor::Executor(RuntimeContext& context, const std::shared_ptr<ScopeStack>& scopes)
@@ -691,3 +692,4 @@ void Executor::VisitCustom(ast::ASTNode& node) {
 }
 
 }  // namespace interp
+}  // namespace dinterp

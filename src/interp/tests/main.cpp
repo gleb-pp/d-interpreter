@@ -3,6 +3,7 @@
 #include "fixture.h"
 
 using namespace std;
+using namespace dinterp;
 using namespace interp;
 
 inline bool isprime(int n) {
@@ -220,9 +221,7 @@ Call: 8 800 123 45 67
 )");
 }
 
-TEST_F(Sample, Complex05) {
-    ReadFile("samples/complex/05.d", false);
-}
+TEST_F(Sample, Complex05) { ReadFile("samples/complex/05.d", false); }
 
 TEST_F(Sample, Complex06) {
     ReadFile("samples/complex/06.d", true);
@@ -253,9 +252,7 @@ TEST_F(Sample, Complex10) {
     RunAndExpect("", "");
 }
 
-TEST_F(Sample, Complex11) {
-    ReadFile("samples/complex/11.d", false);
-}
+TEST_F(Sample, Complex11) { ReadFile("samples/complex/11.d", false); }
 
 TEST_F(Sample, Complex12) {
     ReadFile("samples/complex/12.d", true);
@@ -302,6 +299,14 @@ TEST_F(Sample, Complex15) {
         RunAndExpectCrash("");
         sts.pop_back();
     }
+}
+
+TEST_F(Sample, ExtraArray) {
+    ReadFile("samples/extra/array.d", true);
+    RunAndExpect("", R"([ [1] a, [3] c, [10] d ]
+false
+[ [1] 1, [2] 3, [3] 10 ]
+)");
 }
 
 int main(int argc, char** argv) {

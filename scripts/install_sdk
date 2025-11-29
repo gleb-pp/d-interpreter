@@ -1,0 +1,41 @@
+#!/bin/env bash
+buildfunc ()
+{
+    cd build
+    cmake ../src -DTesting=OFF -DInstallInterpreter=OFF -DInstallSDK=ON || return 1
+    cmake --build . || return 1
+    sudo cmake --install . || return 1
+}
+
+GOOD=""
+BAD=""
+BOLD=""
+NORM=""
+
+if [ -t 1 -a $(tput colors) -ge 8 ]; then
+    GOOD=$(tput setaf 2)
+    BAD=$(tput setaf 1)
+    BOLD=$(tput setaf 4)
+    NORM=$(tput sgr0)
+fi
+
+if [ ! -d .git ]; then
+    if [ -d ../.git ]; then
+        cd ..
+    else
+        echo "${BAD}This script must be run from the project's root directory or one of its immediate subdirectories${NORM}" >/dev/stderr
+        exit 1
+    fi
+fi
+
+if [ ! -d build ]; then
+    mkdir build
+    echo "/build directory created"
+fi
+
+echo ${BOLD}=== BUILD START ===${NORM}
+if buildfunc; then
+    echo ${GOOD}=== ALL GOOD!! ===${NORM}
+else
+    echo ${BAD}=== ERRORS FOUND ===${NORM}
+fi

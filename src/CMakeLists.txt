@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(dinterpreter VERSION 0.0.0 LANGUAGES CXX)
+set(version_maj 1)
+set(version ${version_maj}.0.0)
+project(dinterpreter VERSION ${version} LANGUAGES CXX)
 
 if(NOT CMAKE_BUILD_TYPE)
     message(STATUS "CMAKE_BUILD_TYPE set to Release")
@@ -14,9 +16,11 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
     target_compile_definitions(common_features INTERFACE DINTERP_DEBUG)
 endif()
 
-option(CompileTests "Compile tests (requires GTest)" OFF)
+option(Testing "Compile tests (requires GTest)" OFF)
+option(InstallSDK "Enable installing the DInterp::dinterptools development library (as a CMake package)" OFF)
+option(InstallInterpreter "Enable installing the dinterp binary" ON)
 
-if(CompileTests)
+if(Testing)
     find_package(GTest REQUIRED)
     enable_testing()
     add_library(test_features INTERFACE)
@@ -24,7 +28,13 @@ if(CompileTests)
     target_link_libraries(test_features INTERFACE pthread GTest::gtest)
 endif()
 
+include(GNUInstallDirs)
+
 add_executable(dinterp)
+add_library(dinterptools)
+target_compile_features(dinterptools INTERFACE cxx_std_20)
+set_property(TARGET dinterptools PROPERTY VERSION ${version})
+set_property(TARGET dinterptools PROPERTY SOVERSION ${version_maj})
 
 add_subdirectory(bigint)
 add_subdirectory(complog)
@@ -32,6 +42,27 @@ add_subdirectory(locators)
 add_subdirectory(lexer)
 add_subdirectory(syntax)
 add_subdirectory(runtime)
-add_subdirectory(semantics)
+add_subdirectory(semantic)
 add_subdirectory(interp)
 add_subdirectory(main)
+
+if (InstallSDK)
+    include(CMakePackageConfigHelpers)
+    install(TARGETS dinterptools EXPORT DInterpExport FILE_SET HEADERS)
+    install(EXPORT DInterpExport FILE DInterpTargets.cmake NAMESPACE DInterp:: DESTINATION
+        ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp)
+    configure_package_config_file(
+        DInterpConfig.cmake.in
+        DInterpConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+    )
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/DInterpConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/dinterp
+    )
+endif()

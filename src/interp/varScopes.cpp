@@ -1,8 +1,9 @@
-#include "interp/varScopes.h"
+#include "dinterp/interp/varScopes.h"
 
 #include <stdexcept>
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 void Scope::Declare(const shared_ptr<Variable>& newvar) {
@@ -30,3 +31,4 @@ optional<shared_ptr<Variable>> ScopeStack::Lookup(const string& name) const {
 }
 
 }  // namespace interp
+}  // namespace dinterp

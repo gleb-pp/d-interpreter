@@ -1,9 +1,11 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "locators/CodeFile.h"
-#include "complog/CompilationLog.h"
-#include "syntax.h"
 
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/syntax.h"
+
+namespace dinterp {
 namespace interp {
 
 class Sample : public testing::Test {
@@ -17,4 +19,5 @@ public:
     void RunAndExpectCrash(const char* input);
 };
 
-}
+}  // namespace interp
+}  // namespace dinterp

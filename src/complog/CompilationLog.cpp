@@ -1,10 +1,11 @@
-#include "complog/CompilationLog.h"
+#include "dinterp/complog/CompilationLog.h"
 
 #include <sstream>
 
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 using namespace std;
 
+namespace dinterp {
 namespace complog {
 std::string AccumulatedCompilationLog::ToString(const CompilationMessage::FormatOptions& options) const {
     stringstream out;
@@ -53,3 +54,4 @@ void CombinedCompilationLog::Log(const std::shared_ptr<CompilationMessage>& mess
     for (auto& ptr : logs) ptr->Log(message);
 }
 }  // namespace complog
+}  // namespace dinterp

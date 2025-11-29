@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 
+#include "dinterp/locators/locator.h"
 #include "fixture.h"
-#include "locators/locator.h"
 using namespace std;
-using namespace locators;
+using namespace dinterp::locators;
 
 TEST_F(RealCodeFixture, LocatorFromFile) {
     Locator loc(file, 34);

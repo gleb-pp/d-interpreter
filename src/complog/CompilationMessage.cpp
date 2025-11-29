@@ -1,13 +1,13 @@
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 
-#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
+namespace dinterp {
 namespace complog {
 Severity::Severity(int index) : index(index) {
     if (index < 0 || static_cast<size_t>(index) >= sizeof(SEVERITY_STR) / sizeof(SEVERITY_STR[0]))
@@ -73,3 +73,4 @@ void CompilationMessage::WriteToStream(ostream& out, const FormatOptions& option
     }
 }
 }  // namespace complog
+}  // namespace dinterp

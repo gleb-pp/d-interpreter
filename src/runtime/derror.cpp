@@ -1,9 +1,11 @@
-#include "runtime/derror.h"
+#include "dinterp/runtime/derror.h"
 using namespace std;
 
+namespace dinterp {
 namespace runtime {
 
 DRuntimeError::DRuntimeError(std::string message) : msg(message) {}
 const char* DRuntimeError::what() const noexcept { return msg.c_str(); }
 
 }  // namespace runtime
+}  // namespace dinterp

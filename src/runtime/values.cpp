@@ -1,4 +1,4 @@
-#include "runtime/values.h"
+#include "dinterp/runtime/values.h"
 
 #include <algorithm>
 #include <cmath>
@@ -7,10 +7,11 @@
 #include <memory>
 #include <sstream>
 
-#include "runtime/derror.h"
-#include "runtime/types.h"
+#include "dinterp/runtime/derror.h"
+#include "dinterp/runtime/types.h"
 using namespace std;
 
+namespace dinterp {
 namespace runtime {
 
 /*
@@ -34,7 +35,7 @@ optional<partial_ordering> RuntimeValue::BinaryComparison([[maybe_unused]] const
 RuntimeValueResult RuntimeValue::UnaryMinus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryPlus() const { return {}; }
 RuntimeValueResult RuntimeValue::UnaryNot() const { return {}; }
-RuntimeValueResult RuntimeValue::Field([[maybe_unused]] const string& name) const { return {}; }
+RuntimeValueResult RuntimeValue::Field([[maybe_unused]] const string& name) { return {}; }
 RuntimeValueResult RuntimeValue::Field([[maybe_unused]] const RuntimeValue& index) const { return {}; }
 RuntimeValueResult RuntimeValue::Subscript([[maybe_unused]] const RuntimeValue& other) const { return {}; }
 
@@ -89,7 +90,7 @@ optional<partial_ordering> IntegerValue::BinaryComparison(const RuntimeValue& ot
 }
 RuntimeValueResult IntegerValue::UnaryMinus() const { return make_shared<IntegerValue>(-value); }
 RuntimeValueResult IntegerValue::UnaryPlus() const { return make_shared<IntegerValue>(value); }
-RuntimeValueResult IntegerValue::Field(const string& name) const {
+RuntimeValueResult IntegerValue::Field(const string& name) {
     if (name == "Round" || name == "Floor" || name == "Ceil") return make_shared<IntegerValue>(value);
     if (name == "Frac") return make_shared<RealValue>(0);
     return {};
@@ -108,7 +109,7 @@ optional<partial_ordering> RealValue::BinaryComparison(const RuntimeValue& other
 }
 RuntimeValueResult RealValue::UnaryMinus() const { return make_shared<RealValue>(-value); }
 RuntimeValueResult RealValue::UnaryPlus() const { return make_shared<RealValue>(value); }
-RuntimeValueResult RealValue::Field(const string& name) const {
+RuntimeValueResult RealValue::Field(const string& name) {
     if (name == "Round") return make_shared<IntegerValue>(BigInt(round(value)));
     if (name == "Floor") return make_shared<IntegerValue>(BigInt(floor(value)));
     if (name == "Ceil") return make_shared<IntegerValue>(BigInt(ceil(value)));
@@ -250,7 +251,7 @@ optional<partial_ordering> StringValue::BinaryComparison(const RuntimeValue& oth
     if (!p) return {};
     return value <=> p->value;
 }
-RuntimeValueResult StringValue::Field(const string& name) const {
+RuntimeValueResult StringValue::Field(const string& name) {
     if (name == "Split")
         return make_shared<StringSplitFunction>(dynamic_pointer_cast<const StringValue>(shared_from_this()));
     if (name == "SplitWS")
@@ -348,6 +349,18 @@ void ArrayValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& 
     out << " ]";
     recGuard.erase(ins.first);
 }
+RuntimeValueResult ArrayValue::Field(const string& name) {
+    if (name == "Del") return make_shared<ArrayDelFunction>(dynamic_pointer_cast<ArrayValue>(shared_from_this()));
+    if (name == "Indices") {
+        vector<shared_ptr<RuntimeValue>> indices(Value.size());
+        std::ranges::transform(Value, indices.begin(), [](const pair<const BigInt, shared_ptr<RuntimeValue>>& kv) {
+            return make_shared<IntegerValue>(kv.first);
+        });
+        return make_shared<ArrayValue>(indices);
+    }
+    if (name == "Length") return make_shared<IntegerValue>(BigInt(Value.size()));
+    return {};
+}
 
 TupleValue::TupleValue(const vector<shared_ptr<RuntimeValue>>& values, const map<string, size_t>& nameIndex)
     : values(values), nameIndex(nameIndex) {}
@@ -387,7 +400,7 @@ RuntimeValueResult TupleValue::BinaryPlus(const RuntimeValue& other) const {
     if (!p) return {};
     return make_shared<TupleValue>(*this, *p);
 }
-RuntimeValueResult TupleValue::Field(const string& name) const { return ValueByName(name); }
+RuntimeValueResult TupleValue::Field(const string& name) { return ValueByName(name); }
 RuntimeValueResult TupleValue::Field(const RuntimeValue& index) const {
     auto p = dynamic_cast<const IntegerValue*>(&index);
     if (!p) return {};
@@ -434,100 +447,26 @@ void TupleValue::DoPrintSelf(ostream& out, set<shared_ptr<const RuntimeValue>>& 
     recGuard.erase(ins.first);
 }
 
-StringSliceFunction::StringSliceFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
-RuntimeValueResult StringSliceFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 3) return DRuntimeError("The string.Slice function requires 3 arguments that are integers");
-    const IntegerValue* _args[3];
-    ranges::transform(args, _args,
-                      [](const shared_ptr<RuntimeValue>& val) { return dynamic_cast<const IntegerValue*>(val.get()); });
-    bool types_ok = true;
-    for (int i = 0; i < 3; i++) {
-        if (!_args[i]) {
-            types_ok = false;
-            break;
-        }
-    }
-    if (!types_ok) {
-        stringstream msg("The string.Slice function expected \"int\" arguments, but ");
-        bool first = true;
-        const char* const argnames[] = {"start", "stop", "step"};
-        for (int i = 0; i < 3; i++) {
-            if (_args[i]) continue;
-            if (!first) msg << "; ";
-            first = false;
-            msg << "argument" << i + 1 << " (" << argnames[i] << ") was \"" << args[i]->TypeOfValue()->Name() << '\"';
-        }
-        return DRuntimeError(msg.str());
-    }
-    if (!_args[2]->Value()) return DRuntimeError("The string.Slice function's third argument (step) cannot be 0");
-    return make_shared<StringValue>(_this->Slice(_args[0]->Value(), _args[1]->Value(), _args[2]->Value()));
+void ArrayDelFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
+    out << "<built-in function [].Del(index: int) -> none>";
 }
-shared_ptr<runtime::Type> StringSliceFunction::TypeOfValue() const {
-    return make_shared<FuncType>(false, vector<shared_ptr<Type>>(3, make_shared<IntegerType>()),
-                                 make_shared<StringType>());
-}
-void StringSliceFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
-    out << "<built-in function string.Slice(start: int, stop: int, step: int) -> string>";
-}
-
-StringSplitFunction::StringSplitFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
-RuntimeValueResult StringSplitFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 1) return DRuntimeError("The string.Split function accepts exactly 1 string argument");
-    auto strval = dynamic_cast<const StringValue*>(args[0].get());
-    if (!strval)
-        return DRuntimeError("The string.Split function expected a string argument, but received \"" +
+ArrayDelFunction::ArrayDelFunction(const std::shared_ptr<ArrayValue>& _this) : _this(_this) {}
+RuntimeValueResult ArrayDelFunction::Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const {
+    size_t n = args.size();
+    if (n != 1) return DRuntimeError("The [].Del function expects exactly 1 argument, but received " + to_string(n));
+    auto val = dynamic_pointer_cast<IntegerValue>(args[0]);
+    if (!val)
+        return DRuntimeError("The [].Del function expects a integer argument, but received \"" +
                              args[0]->TypeOfValue()->Name() + "\"");
-    vector<shared_ptr<RuntimeValue>> strings;
-    std::ranges::transform(_this->Split(strval->Value()), back_inserter(strings),
-                           [](const string& val) { return make_shared<StringValue>(val); });
-    return make_shared<ArrayValue>(strings);
+    const BigInt& index = val->Value();
+    auto iter = _this->Value.find(index);
+    if (iter == _this->Value.end()) return DRuntimeError("No value associated with index " + index.ToString());
+    _this->Value.erase(iter);
+    return make_shared<NoneValue>();
 }
-shared_ptr<runtime::Type> StringSplitFunction::TypeOfValue() const {
-    return make_shared<FuncType>(true, vector<shared_ptr<Type>>{make_shared<StringType>()}, make_shared<ArrayType>());
-}
-void StringSplitFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
-    out << "<built-in function string.Split(sep: string) -> []>";
-}
-
-StringSplitWSFunction::StringSplitWSFunction(const shared_ptr<const StringValue>& _this) : _this(_this) {}
-RuntimeValueResult StringSplitWSFunction::Call(const vector<shared_ptr<RuntimeValue>>& args) const {
-    if (args.size()) return DRuntimeError("The string.SplitWS function accepts no arguments");
-    vector<shared_ptr<RuntimeValue>> strings;
-    std::ranges::transform(_this->SplitWS(), back_inserter(strings),
-                           [](const string& val) { return make_shared<StringValue>(val); });
-    return make_shared<ArrayValue>(strings);
-}
-shared_ptr<runtime::Type> StringSplitWSFunction::TypeOfValue() const {
-    return make_shared<FuncType>(true, vector<shared_ptr<Type>>(), make_shared<ArrayType>());
-}
-void StringSplitWSFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
-    out << "<built-in function string.SplitWS() -> []>";
-}
-
-StringJoinFunction::StringJoinFunction(const std::shared_ptr<const StringValue>& _this) : _this(_this) {}
-RuntimeValueResult StringJoinFunction::Call(const std::vector<std::shared_ptr<RuntimeValue>>& args) const {
-    if (args.size() != 1) return DRuntimeError("The string.Join function accepts exactly 1 array argument");
-    auto arrval = dynamic_cast<const ArrayValue*>(args[0].get());
-    if (!arrval)
-        return DRuntimeError("The string.Join function expects an array of strings as the argument, but received \"" +
-                             args[0]->TypeOfValue()->Name() + "\"");
-    vector<const StringValue*> strvals;
-    strvals.reserve(arrval->Value.size());
-    std::ranges::transform(arrval->Value, back_inserter(strvals),
-                           [](const std::pair<BigInt, std::shared_ptr<RuntimeValue>>& kv) {
-                               return dynamic_cast<const StringValue*>(kv.second.get());
-                           });
-    for (auto i : strvals)
-        if (!i) return DRuntimeError("The string.Join function received an array with non-string values");
-    vector<string> strs(strvals.size());
-    std::ranges::transform(strvals, strs.begin(), [](const StringValue* val) { return val->Value(); });
-    return make_shared<StringValue>(_this->Join(strs));
-}
-std::shared_ptr<runtime::Type> StringJoinFunction::TypeOfValue() const {
-    return make_shared<FuncType>(true, vector<shared_ptr<Type>>{make_shared<ArrayType>()}, make_shared<StringType>());
-}
-void StringJoinFunction::DoPrintSelf(std::ostream& out, std::set<std::shared_ptr<const RuntimeValue>>&) const {
-    out << "<built-in function string.Join(strings: []) -> string>";
+std::shared_ptr<runtime::Type> ArrayDelFunction::TypeOfValue() const {
+    return make_shared<FuncType>(false, vector<shared_ptr<Type>>{make_shared<IntegerType>()}, make_shared<NoneType>());
 }
 
 }  // namespace runtime
+}  // namespace dinterp

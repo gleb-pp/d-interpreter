@@ -1,10 +1,11 @@
-#include "interp/runner.h"
+#include "dinterp/interp/runner.h"
 
-#include "interp/execution.h"
-#include "interp/input.h"
-#include "interp/varScopes.h"
+#include "dinterp/interp/execution.h"
+#include "dinterp/interp/input.h"
+#include "dinterp/interp/varScopes.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 void Run(interp::RuntimeContext& context, ast::Body& program) {
@@ -15,3 +16,4 @@ void Run(interp::RuntimeContext& context, ast::Body& program) {
 }
 
 }  // namespace interp
+}  // namespace dinterp

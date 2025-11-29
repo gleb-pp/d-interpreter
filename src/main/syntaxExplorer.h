@@ -2,8 +2,9 @@
 #include <iostream>
 #include <vector>
 
-#include "syntax.h"
+#include "dinterp/syntax.h"
 
+namespace dinterp {
 class ASTExplorer {
 public:
     struct ActionCommand {
@@ -75,3 +76,4 @@ public:
     static void PrintCommands(const ASTExplorer& explorer, std::ostream& output);
     void Explore(std::ostream& output, std::istream& input);
 };
+}  // namespace dinterp

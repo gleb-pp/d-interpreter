@@ -5,17 +5,18 @@
 #include <optional>
 #include <sstream>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
-#include "interp/runner.h"
-#include "interp/runtimeContext.h"
-#include "lexer.h"
-#include "locators/CodeFile.h"
-#include "semantic.h"
-#include "syntax.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/interp/runner.h"
+#include "dinterp/interp/runtimeContext.h"
+#include "dinterp/lexer.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/semantic.h"
+#include "dinterp/syntax.h"
 #include "syntaxExplorer.h"
 #include "tokenTypeStrings.h"
 using namespace std;
+using namespace dinterp;
 
 class Options {
 public:
@@ -230,7 +231,7 @@ bool ProcessFile(string filename, const Options& opts, complog::ICompilationLog&
         in.close();
         file = make_shared<locators::CodeFile>(filename, sstr.str());
     }
-    auto maybeTokens = Lexer::tokenize(file, slog);
+    auto maybeTokens = Lexer::tokenize(file, slog, true);
     if (!maybeTokens.has_value()) {
         cerr << "A lexical error was encountered in " << filename << ", stopping.\n";
         return false;

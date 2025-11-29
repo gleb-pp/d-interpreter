@@ -1,7 +1,8 @@
 #include "badwarning.h"
 
-#include "complog/CompilationMessage.h"
+#include "dinterp/complog/CompilationMessage.h"
 using namespace std;
+using namespace dinterp;
 using namespace locators;
 using namespace complog;
 

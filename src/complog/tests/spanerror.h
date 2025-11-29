@@ -1,17 +1,17 @@
 #pragma once
-#include "complog/CompilationMessage.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/locator.h"
 
-class SpanError : public complog::CompilationMessage {
+class SpanError : public dinterp::complog::CompilationMessage {
 private:
-    locators::SpanLocator loc;
+    dinterp::locators::SpanLocator loc;
 
 protected:
     void WriteMessageToStream(std::ostream& out,
-                              const complog::CompilationMessage::FormatOptions& options) const override;
-    std::vector<locators::Locator> Locators() const override;
-    std::vector<locators::SpanLocator> SpanLocators() const override;
+                              const dinterp::complog::CompilationMessage::FormatOptions& options) const override;
+    std::vector<dinterp::locators::Locator> Locators() const override;
+    std::vector<dinterp::locators::SpanLocator> SpanLocators() const override;
 
 public:
-    SpanError(const locators::SpanLocator& loc);
+    SpanError(const dinterp::locators::SpanLocator& loc);
 };

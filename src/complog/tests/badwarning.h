@@ -1,16 +1,16 @@
 #pragma once
-#include "complog/CompilationMessage.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/locator.h"
 
-class BadWarning : public complog::CompilationMessage {
+class BadWarning : public dinterp::complog::CompilationMessage {
 private:
-    locators::Locator loc;
+    dinterp::locators::Locator loc;
 
 protected:
     void WriteMessageToStream(std::ostream& out,
-                              const complog::CompilationMessage::FormatOptions& options) const override;
-    std::vector<locators::Locator> Locators() const override;
+                              const dinterp::complog::CompilationMessage::FormatOptions& options) const override;
+    std::vector<dinterp::locators::Locator> Locators() const override;
 
 public:
-    BadWarning(const locators::Locator& loc);
+    BadWarning(const dinterp::locators::Locator& loc);
 };

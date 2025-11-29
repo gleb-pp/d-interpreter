@@ -1,8 +1,9 @@
-#include "interp/runtimeContext.h"
+#include "dinterp/interp/runtimeContext.h"
 
-#include "locators/locator.h"
+#include "dinterp/locators/locator.h"
 using namespace std;
 
+namespace dinterp {
 namespace interp {
 
 // CallStackTrace
@@ -170,3 +171,4 @@ void RuntimeContext::SetThrowingState(const runtime::DRuntimeError& error, const
 }
 
 }  // namespace interp
+}  // namespace dinterp

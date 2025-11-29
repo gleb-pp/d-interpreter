@@ -1,18 +1,19 @@
-#include "lexer.h"
+#include "dinterp/lexer.h"
 
 #include <algorithm>
 #include <cctype>
 #include <utility>
 
-#include "complog/CompilationLog.h"
-#include "complog/CompilationMessage.h"
-#include "locators/CodeFile.h"
-#include "locators/locator.h"
+#include "dinterp/complog/CompilationLog.h"
+#include "dinterp/complog/CompilationMessage.h"
+#include "dinterp/locators/CodeFile.h"
+#include "dinterp/locators/locator.h"
 
 using namespace std;
 
 static bool isLatin(char ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z'); }
 
+namespace dinterp {
 LexerError::LexerError(const locators::Locator& position)
     : complog::CompilationMessage(complog::Severity::Error(), "LexerError"), position(position) {}
 
@@ -288,11 +289,15 @@ static bool checkIdentifierToken(size_t& i, size_t n, const string& code, vector
 }
 
 optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locators::CodeFile>& file,
-                                                    complog::ICompilationLog& log) {
+                                                    complog::ICompilationLog& log, bool skipShebang) {
     vector<shared_ptr<Token>> tokens;
     size_t i = 0;
     const std::string& code = file->AllText();
     size_t n = code.length();
+    if (skipShebang && code.starts_with("#!")) {
+        while (i < n && code[i] != '\n') ++i;
+        i += i < n;
+    }
     while (i < n) {
         if (code[i] == ' ' || code[i] == '\r' || code[i] == '\t') {
             i++;
@@ -312,3 +317,4 @@ optional<vector<shared_ptr<Token>>> Lexer::tokenize(const shared_ptr<const locat
     tokens.push_back(eof);
     return tokens;
 }
+}  // namespace dinterp
