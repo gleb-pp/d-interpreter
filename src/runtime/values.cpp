@@ -154,7 +154,7 @@ vector<string> StringValue::Split(const string& sep) const {
     vector<long> z(n);
     for (long i = 0; i < n; i++) {
         long& res = z[i];
-        if (i > r) res = max(r - i, z[i - l]);
+        if (i > r) res = max(r - i, zsep[i - l]);
         while (i + res < n && res < nsep && value[i + res] == sep[res]) ++res;
         if (i + res > r) {
             r = i + res;
@@ -167,7 +167,7 @@ vector<string> StringValue::Split(const string& sep) const {
         if (z[i] == nsep) {
             res.push_back(value.substr(pos, i - pos));
             i += nsep - 1;
-            pos = i;
+            pos = i + 1;
         }
     res.push_back(value.substr(pos));
     return res;
